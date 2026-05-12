@@ -3,6 +3,8 @@ import { PainSection } from "@/components/landing/pain-section";
 import { ConsequenceSection } from "@/components/landing/consequence-section";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { BonusGuaranteeSection } from "@/components/landing/bonus-guarantee-section";
+import { FinalCtaSection } from "@/components/landing/final-cta-section";
+import { Footer } from "@/components/landing/footer";
 
 export default function HomePage() {
   return (
@@ -12,6 +14,8 @@ export default function HomePage() {
       <ConsequenceSection />
       <PricingSection />
       <BonusGuaranteeSection />
+      <FinalCtaSection />
+      <Footer />
     </main>
   );
 }
