@@ -1,6 +1,8 @@
 import { HeroSection } from "@/components/landing/hero-section";
 import { PainSection } from "@/components/landing/pain-section";
 import { ConsequenceSection } from "@/components/landing/consequence-section";
+import { PricingSection } from "@/components/landing/pricing-section";
+import { BonusGuaranteeSection } from "@/components/landing/bonus-guarantee-section";
 
 export default function HomePage() {
   return (
@@ -8,6 +10,8 @@ export default function HomePage() {
       <HeroSection />
       <PainSection />
       <ConsequenceSection />
+      <PricingSection />
+      <BonusGuaranteeSection />
     </main>
   );
 }
