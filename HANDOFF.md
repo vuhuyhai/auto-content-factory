@@ -36,7 +36,9 @@
 - ✅ **npm run build PASS - Static for `/`, Dynamic for /dashboard /auth/***
 - ✅ TypeScript zero error
 - ⏳ Migrate middleware.ts → proxy.ts modern (Day 5+ - Next.js 16 đã tự dùng proxy.ts)
-- ⏳ Deploy lần đầu lên Vercel + connect domain autocontent.online
+- ✅ **Production: ✅ LIVE - https://auto-content-factory.vercel.app render OK**
+- ⏳ Connect domain autocontent.online qua Vercel
+- **Last verified:** 12/05/2026 - Day 5 close - 200 OK + Vercel Cache HIT
 
 ## 3. Done So Far
 
@@ -150,6 +152,27 @@
 - **contents.brand_id denormalized có nguy cơ drift** - cần CHECK constraint (Day 6+)
 - **Bảng brands có schema nhiều cột hơn dự đoán** - sync Drizzle khi build Brand creation Week 2
 - **CTA "Xem cách hoạt động" trong Hero link tới /#how-it-works** - chưa có section đó, cần thêm Week 2 hoặc bỏ button
+
+### D5-6: Vercel Framework Preset bị set "Other" mặc định
+- Triệu chứng: Build PASS trên Vercel, URL trả 404 với `X-Vercel-Error: NOT_FOUND`
+- Nguyên nhân: Khi import GitHub repo lần đầu, Vercel có thể auto-detect framework SAI thành "Other"
+- Fix: Settings → Build and Deployment → Framework Preset → đổi thành "Next.js" → Save → Redeploy với "Use existing Build Cache" UNCHECKED
+- Cách kiểm tra nhanh: vào `https://vercel.com/[team]/[project]/settings/build-and-deployment`
+
+### D5-7: KHÔNG dùng `vercel link` với option "Pull env now: YES" khi Vercel server chưa có env
+- Triệu chứng: Sau khi chạy `npx vercel link` và chọn YES cho "Pull environment variables now" + YES cho "Overwrite .env.local", file `.env.local` local bị overwrite, mất hết env values, chỉ còn `VERCEL_OIDC_TOKEN`
+- Nguyên nhân: Vercel CLI pull env từ environment "Development" trên Vercel server. Nếu server chưa có env, CLI download file rỗng và ghi đè lên `.env.local` local
+- Workflow đúng:
+  1. Push env từ `.env.local` lên Vercel TRƯỚC (qua Dashboard hoặc CLI `vercel env add`)
+  2. Sau đó mới `vercel link` để sync
+  3. Hoặc: Khi prompt "Overwrite .env.local? (Y/n)", LUÔN chọn **n**
+- Recovery: Lấy lại env từ source service Dashboard (Supabase, Resend, PayOS, Anthropic)
+
+### D5-8: Phải add env vào Vercel cho cả 3 environments
+- Triệu chứng: MIDDLEWARE_INVOCATION_FAILED (HTTP 500) trên production
+- Nguyên nhân: middleware đọc `process.env.NEXT_PUBLIC_SUPABASE_URL`, nếu Vercel chưa có env thì undefined → createServerClient crash
+- Fix: Vercel Dashboard → Settings → Environment Variables → Add 3 Supabase env (URL + anon + service_role), check ALL Environments (Production + Preview + Development)
+- Note: Recovery file `.env.local` lưu ý PHẢI giữ lại `VERCEL_OIDC_TOKEN` do CLI auto-manage
 
 ## 6. Next Steps
 
