@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import Link from 'next/link'
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button'
 import { signup, type SignupState } from './actions'
 
 const initialState: SignupState = {}
@@ -13,10 +14,10 @@ export default function SignupPage() {
     <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-          Tao tai khoan
+          Tạo tài khoản
         </h1>
         <p className="text-sm text-gray-600 mb-6">
-          Bat dau viet content tu dong cho doanh nghiep cua ban.
+          Bắt đầu viết content tự động cho doanh nghiệp của bạn.
         </p>
 
         <form action={formAction} className="space-y-4">
@@ -43,7 +44,7 @@ export default function SignupPage() {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Mat khau
+              Mật khẩu
             </label>
             <input
               id="password"
@@ -55,7 +56,7 @@ export default function SignupPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Toi thieu 8 ky tu.
+              Tối thiểu 8 ký tự.
             </p>
           </div>
 
@@ -73,17 +74,28 @@ export default function SignupPage() {
             disabled={isPending}
             className="w-full bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {isPending ? 'Dang tao tai khoan...' : 'Tao tai khoan'}
+            {isPending ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
           </button>
         </form>
 
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500">hoặc</span>
+          </div>
+        </div>
+
+        <GoogleSignInButton label="Đăng ký với Google" />
+
         <p className="text-sm text-gray-600 text-center mt-6">
-          Da co tai khoan?{' '}
+          Đã có tài khoản?{' '}
           <Link
             href="/login"
             className="text-blue-600 font-medium hover:underline"
           >
-            Dang nhap
+            Đăng nhập
           </Link>
         </p>
       </div>
