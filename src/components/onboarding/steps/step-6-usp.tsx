@@ -49,7 +49,7 @@ export function Step6USP() {
                 />
               </FormControl>
               <FormDescription>
-                {usp.length}/300 ký tự (tối thiểu 50)
+                {usp.length}/300 ký tự (tối thiểu 30)
               </FormDescription>
               <FormMessage />
             </FormItem>

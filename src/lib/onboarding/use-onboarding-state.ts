@@ -14,9 +14,12 @@ interface UseOnboardingStateReturn {
   form: UseFormReturn<OnboardingFormData>
   currentStep: number
   isHydrated: boolean
+  showPreview: boolean
   goNext: () => Promise<boolean>
   goBack: () => void
   goToStep: (step: number) => void
+  enterPreview: () => void
+  exitPreview: () => void
   resetDraft: () => void
   saveDraft: () => void
 }
@@ -38,6 +41,7 @@ export function useOnboardingState(): UseOnboardingStateReturn {
     mode: "onBlur",
   })
   const [currentStep, setCurrentStep] = useState(1)
+  const [showPreview, setShowPreview] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Hydrate from localStorage on mount
@@ -113,6 +117,9 @@ export function useOnboardingState(): UseOnboardingStateReturn {
       window.scrollTo({ top: 0, behavior: "smooth" })
       return true
     }
+    // Step 8 finished - show preview instead of advancing
+    setShowPreview(true)
+    window.scrollTo({ top: 0, behavior: "smooth" })
     return true
   }, [currentStep, form, saveDraft])
 
@@ -129,12 +136,22 @@ export function useOnboardingState(): UseOnboardingStateReturn {
     (step: number) => {
       if (step >= 1 && step <= TOTAL_STEPS) {
         setCurrentStep(step)
+        setShowPreview(false)
         saveDraft(step)
         window.scrollTo({ top: 0, behavior: "smooth" })
       }
     },
     [saveDraft],
   )
+
+  const enterPreview = useCallback(() => {
+    setShowPreview(true)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [])
+
+  const exitPreview = useCallback(() => {
+    setShowPreview(false)
+  }, [])
 
   const resetDraft = useCallback(() => {
     if (typeof window === "undefined") return
@@ -151,9 +168,12 @@ export function useOnboardingState(): UseOnboardingStateReturn {
     form,
     currentStep,
     isHydrated,
+    showPreview,
     goNext,
     goBack,
     goToStep,
+    enterPreview,
+    exitPreview,
     resetDraft,
     saveDraft,
   }

@@ -115,7 +115,7 @@ export type Step5Data = z.infer<typeof step5Schema>
 // ============================================================================
 
 export const step6Schema = z.object({
-  usp: requiredString("Điểm khác biệt", 50).max(300, {
+  usp: requiredString("Điểm khác biệt", 30).max(300, {
     message: "Điểm khác biệt tối đa 300 ký tự",
   }),
 })
@@ -160,15 +160,37 @@ export type Step8Data = z.infer<typeof step8Schema>
 
 export const fullOnboardingSchema = z.object({
   // Step 1
-  brand_name: z.string().trim().min(2).max(100),
-  slogan: z.string().trim().max(150).optional(),
-  industry: z.string().trim().min(1),
-  industry_custom: z.string().trim().max(100).optional(),
+  brand_name: z
+    .string()
+    .trim()
+    .min(2, { message: "Tên thương hiệu phải có ít nhất 2 ký tự" })
+    .max(100, { message: "Tên thương hiệu tối đa 100 ký tự" }),
+  slogan: z
+    .string()
+    .trim()
+    .max(150, { message: "Slogan tối đa 150 ký tự" })
+    .optional(),
+  industry: z
+    .string()
+    .trim()
+    .min(1, { message: "Ngành nghề là bắt buộc" }),
+  industry_custom: z
+    .string()
+    .trim()
+    .max(100, { message: "Tên ngành tối đa 100 ký tự" })
+    .optional(),
 
   // Step 2
-  age_range: z.array(z.string()).min(1).max(2),
+  age_range: z
+    .array(z.string())
+    .min(1, { message: "Chọn ít nhất 1 độ tuổi" })
+    .max(2, { message: "Chỉ chọn tối đa 2 độ tuổi" }),
   gender_focus: z.enum(["male", "female", "mixed"]),
-  persona_description: z.string().trim().min(20).max(300),
+  persona_description: z
+    .string()
+    .trim()
+    .min(20, { message: "Mô tả khách hàng phải có ít nhất 20 ký tự" })
+    .max(300, { message: "Mô tả tối đa 300 ký tự" }),
 
   // Step 3
   archetype: z.enum([
@@ -186,17 +208,35 @@ export const fullOnboardingSchema = z.object({
   emotion: z.number().min(0).max(10).int(),
 
   // Step 5
-  pain_points: z.string().trim().min(50).max(500),
+  pain_points: z
+    .string()
+    .trim()
+    .min(50, { message: "Pain points phải có ít nhất 50 ký tự" })
+    .max(500, { message: "Pain points tối đa 500 ký tự" }),
 
   // Step 6
-  usp: z.string().trim().min(50).max(300),
+  usp: z
+    .string()
+    .trim()
+    .min(30, { message: "USP phải có ít nhất 30 ký tự" })
+    .max(300, { message: "USP tối đa 300 ký tự" }),
 
   // Step 7
-  topics: z.array(z.string()).min(3).max(5),
-  hashtags: z.array(z.string().trim().min(2)).min(3).max(8),
+  topics: z
+    .array(z.string())
+    .min(3, { message: "Chọn ít nhất 3 chủ đề" })
+    .max(5, { message: "Chỉ chọn tối đa 5 chủ đề" }),
+  hashtags: z
+    .array(z.string().trim().min(2))
+    .min(3, { message: "Cần ít nhất 3 hashtag" })
+    .max(8, { message: "Tối đa 8 hashtag" }),
 
   // Step 8
-  sample_content: z.string().trim().max(5000).optional(),
+  sample_content: z
+    .string()
+    .trim()
+    .max(5000, { message: "Sample content tối đa 5000 ký tự" })
+    .optional(),
 })
 
 export type FullOnboardingData = z.infer<typeof fullOnboardingSchema>
