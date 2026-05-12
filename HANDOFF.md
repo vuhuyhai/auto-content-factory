@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 3 - Google OAuth flow DONE ✅
+**Status:** Week 1 Day 4 - Profile auto-create trigger + RLS DONE ✅
 
 ## 2. Current State
 
@@ -15,7 +15,7 @@
 - ✅ Next.js 16.2.6 + TypeScript + Tailwind + Turbopack
 - ✅ Supabase Pro plan connected (region ap-southeast-1, Singapore)
 - ✅ Drizzle ORM + 6 table deployed to production DB
-- ✅ GitHub repo `vuhuyhai/auto-content-factory` với 10 commits
+- ✅ GitHub repo `vuhuyhai/auto-content-factory` với 11 commits (Day 3 close), Day 4 +5 commits dự kiến
 - ✅ Supabase Auth helpers (server, client, middleware utility)
 - ✅ Middleware bảo vệ /dashboard (redirect 307 về /login nếu chưa auth)
 - ✅ Login page email/password + Google OAuth button
@@ -23,123 +23,127 @@
 - ✅ Confirm-email page (post-signup)
 - ✅ Dashboard placeholder hiển thị user email + UUID
 - ✅ Google Cloud Console OAuth 2.0 Client ID configured
-- ✅ Supabase Google provider enabled (Client ID + Secret paste đúng format)
-- ✅ /auth/callback route handler (exchange code → session)
-- ✅ Smoke test E2E Day 3 PASS 6/6 (Login UI, Signup UI, Google OAuth flow, Callback error banner, Middleware protect, Email/password regression)
-- ⏳ Profile auto-create trigger (Day 4)
-- ⏳ RLS enable cho 6 table (Day 4)
+- ✅ Supabase Google provider enabled
+- ✅ /auth/callback route handler
+- ✅ Smoke test E2E Day 3 PASS 6/6
+- ✅ **Schema profiles: 8 cột (thêm avatar_url + updated_at Day 4)**
+- ✅ **Function `handle_new_user()` SECURITY DEFINER trên auth.users INSERT**
+- ✅ **Trigger `on_auth_user_created` active - profile tự tạo cho signup mới**
+- ✅ **RLS enabled 6/6 bảng với tổng 16 policy (verified dual-client SQL test PASS + smoke test UI thật PASS)**
+- ✅ **Test-day2 user retired - DB chỉ còn fitnessviet@gmail.com là user thật**
 - ⏳ Landing page bento design (Day 5-7)
+- ⏳ Migrate middleware.ts → proxy.ts (Next.js 16 modern convention)
 
 ## 3. Done So Far
 
 ### Day 1 (12/05/2026)
-- Cài Cursor pack v2.0 (CLAUDE.md + .cursor/rules/*.mdc)
-- Init Next.js 16.2.6 với TypeScript, Tailwind, src-dir, App Router
-- Install 33 packages: Supabase SDK + Drizzle ORM + Postgres driver + UI utilities
-- Setup `.env.local` với 5 biến core (Supabase + Anthropic)
-- Tạo schema 6 table: profiles, brands, workflows, contents, content_logs, subscriptions
-- Push migration lên Supabase production thành công
-- Smoke test localhost OK (browser load `http://localhost:3000`)
+- Cài Cursor pack v2.0
+- Init Next.js 16.2.6 + TypeScript + Tailwind
+- Install 33 packages
+- Setup `.env.local` (Supabase + Anthropic)
+- Schema 6 table: profiles, brands, workflows, contents, content_logs, subscriptions
+- Push migration lên Supabase production
+- Smoke test localhost OK
 
-**Commits Day 1:**
-- `81a10bd` - Initial commit from Create Next App
-- `b6c2bc3` - chore: add Cursor pack v2.0 and core dependencies
-- `bae7638` - feat(week1-day1): add Drizzle ORM schema with 6 tables and Supabase migration
+**Commits Day 1:** `81a10bd`, `b6c2bc3`, `bae7638`
 
 ### Day 2 (12/05/2026)
-- Setup Supabase Auth helpers (server, client, middleware utility) trong `src/lib/supabase/`
-- Tạo middleware ở `src/middleware.ts` (KHÔNG phải root - quy ước Next.js 16 với src/)
-- Build Login page với Server Action `signInWithPassword` + useActionState + Vietnamese UI
-- Build Signup page với Server Action `signUp` + validation password 8+ ký tự
-- Build Confirm-email page (post-signup screen)
-- Build Dashboard placeholder hiển thị user email + UUID từ Supabase server client
-- Tạo test user `test-day2@autocontentfactory.com` trên Supabase Dashboard (Auto Confirm)
-- Smoke test E2E qua browser PASS 4/4
+- Setup Supabase Auth helpers
+- Middleware `src/middleware.ts` protect /dashboard
+- Login + Signup page với Server Action
+- Confirm-email page
+- Dashboard placeholder
+- Test user `test-day2@autocontentfactory.com` tạo trên Supabase Dashboard
+- Smoke test E2E PASS 4/4
 
-**Commits Day 2:**
-- `25c6e5f` - feat(week1-day2): add Supabase Auth helpers (server, client, middleware)
-- `a13830a` - feat(week1-day2): protect /dashboard route with auth middleware
-- `67d6226` - feat(week1-day2): add login page with Server Action + dashboard placeholder
-- `08d23b3` - feat(week1-day2): add signup page + confirm-email screen
-- `98d1053` - docs(week1-day1): add HANDOFF and SMOKE_TEST, fix pooler comment
-- `d50ba32` - docs(handoff): close Day 2 - email/password Auth flow DONE
+**Commits Day 2:** `25c6e5f`, `a13830a`, `67d6226`, `08d23b3`, `98d1053`, `d50ba32`
 
 ### Day 3 (12/05/2026)
-- Setup Google Cloud Console project `auto-content-factory` + OAuth 2.0 Client ID (Web application)
-- Config OAuth Consent Screen (External, test users: fitnessviet@gmail.com)
-- Authorized JavaScript origins: http://localhost:3000 + https://autocontent.online
-- Authorized redirect URI: https://fnhgtxxuudnqxxmzdpjx.supabase.co/auth/v1/callback
-- Paste Client ID + Secret vào Supabase Dashboard → Authentication → Providers → Google → toggle ON
-- Tạo `GoogleSignInButton` client component (inline Google G SVG 4 màu, loading state, error state)
-- Tạo `/auth/callback/route.ts` route handler (exchange code for session, redirect to next)
-- Update login page: Suspense-wrapped `useSearchParams` để đọc callback error
-- Update signup page: thêm GoogleSignInButton với label "Đăng ký với Google"
-- Fix Suspense boundary cho `useSearchParams` (Next.js 16 prerender requirement)
-- Fix Vietnamese encoding (Cursor lưu file bytes corrupt ban đầu, paste lại qua IDE UI)
-- Smoke test E2E qua Chrome PASS 6/6:
-  - CHECK 1: Login render đúng tiếng Việt có dấu
-  - CHECK 2: Signup render đúng label khác
-  - CHECK 3: Google OAuth redirect đến accounts.google.com (sau khi fix Supabase Client ID)
-  - CHECK 4: Banner `?error=auth_callback_failed` hiển thị đúng
-  - CHECK 5: Middleware vẫn protect /dashboard (redirect 307)
-  - CHECK 6: Email/password flow KHÔNG bị break (regression test)
+- Google Cloud Console OAuth 2.0 Client ID + Consent Screen
+- Supabase Google provider enabled
+- `GoogleSignInButton` component (inline G SVG, loading state)
+- `/auth/callback/route.ts` route handler
+- Fix Suspense boundary cho `useSearchParams`
+- Fix Vietnamese encoding (Cursor save corrupt → paste lại qua IDE)
+- Smoke test E2E Chrome PASS 6/6
+- Domain corrected to `autocontent.online`
 
-**Commits Day 3:**
-- (to be added after commit)
+**Commits Day 3:** `ab31bb3`, `f970116`
+
+### Day 4 (12/05/2026)
+- **Schema migration**: thêm `avatar_url text` + `updated_at timestamptz NOT NULL DEFAULT now()` vào bảng `profiles`
+- **Drizzle schema sync**: update `src/lib/db/schema.ts` thêm 2 field tương ứng (avatarUrl, updatedAt mode 'date' consistent với createdAt)
+- **Generate Drizzle migration**: `drizzle/0001_curious_silver_surfer.sql`
+- **Function `handle_new_user()`**: tạo + fix - bug schema mismatch lần 1 (`full_name` không tồn tại → dùng `name`)
+- **Trigger `on_auth_user_created`**: AFTER INSERT trên `auth.users`, gọi function SECURITY DEFINER
+- **Test trigger giả lập**: insert 2 user test (email/password + Google OAuth metadata) → verify profile tự tạo đúng spec → cleanup
+- **Backfill 2 user thật** (test-day2 + fitnessviet) với schema mới
+- **Enable RLS 6/6 bảng** chia 3 wave:
+  - Wave 7A: profiles (2 policy: SELECT, UPDATE)
+  - Wave 7B: brands (4 CRUD) + subscriptions (1 SELECT)
+  - Wave 7C: workflows (4) + contents (4) + content_logs (1) - bug schema mismatch lần 2 (`content_id` không tồn tại trong content_logs, fix bằng JOIN trực tiếp qua brand_id)
+- **Dual-client SQL test** với seed 1 brand + 1 workflow + 1 content + 1 log mỗi user: anon=0, fitnessviet thấy 1, test-day2 thấy 1, không leak - bug schema mismatch lần 3 (`voice_description` không tồn tại trong brands, dùng cột minimal)
+- **Cleanup seed test data** 8 row theo thứ tự FK child→parent
+- **Dump test-day2 user** (email domain không tồn tại thật, không reset password được, RLS đã verified qua SQL test nên không cần email/password user nữa)
+- **Smoke test UI Google OAuth thật**: dashboard render đúng email + UUID + RLS không block
+- **4 SQL snapshot files** trong `supabase/migrations/manual_day4/` làm audit trail
+
+**Commits Day 4 (dự kiến):**
+- `feat(week1-day4): sync Drizzle schema with avatar_url + updated_at`
+- `feat(week1-day4): add handle_new_user trigger for profile auto-create`
+- `feat(week1-day4): enable RLS on all 6 public tables with 16 policies`
+- `docs(week1-day4): snapshot manual migrations applied via Supabase MCP`
+- `docs(handoff): close Day 4 - profile trigger + RLS DONE`
 
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
 |---|---|
-| Next.js 16.2.6 App Router | Default stack instruction, SSR/SSG, Vercel native |
-| Supabase Auth + Postgres | Free tier OK 100 customer đầu, không cần Clerk |
-| Drizzle ORM (không Prisma) | Type-safe, light, better DX với TypeScript |
-| Postgres Session Pooler port 5432 | Mạng Việt Nam IPv4 only, Transaction Pooler IPv6 fail |
-| 1 brand/user trong MVP | Cắt scope, Phase 2 multi-brand |
-| 3 tier: Free/Starter/Pro | Cắt từ 5 tier xuống |
-| PayOS (không Stripe) | VND-native, QR payment phù hợp SMB VN |
+| Next.js 16.2.6 App Router | Default stack, SSR/SSG, Vercel native |
+| Supabase Auth + Postgres | Free tier OK 100 user đầu |
+| Drizzle ORM | Type-safe, light, better DX |
+| Postgres Session Pooler port 5432 | IPv4 only cho mạng VN |
+| 1 brand/user trong MVP | Cắt scope |
+| 3 tier: Free/Starter/Pro | Cắt từ 5 tier |
+| PayOS | VND-native, phù hợp SMB VN |
 | Bento Grid design | Apple discipline + mobile-first |
-| Middleware ở `src/middleware.ts` (không root) | Next.js 16 + folder src/ requires this path |
-| Route group `(auth)` cho login/signup | Gom auth pages, share layout sau này, URL gọn `/login` không phải `/auth/login` |
-| Server Action + useActionState | Pattern Next.js 16 chuẩn cho form, không cần API route riêng |
-| Email/password trước, OAuth sau | Cắt scope Day 2, Google OAuth Day 3 |
-| Google OAuth qua Supabase Auth | Không tự handle PKCE/state, để Supabase làm; chỉ cần exchange code → session ở callback |
-| `useSearchParams` bọc `<Suspense>` boundary | Next.js 16 bắt buộc, không thì prerender fail toàn page |
-| Inner component pattern (LoginForm bên trong LoginPage) | Cách nhẹ nhất để Suspense ôm useSearchParams mà giữ page có structure rõ |
+| Middleware ở `src/middleware.ts` | Next.js 16 + src/ folder convention |
+| Route group `(auth)` cho login/signup | Gom auth pages |
+| Server Action + useActionState | Pattern Next.js 16 chuẩn |
+| Email/password trước, OAuth sau | Cắt scope Day 2 |
+| Google OAuth qua Supabase Auth | Không tự handle PKCE |
+| `useSearchParams` bọc `<Suspense>` | Next.js 16 prerender requirement |
+| **`SECURITY DEFINER` cho trigger function** | Bypass RLS khi auth.users trigger insert public.profiles (role supabase_auth_admin không có quyền vào public schema) |
+| **Hướng 1 RLS: subquery EXISTS thay vì denormalize user_id** | MVP <1000 user không cần optimize, subquery 1-hop đủ nhanh |
+| **Dùng `contents.brand_id` (denormalized) cho RLS contents** | 1-hop JOIN thay vì 2-hop qua workflows, đơn giản + nhanh hơn |
+| **content_logs immutable từ user side** | Audit log pattern write-once read-many, INSERT do system qua Service Role |
+| **subscriptions chỉ SELECT cho user** | Tránh bug "user tự update plan=pro" bypass payment |
+| **KHÔNG có INSERT policy cho profiles** | Trigger SECURITY DEFINER tự handle, user không tự insert |
 
 ## 5. Known Issues
 
-- RLS chưa enable trên 6 table (tất cả UNRESTRICTED) - sẽ enable Day 4 sau khi có Profile trigger
-- Supabase maintenance scheduled 13-14/05/2026 (Shared pooler ap-southeast-1)
+- Supabase maintenance scheduled 13-14/05/2026 (Shared pooler ap-southeast-1) - có thể ảnh hưởng Day 5 sáng
 - PayOS chưa setup (Week 4)
 - Resend chưa verify domain (Week 3)
 - Cloudflare R2 bucket `acf-assets` chưa tạo (Week 2-3)
 - Domain `autocontent.online` chưa point Vercel (Week 4)
-- Profile auto-create trigger chưa làm (Day 4) - user signup qua Google OAuth chưa có row trong `public.profiles`
-- Next.js 16 warning: `middleware` file convention deprecated → sẽ đổi sang `proxy.ts` (Day 5+ khi research kỹ docs)
-- Test user `test-day2@autocontentfactory.com` còn trên Supabase Dashboard - cleanup khi nào hết test
-- Playwright MCP sandbox không thấy localhost của máy host - phải test thủ công trong Chrome HOẶC dùng Vercel preview URL
+- Next.js 16 warning: `middleware` file convention deprecated → đổi sang `proxy.ts` (Day 5+ khi research kỹ docs)
+- Playwright MCP sandbox không thấy localhost - test thủ công Chrome HOẶC Vercel preview URL
+- **`contents.brand_id` denormalized có nguy cơ drift khỏi `workflows.brand_id`** → cần thêm CHECK constraint hoặc trigger sync ở Day 5+
+- **Bảng `brands` có schema nhiều cột hơn dự đoán** (slogan, industry, audience_persona, voice_archetype, brand_voice_guide, hashtags, logo_url, status) - cần update Drizzle schema khi build feature Brand creation Week 2
 
 ## 6. Next Steps
-
-### Day 4: Profile auto-create trigger + Enable RLS
-
-- Viết SQL trigger function trên `auth.users` INSERT → tự tạo row trong `public.profiles` (push qua Supabase MCP `apply_migration`)
-- Test signup flow end-to-end (cả email/password và Google OAuth) → verify profile row tự tạo
-- Backfill profile cho user hiện tại trong `auth.users` chưa có entry profile (`test-day2@...` + user Google OAuth Day 3)
-- Enable RLS cho 6 table với policy cơ bản (user chỉ đọc/sửa data của mình)
-- Test RLS bằng dual-client test (anon vs authenticated, dùng Supabase MCP `execute_sql`)
-- Commit + update HANDOFF + smoke test
 
 ### Day 5-7: Landing page + Pricing (Bento Grid)
 
 - Add shadcn/ui (init)
-- Bento Grid hero + 4 feature cards
+- Bento Grid hero + 4 feature cards (skill `bento-grid` reference trong Project knowledge)
 - Pricing section 3 tier (Free/Starter/Pro)
 - Footer + CTA "Đăng ký free"
 - Mobile responsive audit
-- Migrate `middleware.ts` → `proxy.ts` (Next.js 16 modern convention, research docs trước)
-- Skill `bento-grid` reference trong Project knowledge
+- Migrate `middleware.ts` → `proxy.ts` (Next.js 16 modern convention)
+- Thêm CHECK constraint `contents.brand_id = workflows.brand_id` (chống denormalize drift)
+- Sync Drizzle schema cho bảng `brands` (thêm 7 cột còn thiếu)
 
 ### Cuối Week 1: Deploy lần đầu
 
@@ -153,8 +157,8 @@
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind, shadcn/ui (sẽ add Day 5)
-- Backend: Next.js API routes + Server Actions
-- DB: Supabase Postgres + Drizzle ORM
+- Backend: Next.js Server Actions + API routes
+- DB: Supabase Postgres + Drizzle ORM (RLS enabled 6/6 tables)
 - Auth: Supabase Auth (email/password + Google OAuth DONE)
 - AI: Claude API Sonnet 4.6 (brand voice tiếng Việt)
 - Email: Resend (Week 3)
@@ -172,88 +176,133 @@
 - Vercel project: auto-content-factory (vuhuyhais-projects)
 - Supabase: fnhgtxxuudnqxxmzdpjx (Pro plan, ap-southeast-1)
 - Admin email: fitnessviet@gmail.com
-- Test users:
-  - test-day2@autocontentfactory.com (email/password, Day 2)
-  - (Có thể thêm user Google OAuth từ Day 3 nếu anh đã click "Allow" trong smoke test)
+- Test users: chỉ còn 1 user thật - fitnessviet@gmail.com (Google OAuth, "Vũ Hải", avatar Google CDN)
 
-### Project structure (sau Day 3)
+### RLS Coverage (6/6 bảng, 16 policies total)
+
+| Bảng | Policy count | Pattern |
+|---|---|---|
+| profiles | 2 (SELECT, UPDATE) | `auth.uid() = id` |
+| brands | 4 (full CRUD) | `auth.uid() = user_id` |
+| workflows | 4 (full CRUD) | JOIN qua `brands.user_id` (1-hop) |
+| contents | 4 (full CRUD) | JOIN qua `brands.user_id` via `contents.brand_id` (1-hop) |
+| content_logs | 1 (SELECT only) | JOIN qua `brands.user_id` (1-hop) |
+| subscriptions | 1 (SELECT only) | `auth.uid() = user_id` |
+
+### Bypass RLS qua đâu (cần nhớ Week 2+)
+
+- Trigger `handle_new_user`: `SECURITY DEFINER` → bypass RLS
+- Webhook PayOS update subscriptions: dùng `SUPABASE_SERVICE_ROLE_KEY` (server-side env)
+- Cron job insert content_logs: dùng `SUPABASE_SERVICE_ROLE_KEY` (server-side env)
+- KHÔNG bao giờ leak SERVICE_ROLE_KEY ra client bundle
+
+### Project structure (sau Day 4)
 src/
-├── middleware.ts (Next.js 16 + src/ folder convention)
+├── middleware.ts
 ├── lib/
+│   ├── db/
+│   │   └── schema.ts (Drizzle, profiles có 8 cột)
 │   └── supabase/
-│       ├── server.ts (createServerClient cho Server Component)
-│       ├── client.ts (createBrowserClient cho Client Component)
-│       └── middleware.ts (updateSession utility)
+│       ├── server.ts
+│       ├── client.ts
+│       └── middleware.ts
 ├── components/
 │   └── auth/
-│       └── google-sign-in-button.tsx (Client component, inline G SVG)
+│       └── google-sign-in-button.tsx
 └── app/
-├── (auth)/
-│   ├── login/
-│   │   ├── page.tsx (Suspense + LoginForm + GoogleSignInButton)
-│   │   └── actions.ts (Server Action signInWithPassword)
-│   └── signup/
-│       ├── page.tsx (form + GoogleSignInButton)
-│       └── actions.ts (Server Action signUp)
-├── auth/
-│   ├── callback/
-│   │   └── route.ts (GET handler exchange code for session)
-│   └── confirm-email/
-│       └── page.tsx
-└── dashboard/
-└── page.tsx
+    ├── (auth)/
+    │   ├── login/ (page.tsx + actions.ts)
+    │   └── signup/ (page.tsx + actions.ts)
+    ├── auth/
+    │   ├── callback/route.ts
+    │   └── confirm-email/page.tsx
+    └── dashboard/page.tsx
 
-### Google OAuth setup (Day 3 - đã DONE)
-- Google Cloud Console project: `auto-content-factory`
-- OAuth 2.0 Client ID: `ACF Web Client` (Web application)
-- Authorized JavaScript origins:
-  - http://localhost:3000
-  - https://autocontent.online
-- Authorized redirect URI:
-  - https://fnhgtxxuudnqxxmzdpjx.supabase.co/auth/v1/callback
-- Test users (OAuth Consent Screen): fitnessviet@gmail.com
-- Supabase: provider Google enabled, Client ID + Secret đã paste đúng format (Client ID dạng `xxx.apps.googleusercontent.com`)
+supabase/migrations/
+├── manual_day4/ (4 SQL snapshot từ Supabase MCP apply_migration)
+│   ├── 0001_profile_auto_create_trigger.sql
+│   ├── 0002_add_avatar_url_and_updated_at_to_profiles.sql
+│   ├── 0003_fix_handle_new_user_use_name_column.sql
+│   └── 0004_enable_rls_all_tables.sql
+
+drizzle/
+├── 0001_curious_silver_surfer.sql (Drizzle generate, đã apply via Supabase MCP)
+└── meta/...
 
 ### Mental model
 - Productized Service first, SaaS second
 - Vietnamese SMB owner 30-50 tuổi, mobile-first
-- Quality over quantity (1 bài tốt > 10 bài mediocre)
+- Quality over quantity
 - Speed over polish (MVP scrappy hơn beautiful broken)
 - Brand voice không "AI-generated" feeling
 
 ### Proven pattern reference
-- File `03_VSE_News_Auto_Writer.md` trong Project knowledge = workflow đã chạy production
-- Port pattern này sang web app trong Week 2-3
+- `03_VSE_News_Auto_Writer.md` = workflow production VSE, port sang web app Week 2-3
 
-### Scope cắt khỏi MVP (Phase 2 sẽ làm)
+### Scope cắt khỏi MVP (Phase 2)
 - ❌ Multi-brand per user
 - ❌ Workflow types (chỉ news_based)
 - ❌ Tier Business + Enterprise
 - ❌ Auto-post Facebook/LinkedIn
-- ❌ Image gen tự động (chỉ tạo text prompt)
+- ❌ Image gen tự động
 - ❌ Brand voice training từ bài cũ
 - ❌ i18n English toggle
 - ❌ PostHog analytics
 
-### Bài học Day 1 (quan trọng)
-1. **Mạng Việt Nam IPv4 only** → KHÔNG dùng Transaction Pooler (IPv6), PHẢI dùng Session Pooler (IPv4)
+### Bài học Day 1
+1. **Mạng VN IPv4 only** → KHÔNG Transaction Pooler, PHẢI Session Pooler
 2. **Paste DATABASE_URL cẩn thận** → tránh thừa `DATABASE_URL=` trong giá trị
-3. **Password leak vào chat** → rotate ngay, không tiếc
+3. **Password leak vào chat** → rotate ngay
 
-### Bài học Day 2 (quan trọng)
-1. **Next.js 16 + folder `src/`** → middleware PHẢI ở `src/middleware.ts`, KHÔNG phải root project. Hậu quả nếu sai: file middleware hoàn toàn không được pick up, không có log, request đi thẳng vào route handler. Verify với docs Next.js official trước khi tạo file config-related.
-2. **PowerShell `taskkill /PID` không đáng tin** → có thể báo "process not found" nhưng process vẫn chiếm port. Dùng `Get-NetTCPConnection -LocalPort N -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }` để kill theo port (robust hơn).
-3. **PowerShell parse `()` thành subexpression** → path chứa `(auth)` phải quote bằng `"..."`: `Test-Path "src\app\(auth)\..."`. Luôn quote path có ký tự đặc biệt (`(`, `)`, `[`, `]`, space, `&`, `$`).
-4. **Sau khi tạo/move middleware → BẮT BUỘC restart `npm run dev`** → Turbopack không hot-reload thay đổi structure middleware. Tương tự cho mọi file Next.js config (`next.config.ts`, `tsconfig.json`, route group folder mới).
-5. **Curl alias trong PowerShell** → `curl -I` parse sai (gọi `Invoke-WebRequest`). Dùng `curl.exe -I` để gọi curl thật của Windows 10 1804+.
-6. **Server Action redirect không return** → dùng `redirect('/path')` trực tiếp, KHÔNG `return redirect(...)`. `redirect` throws internally.
-7. **Next.js 16 deprecate `middleware` → `proxy`** → warning hiện ra ở build time nhưng vẫn chạy được. Sẽ migrate Day 5+.
+### Bài học Day 2
+1. **Next.js 16 + `src/`** → middleware PHẢI ở `src/middleware.ts`
+2. **PowerShell `taskkill /PID` không đáng tin** → dùng `Get-NetTCPConnection -LocalPort N | Stop-Process -Force`
+3. **PowerShell parse `()`** → quote path có ký tự đặc biệt
+4. **Sau tạo/move middleware → restart `npm run dev`** (Turbopack không hot-reload)
+5. **Curl alias PowerShell** → dùng `curl.exe -I`
+6. **Server Action redirect không return** → `redirect()` throws internally
+7. **Next.js 16 deprecate `middleware` → `proxy`** → warning ở build, sẽ migrate Day 5+
 
-### Bài học Day 3 (quan trọng)
-1. **Cursor save file tiếng Việt có thể corrupt encoding** → bytes lưu sai UTF-8, hiển thị mojibake (`ÄÄƒng nháºp` thay vì `Đăng nhập`). Verify bằng `Select-String -Path X -Pattern "Đăng nhập" -Quiet` sau mỗi lần Cursor sửa file có tiếng Việt. Fix: paste lại nội dung qua Cursor IDE (Ctrl+S) thay vì để Cursor agent write.
-2. **`useSearchParams()` BẮT BUỘC bọc `<Suspense>`** → Next.js 16 prerender fail nếu không có. Lỗi: "useSearchParams() should be wrapped in a suspense boundary". Pattern fix: tách inner component dùng `useSearchParams`, export page bọc `<Suspense fallback={...}><InnerComponent /></Suspense>`.
-3. **Supabase Google provider có 2 thứ cần đúng cùng lúc:** (a) toggle "Enable Sign in with Google" ON, (b) Client IDs đúng format `xxxxxxxxxxxx.apps.googleusercontent.com` (NOT email, NOT text random). Nếu Client IDs sai format → Supabase save nhưng provider thực ra disabled. Verify bằng Supabase MCP `get_logs service=auth` → tìm dòng `provider is not enabled` ở path `/authorize`.
-4. **MCP verify sau mỗi setup thao tác tay quan trọng** → trước khi anh báo "Xong cả 2 Google + Supabase", em nên đưa 1 click test nhỏ verify ngay. Fail fast tiết kiệm 30 phút debug.
-5. **Playwright MCP Claude Desktop chạy trong sandbox** → KHÔNG thấy localhost của host machine. Smoke test E2E qua Playwright MCP đòi URL public (Vercel preview, ngrok). Local dev → test thủ công Chrome hoặc setup tunnel.
-6. **GitHub raw URL có cache CDN** → web_fetch HANDOFF.md từ GitHub có thể trả bản cũ vài phút sau commit/push. Cross-check `git log` local nếu nghi ngờ.
-7. **Domain chính xác là `autocontent.online` không phải `autocontentfactory.com`** → update mọi reference (Authorized origins Google, env Vercel sau này).
+### Bài học Day 3
+1. **Cursor save tiếng Việt corrupt** → verify bằng `Select-String -Pattern` sau mỗi sửa
+2. **`useSearchParams()` BẮT BUỘC `<Suspense>`** → Next.js 16 prerender requirement
+3. **Supabase Google provider 2 điều kiện**: toggle ON + Client ID đúng format `xxx.apps.googleusercontent.com`
+4. **MCP verify sau setup thao tác tay** → fail fast tiết kiệm debug
+5. **Playwright MCP sandbox không thấy localhost host** → test Chrome thủ công
+6. **GitHub raw URL cache CDN** → cross-check `git log` local nếu nghi
+7. **Domain đúng là `autocontent.online`** không phải `autocontentfactory.com`
+
+### Bài học Day 4 (RULES, không phải Lessons)
+
+**RULE D4-1: VERIFY-FIRST PROTOCOL khi viết SQL chứa tên cột.**
+Trong Day 4 vi phạm rule này 3 LẦN (full_name không tồn tại, content_id không tồn tại, voice_description không tồn tại). Mỗi lần đều phải rollback + viết lại. Pattern BẮT BUỘC trước khi viết SQL chứa tên cột bảng nào:
+```sql
+-- Step 1: Verify columns
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public' and table_name = '<bảng>'
+order by ordinal_position;
+
+-- Step 2: Verify FK relationships nếu cần
+select kcu.column_name, ccu.table_name, ccu.column_name
+from information_schema.table_constraints tc
+join information_schema.key_column_usage kcu on tc.constraint_name = kcu.constraint_name
+join information_schema.constraint_column_usage ccu on tc.constraint_name = ccu.constraint_name
+where tc.table_schema = 'public' and tc.constraint_type = 'FOREIGN KEY' and tc.table_name = '<bảng>';
+```
+KHÔNG có exception. Ngay cả khi "vừa thấy schema 1 phút trước" - context có thể đã thay đổi.
+
+**RULE D4-2: Drizzle schema = source of truth, KHÔNG sửa DDL trực tiếp DB.**
+Pattern chuẩn: (1) Update Drizzle file → (2) `npm run db:generate` → (3) Review SQL → (4) Apply qua Supabase MCP. Không skip bước generate vì Drizzle giữ snapshot journal trong `drizzle/meta/`, skip = lệch snapshot, lần sau generate sẽ dirty.
+
+**RULE D4-3: Postgres transaction atomic = safety net.**
+Migration fail 1 statement → toàn bộ rollback. Tận dụng pattern này: gom tất cả ALTER + CREATE POLICY của 1 wave vào 1 migration. Sai = rollback sạch, không có state "half-applied".
+
+**RULE D4-4: SECURITY DEFINER cho function trigger trên auth.users.**
+Trigger fire context có role `supabase_auth_admin`, role này KHÔNG có quyền insert vào schema `public`. Phải dùng `SECURITY DEFINER` + `SET search_path = public` để function chạy với quyền owner (postgres).
+
+**RULE D4-5: Test RLS bằng dual-client SQL TRƯỚC khi smoke test UI.**
+Dual-client test (set role + jwt.claims) verify policy logic độc lập với app code. Smoke test UI verify integration. Nếu dual-client fail = policy sai, fix migration. Nếu dual-client PASS mà UI fail = code app sai (client config, server component query syntax). Phân tách 2 vấn đề, debug nhanh hơn.
+
+**RULE D4-6: Schema mismatch lặp 3 lần = pattern problem, không phải accident.**
+Lessons đọc cho biết, Rules buộc làm. Khi viết bài học không tự kỷ luật được → escalate thành RULE với protocol cụ thể (verify query, checklist), không chỉ "nhớ check schema".
