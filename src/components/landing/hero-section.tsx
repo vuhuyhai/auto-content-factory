@@ -68,7 +68,7 @@ export function HeroSection() {
           </Card>
 
           {/* Feature Card 1 */}
-          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-4 md:row-span-2 p-8 flex flex-col justify-start gap-4">
+          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-4 p-8 flex flex-col justify-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
               <Mic2 size={24} />
             </div>
@@ -81,7 +81,7 @@ export function HeroSection() {
           </Card>
 
           {/* Feature Card 2 */}
-          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-8 md:row-span-2 p-8 flex flex-col justify-start gap-4">
+          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-8 p-8 flex flex-col justify-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
               <Sparkles size={24} />
             </div>

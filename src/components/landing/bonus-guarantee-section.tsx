@@ -44,7 +44,7 @@ const TOTAL_VALUE_ITEMS = [
 
 export function BonusGuaranteeSection() {
   return (
-    <section className="w-full bg-slate-50 py-16 md:py-24 border-t border-slate-100">
+    <section className="w-full bg-slate-50 py-20 md:py-32 border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 md:px-12">
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
           <Badge variant="outline" className="border-[#E63946] text-[#E63946]">
@@ -106,7 +106,7 @@ export function BonusGuaranteeSection() {
             {TOTAL_VALUE_ITEMS.map((item) => (
               <div
                 key={item.label}
-                className="flex justify-between items-center text-base md:text-lg border-b border-slate-700 pb-3 last:border-b-0"
+                className="flex justify-between items-baseline text-base md:text-lg border-b border-slate-700 pb-3 last:border-b-0"
               >
                 <span className="text-slate-300">{item.label}</span>
                 <span className="text-white font-medium">{item.value}</span>

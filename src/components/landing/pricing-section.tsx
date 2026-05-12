@@ -100,7 +100,7 @@ export function PricingSection() {
           {PRICING_TIERS.map((tier) => (
             <Card
               key={tier.name}
-              className={`rounded-[20px] border-slate-200 bg-white p-8 flex flex-col gap-6 transition-colors duration-300 hover:border-slate-300 relative ${tier.highlighted ? "border-[#E63946] border-2 shadow-lg shadow-[#E63946]/10 scale-100 md:scale-105" : ""}`}
+              className={`rounded-[20px] border-slate-200 bg-white p-8 flex flex-col gap-6 h-full transition-colors duration-300 hover:border-slate-300 relative ${tier.highlighted ? "border-[#E63946] border-2 shadow-lg shadow-[#E63946]/10 scale-100 md:scale-105" : ""}`}
             >
               {tier.highlighted && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#E63946] text-white text-xs font-semibold px-4 py-1 rounded-full uppercase tracking-wider">
@@ -133,7 +133,7 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              <div className="pt-2">
+              <div className="pt-2 mt-auto">
                 <Button
                   asChild
                   size="lg"
