@@ -29,12 +29,10 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // QUAN TRONG: goi getUser() de refresh session token
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Bao ve /dashboard - chua auth thi day ve /login
   if (
     !user &&
     request.nextUrl.pathname.startsWith('/dashboard')
