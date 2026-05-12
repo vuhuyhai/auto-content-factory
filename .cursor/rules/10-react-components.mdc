@@ -1,0 +1,154 @@
+---
+description: React/Next.js component patterns
+globs: ["**/*.tsx", "**/*.jsx"]
+alwaysApply: false
+---
+
+# React + Next.js Component Patterns
+
+## Component structure
+```typescript
+'use client';  // Chỉ khi cần (event handlers, useState, useEffect)
+
+import { useState } from 'react';
+import type { User } from '@/lib/types';
+
+interface Props {
+  user: User;
+  onSelect?: (id: string) => void;
+}
+
+export function ProfileCard({ user, onSelect }: Props) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="rounded-lg border p-4">
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+## Server vs Client Components
+
+**Default = Server Component** (no `'use client'`):
+- Static UI, data fetching from DB
+- SEO-friendly content
+- No event handlers, no useState/useEffect
+
+**Add `'use client'` ONLY when:**
+- Có event handlers (onClick, onChange)
+- Dùng useState, useEffect, useRef
+- Dùng browser APIs (localStorage, window)
+- Dùng third-party libs that need client (Framer Motion, etc.)
+
+## Data Fetching Patterns
+
+### Server Component (default)
+```typescript
+// app/users/page.tsx
+import { createClient } from '@/lib/supabase/server';
+
+export default async function UsersPage() {
+  const supabase = createClient();
+  const { data: users } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  return <UserList users={users ?? []} />;
+}
+```
+
+### Client Component with hook
+```typescript
+// hooks/use-users.ts
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@/lib/types';
+
+export function useUsers() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from('users').select('*').then(({ data }) => {
+      setUsers(data ?? []);
+      setLoading(false);
+    });
+  }, []);
+
+  return { users, loading };
+}
+```
+
+## Required States (UX)
+
+Every data-fetching component PHẢI handle:
+- **Loading state** — skeleton hoặc spinner
+- **Empty state** — "Chưa có dữ liệu" message
+- **Error state** — error boundary hoặc inline message
+
+```typescript
+{loading && <Skeleton />}
+{!loading && users.length === 0 && <EmptyState />}
+{!loading && users.length > 0 && <UserList users={users} />}
+```
+
+## Form Patterns
+
+### Server Action (preferred)
+```typescript
+// app/users/actions.ts
+'use server';
+
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+
+const userSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+});
+
+export async function createUser(formData: FormData) {
+  const validated = userSchema.parse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+  });
+
+  const supabase = createClient();
+  const { error } = await supabase.from('users').insert(validated);
+
+  if (error) {
+    return { error: 'Có lỗi xảy ra, vui lòng thử lại' };
+  }
+
+  revalidatePath('/users');
+  return { success: true };
+}
+```
+
+## Performance Tips
+
+- `React.memo` chỉ khi thực sự cần (đo bằng React DevTools Profiler)
+- `useMemo`/`useCallback` chỉ cho expensive computations
+- Avoid inline object/array trong JSX (`<X config={{}} />`) — gây re-render
+- Dynamic import cho heavy components: `dynamic(() => import('./heavy'))`
+
+## Accessibility
+
+- Mọi `<button>` cần có `type="button"` (hoặc `"submit"` cho form)
+- Mọi `<input>` cần có `<label>` associated
+- Mọi `<img>` cần có `alt` (hoặc `alt=""` nếu decorative)
+- Focus states rõ ràng (Tailwind: `focus-visible:ring-2`)
+- Keyboard navigation hoạt động được
+
+## Common Mistakes to Avoid
+
+❌ Default export components → use named export
+❌ `any` types → use proper types or `unknown` + narrowing
+❌ Inline async in JSX (`{await fetch()}`) → use Server Component or hook
+❌ `useEffect` cho data fetching → prefer Server Component or SWR/Tanstack Query
+❌ State inside parent → drilling props 5 levels → use Context or Zustand

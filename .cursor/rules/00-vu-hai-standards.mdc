@@ -1,0 +1,75 @@
+---
+description: Vũ Hải's coding standards - applied to ALL files
+alwaysApply: true
+---
+
+# Vũ Hải's Hard Rules
+
+## File Size (CỨNG)
+- **Max 200 LOC/file**. Vượt → tách ngay
+- Component >100 LOC → cân nhắc tách sub-components
+- Nếu file đang sửa đã >200 LOC → đề xuất refactor TRƯỚC khi thêm code mới
+
+## TypeScript (CỨNG)
+- Strict mode. **Không bao giờ dùng `any`**
+- Dùng `interface` cho object shapes (> `type`)
+- Dùng `unknown` + type narrowing thay `any`
+- Named exports preferred over default exports for components
+
+## Naming
+- Files: `kebab-case.tsx` (vd: `user-profile-card.tsx`)
+- Components: `PascalCase`
+- Hooks: `useCamelCase`
+- Functions: `camelCase` action verb (vd: `fetchUserProfile`)
+- Constants: `SCREAMING_SNAKE_CASE`
+
+## Import Order (always)
+```typescript
+// 1. React/Next core
+import { useState } from 'react';
+import { redirect } from 'next/navigation';
+
+// 2. Third-party libs
+import { z } from 'zod';
+import { Loader2 } from 'lucide-react';
+
+// 3. Internal @/ paths
+import { Button } from '@/components/ui/button';
+
+// 4. Relative imports
+import { UserCard } from './user-card';
+
+// 5. Types LAST
+import type { User } from '@/lib/types';
+```
+
+## JSX Quotes (CỨNG)
+- UI text: smart quotes `'…'` (không phải dấu thẳng `'` `"`)
+- ASCII-only: `&apos;` cho `'`, `&quot;` cho `"`
+- Text dài có biến: move ra string `{...}`
+
+❌ KHÔNG dùng dấu thẳng `'` `"` trần trong JSX text → fail lint `react/no-unescaped-entities`
+
+## Vietnamese UI Standards
+- UI labels, toasts, errors: **Tiếng Việt thân thiện**
+- Module/brand names: Giữ English identity (vd: "X-Matrix", "PQL Engine")
+- Server logs: English (debug-friendly)
+
+```typescript
+// ✅ ĐÚNG
+toast.success('Đã lưu thành công!');
+toast.error('Có lỗi xảy ra, vui lòng thử lại');
+
+// ❌ SAI
+toast.success('Saved successfully!');
+```
+
+## Security (CỨNG — NEVER VIOLATE)
+1. KHÔNG commit `.env*.local` — verify `.gitignore`
+2. KHÔNG `console.log(apiKey)` ngay cả debug
+3. KHÔNG dùng `SERVICE_ROLE_KEY` ở client
+4. KHÔNG đọc full `.env.local` — dùng `Select-String -Quiet`
+5. KHÔNG paste env content vào output
+
+## Holy Trinity
+**YAGNI** (You Aren't Gonna Need It) + **KISS** (Keep It Simple, Stupid) + **DRY** (Don't Repeat Yourself)

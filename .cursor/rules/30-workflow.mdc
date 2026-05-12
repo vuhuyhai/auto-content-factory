@@ -1,0 +1,103 @@
+---
+description: When to use Cursor Agent vs Claude Code CLI
+alwaysApply: true
+---
+
+# Workflow Routing — Cursor Agent vs Claude Code CLI
+
+Anh có 2 AI assistant trong cùng Cursor IDE:
+
+## Cursor Agent (panel bên trái, Ctrl+L)
+
+**Khi dùng:**
+- Sửa 1-2 file (component, route handler)
+- Quick fix bug đơn giản
+- Refactor 1 file (extract function, rename, add types)
+- Hỏi giải thích code có sẵn
+- Edit cụ thể theo selection
+
+**KHÔNG dùng cho:**
+- Multi-file feature (>3 files)
+- Plan/research deep
+- Smoke test, deploy
+
+## Claude Code CLI (terminal trong Cursor)
+
+**Khi dùng:**
+- Build feature mới full stack (DB → API → UI)
+- Multi-agent task: `claude /ck:cook "task"`
+- Plan deep với research: `claude /ck:plan:hard "feature"`
+- Smoke test: `claude /ck:smoke full`
+- Resume session cũ: `claude /ck:resume`
+- Apply Vũ Hải's standards: `claude /ck:vu-hai "task"`
+
+**Pattern mẫu:**
+```bash
+# Đầu session mới
+claude /ck:resume
+
+# Build feature lớn (tự research → plan → code → test)
+claude /ck:cook "build user authentication with Supabase + email verification"
+
+# Smoke test trước commit milestone
+claude /ck:smoke full
+
+# Nếu có lỗi đa file
+claude /ck:fix:hard "infinite loop in auth flow"
+```
+
+## Decision Tree
+
+```
+Task gì?
+├── Sửa 1 file? → Cursor Agent
+├── Hỏi giải thích? → Cursor Agent
+├── Quick refactor? → Cursor Agent
+│
+├── Feature mới >3 files? → claude /ck:cook
+├── Cần plan với research? → claude /ck:plan:hard
+├── Bug đa file? → claude /ck:fix:hard
+└── Smoke test? → claude /ck:smoke full
+```
+
+## Both AI assistants đọc cùng files
+
+```
+project-root/
+├── CLAUDE.md           ← Cả 2 đọc (general context)
+├── HANDOFF.md          ← Cả 2 đọc (session memory)
+├── .cursor/rules/      ← Chỉ Cursor Agent
+└── .claude/            ← Chỉ Claude Code CLI
+```
+
+→ Nếu Cursor Agent + Claude Code CLI cho output khác nhau cùng task,
+  KIỂM TRA HANDOFF.md trước (state of truth chung).
+
+## Anti-pattern
+
+❌ **Dùng Cursor Agent cho task lớn** → AI mất context giữa chừng, code không cohesive
+❌ **Dùng `claude /ck:cook` cho task 1 file** → over-engineer, tốn token
+❌ **Mở chat mới trong cả 2 AI cho cùng task** → conflicts khi merge
+
+## Best Practice Combo
+
+**Workflow A (recommended):**
+1. `claude /ck:resume` — load context (terminal)
+2. `claude /ck:plan:hard "<feature>"` — planning + research (terminal)
+3. User review plan → approve
+4. `claude /ck:cook` — implement (terminal)
+5. Cursor Agent (Ctrl+L) — fine-tune individual components
+6. `claude /ck:smoke full` — verify (terminal)
+7. Commit + push
+
+**Workflow B (small task):**
+1. Cursor Agent (Ctrl+L) — direct edit
+2. Manual `git commit`
+3. (Skip CLI entirely)
+
+## Communication Between AIs
+
+Khi anh switch giữa 2 AI cho cùng task:
+1. **Update HANDOFF.md** giữa chừng để cả 2 cùng context
+2. **Commit** trước khi switch (clean state)
+3. Tránh **edit cùng file** từ cả 2 AI cùng lúc → race condition
