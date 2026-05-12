@@ -21,7 +21,7 @@ export const brands = pgTable('brands', {
   industry: varchar('industry', { length: 100 }),
   audiencePersona: text('audience_persona'),
   voiceArchetype: varchar('voice_archetype', { length: 50 }),
-  brandVoiceGuide: jsonb('brand_voice_guide'),
+  brandVoiceGuide: jsonb('brand_voice_guide').$type<BrandVoiceGuide>(),
   hashtags: text('hashtags').array(),
   logoUrl: varchar('logo_url', { length: 500 }),
   status: varchar('status', { length: 20 }).default('active').notNull(),
@@ -85,3 +85,55 @@ export type Workflow = typeof workflows.$inferSelect;
 export type Content = typeof contents.$inferSelect;
 export type ContentLog = typeof contentLogs.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
+
+// ============================================================================
+// JSONB TYPE DEFINITIONS
+// ============================================================================
+
+/**
+ * Brand Voice Guide structure stored in brands.brand_voice_guide JSONB column.
+ * Generated from 8-question onboarding flow.
+ * Version: 1.0
+ */
+export interface BrandVoiceGuide {
+  version: string;
+  brand_basics: {
+    name: string;
+    slogan?: string;
+    industry: string;
+  };
+  audience: {
+    age_range: string[];
+    gender_focus: 'male' | 'female' | 'mixed';
+    persona_description: string;
+  };
+  voice: {
+    archetype: 'caregiver' | 'sage' | 'explorer' | 'everyman' | 'hero' | 'creator';
+    tone: {
+      formality: number;
+      humor: number;
+      emotion: number;
+    };
+    principles: string[];
+  };
+  messaging: {
+    pain_points: string[];
+    usp: string;
+    topics: string[];
+    hashtags: string[];
+  };
+  vocabulary: {
+    yes_words: string[];
+    no_words: string[];
+  };
+  signature_move: string;
+  example_hooks: string[];
+  sample_content_provided: boolean;
+  sample_content_analysis?: {
+    avg_length_chars: number;
+    common_hooks: string[];
+    ending_pattern: string;
+  };
+  created_at: string;
+  last_updated: string;
+}

@@ -42,5 +42,26 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Force redirect to onboarding if user signed in but no brand yet
+  const protectedPaths = ['/dashboard']
+  const isProtectedPath = protectedPaths.some((p) =>
+    request.nextUrl.pathname.startsWith(p),
+  )
+
+  if (user && isProtectedPath) {
+    const { data: brand } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle()
+
+    if (!brand) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
+      return NextResponse.redirect(url)
+    }
+  }
+
   return supabaseResponse
 }

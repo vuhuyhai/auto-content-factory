@@ -43,3 +43,5 @@ next-env.d.ts
 # Claude AI custom pack (future use)
 .claude.local/.env
 .claude.local/.env.local
+.vercel
+.env*.local
