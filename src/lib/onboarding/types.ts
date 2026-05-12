@@ -80,3 +80,41 @@ export interface OnboardingDraft {
 // ============================================================================
 
 export type { BrandVoiceGuide }
+
+// ============================================================================
+// DEFAULT VALUES (cho react-hook-form initialization)
+// ============================================================================
+
+export const DEFAULT_FORM_DATA: OnboardingFormData = {
+  // Step 1
+  brand_name: "",
+  slogan: "",
+  industry: "",
+  industry_custom: "",
+
+  // Step 2
+  age_range: [],
+  gender_focus: "",
+  persona_description: "",
+
+  // Step 3
+  archetype: "",
+
+  // Step 4 (default từ Questionnaire spec)
+  formality: 6,
+  humor: 4,
+  emotion: 5,
+
+  // Step 5
+  pain_points: "",
+
+  // Step 6
+  usp: "",
+
+  // Step 7
+  topics: [],
+  hashtags: [],
+
+  // Step 8
+  sample_content: "",
+}
