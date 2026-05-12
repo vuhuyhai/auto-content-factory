@@ -7,7 +7,9 @@ export const profiles = pgTable('profiles', {
   name: varchar('name', { length: 255 }),
   phone: varchar('phone', { length: 20 }),
   plan: varchar('plan', { length: 20 }).default('free').notNull(),
+  avatarUrl: text('avatar_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // BRANDS - 1 user 1 brand trong MVP
