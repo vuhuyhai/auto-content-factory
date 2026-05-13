@@ -1,22 +1,40 @@
-import { Calendar, Newspaper, Pin, Megaphone, Clock } from 'lucide-react';
+'use client';
+
+import { useState, useTransition } from 'react';
+import { Calendar, Newspaper, Pin, Megaphone, Clock, Trash2, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   getContentTypeLabel,
   getScheduleLabel,
 } from '@/lib/workflows/constants';
 import type { WorkflowWithConfig } from '@/lib/workflows/types';
+import { toggleWorkflowEnabled, deleteWorkflow } from '@/app/dashboard/workflows/actions';
 
 interface WorkflowCardProps {
   workflow: WorkflowWithConfig;
 }
 
-/**
- * Card hiển thị 1 workflow trong list.
- * Day 8 readonly. Day 8 M4 sẽ thêm toggle + delete.
- */
 export function WorkflowCard({ workflow }: WorkflowCardProps) {
-  const name = workflow.config?.name ?? `${getContentTypeLabel(workflow.type)} - ${getScheduleLabel(workflow.scheduleCron)}`;
+  const [isPending, startTransition] = useTransition();
+  const [enabled, setEnabled] = useState(workflow.enabled);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const name =
+    workflow.config?.name ??
+    `${getContentTypeLabel(workflow.type)} - ${getScheduleLabel(workflow.scheduleCron)}`;
   const typeLabel = getContentTypeLabel(workflow.type);
   const scheduleLabel = getScheduleLabel(workflow.scheduleCron);
 
@@ -26,6 +44,32 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
       : workflow.type === 'evergreen'
         ? Pin
         : Megaphone;
+
+  function handleToggle() {
+    const next = !enabled;
+    // Optimistic update
+    setEnabled(next);
+    setErrorMsg(null);
+
+    startTransition(async () => {
+      const result = await toggleWorkflowEnabled(workflow.id, next);
+      if (!result.ok) {
+        // Revert
+        setEnabled(!next);
+        setErrorMsg(result.message ?? 'Có lỗi xảy ra.');
+      }
+    });
+  }
+
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteWorkflow(workflow.id);
+      if (!result.ok) {
+        setErrorMsg(result.message ?? 'Không thể xoá.');
+      }
+      // Nếu ok, revalidatePath sẽ remove card khỏi list
+    });
+  }
 
   return (
     <Card className="transition hover:shadow-md">
@@ -56,19 +100,85 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
                   Chạy gần nhất: {formatRelativeTime(workflow.lastRunAt)}
                 </div>
               )}
+
+              {errorMsg && (
+                <div className="mt-2 text-xs text-red-600">{errorMsg}</div>
+              )}
             </div>
           </div>
 
-          <Badge
-            variant={workflow.enabled ? 'default' : 'secondary'}
-            className={
-              workflow.enabled
-                ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-100'
-            }
-          >
-            {workflow.enabled ? 'Đang chạy' : 'Tạm dừng'}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge
+              variant={enabled ? 'default' : 'secondary'}
+              className={
+                enabled
+                  ? 'bg-green-100 text-green-700 hover:bg-green-100'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-100'
+              }
+            >
+              {enabled ? 'Đang chạy' : 'Tạm dừng'}
+            </Badge>
+
+            {/* Toggle button (custom switch) */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={enabled}
+              aria-label={enabled ? 'Tạm dừng workflow' : 'Bật workflow'}
+              onClick={handleToggle}
+              disabled={isPending}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:opacity-50 ${
+                enabled ? 'bg-pink-600' : 'bg-zinc-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  enabled ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+
+            {/* Delete button + AlertDialog */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-zinc-500 hover:bg-red-50 hover:text-red-600"
+                  disabled={isPending}
+                  aria-label="Xoá workflow"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Xoá workflow?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Bạn sắp xoá workflow{' '}
+                    <span className="font-semibold text-zinc-900">{name}</span>. Tất cả content đã sinh từ workflow này cũng sẽ bị xoá. Hành động này không hoàn tác được.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isPending}>Huỷ</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="bg-red-600 text-white hover:bg-red-700"
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang xoá...
+                      </>
+                    ) : (
+                      'Xoá'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardContent>
     </Card>

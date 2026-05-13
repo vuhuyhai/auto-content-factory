@@ -107,3 +107,65 @@ export async function createWorkflow(
   revalidatePath('/dashboard/workflows');
   redirect('/dashboard/workflows');
 }
+
+/**
+ * Toggle enabled/disabled cho workflow.
+ * RLS sẽ check brand_id thuộc về user (qua brands.user_id).
+ */
+export async function toggleWorkflowEnabled(
+  id: string,
+  enabled: boolean
+): Promise<{ ok: boolean; message?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { ok: false, message: 'Bạn cần đăng nhập.' };
+  }
+
+  const { error } = await supabase
+    .from('workflows')
+    .update({ enabled })
+    .eq('id', id);
+
+  if (error) {
+    console.error('[toggleWorkflowEnabled] error:', error.message);
+    return { ok: false, message: 'Không thể cập nhật trạng thái.' };
+  }
+
+  revalidatePath('/dashboard/workflows');
+  return { ok: true };
+}
+
+/**
+ * Xoá workflow (hard delete).
+ * RLS enforce brand ownership.
+ */
+export async function deleteWorkflow(
+  id: string
+): Promise<{ ok: boolean; message?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { ok: false, message: 'Bạn cần đăng nhập.' };
+  }
+
+  const { error } = await supabase.from('workflows').delete().eq('id', id);
+
+  if (error) {
+    console.error('[deleteWorkflow] error:', error.message);
+    return { ok: false, message: 'Không thể xoá workflow.' };
+  }
+
+  revalidatePath('/dashboard/workflows');
+  return { ok: true };
+}
