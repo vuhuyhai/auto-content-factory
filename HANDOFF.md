@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 12 P1 close - Schedule preset timezone bug FIXED. Cron lưu UTC + label hiển thị VN time. Migration workflow Ladysfit cron 0 7 * * * -> 0 0 * * * verified production endpoint OK.
+**Status:** Week 1 Day 12 P2 close - Content review status actions hoàn chỉnh. Server Action approve/reject với optimistic UI, sidebar badge count draft contents với revalidate layout, filter tabs 4 trạng thái với URL searchParams. tsc PASS, build 15 routes.
 
 ## 2. Current State
 
@@ -41,7 +41,8 @@
 - ✅ `npm run build` PASS - 14 routes (Static `/`, Dynamic `/dashboard/contents` `/dashboard/contents/[id]` `/api/cron/run-workflows`)
 - ✅ TypeScript zero error
 - ✅ Schedule preset timezone fix (Day 12 P1): cron lưu UTC + label VN time, 5 preset mới, DRY pattern schema-from-constants, migration Ladysfit OK
-- **Last verified:** 13/05/2026 - Day 12 P1 close - commit 5e672f1 pushed, Vercel deployment ready, production endpoint POST /api/cron/run-workflows trả 200 OK skipped:1 cron-not-in-window
+- ✅ Content review status actions (Day 12 P2): approve/reject Server Action + optimistic UI, sidebar badge draft count, filter tabs 4 status với URL searchParams
+- **Last verified:** 13/05/2026 - Day 12 P2 close - 3 commits 8e3470f + 01a76cc + 2b7251e local, HANDOFF Day 12 P2 commit + push tất cả lên origin/main next. Production deploy auto sau push.
 
 ### Day 11 additions (13/05/2026)
 
@@ -155,7 +156,61 @@
 - Fix: dùng pattern `Select-String -Path ".env.local" -Pattern "^CRON_SECRET="` KHÔNG có `-SimpleMatch` để `^` hoạt động regex anchor + force `[string]$cronLine = (...).Line` ép kiểu single string
 - Backup file `.env.local.backup-20260513-210731` giữ lại an toàn
 
-**Last verified:** 13/05/2026 - Day 12 P1 close - commit 5e672f1 pushed, Vercel deployment ready, production endpoint POST /api/cron/run-workflows trả 200 OK skipped:1 cron-not-in-window
+### Day 12 P2 additions (13/05/2026)
+
+**M1: Verify schema contents.status (~15 phút)**
+- Supabase MCP execute_sql 5 queries: schema columns + enum check + CHECK constraint + count by status + sample 3 rows
+- Phát hiện: contents.status là varchar (KHÔNG enum), KHÔNG CHECK constraint, default 'generating'
+- DB hiện 5 contents đều status='draft' (M1 baseline)
+- Quyết định: KHÔNG migration ALTER TABLE Day 12 P2. App layer enforce status qua TypeScript literal union + Zod schema (pattern DRY single source of truth Day 12 P1 RULE D12-4)
+
+**M2: Server Action approve/reject + Button UI optimistic (~75 phút)**
+- M2.1: Types + Schema (~10 phút)
+  - src/lib/contents/types.ts: CONTENT_STATUS_VALUES = ['generating', 'draft', 'approved', 'rejected'] as const + ContentStatus type derive + CONTENT_STATUS_LABELS record map VN labels
+  - src/lib/contents/schemas.ts mới (15 LOC): updateStatusSchema dùng z.enum tuple cast pattern DRY
+  - Cursor TASK 3 phát hiện: 2 page hardcoded map có key 'sent' (không còn) → fix M2.2
+- M2.2: Server Action + refactor 2 page hardcoded (~20 phút)
+  - actions.ts +33 LOC: updateContentStatus(input) với Supabase createClient + auth.getUser + UPDATE contents + revalidatePath
+  - Refactor list + detail page bỏ map hardcoded, dùng CONTENT_STATUS_LABELS[content.status]
+  - tsc PASS clean
+- M2.3: Button UI status bar (~25 phút)
+  - content-variant-selector.tsx 117→184 LOC (+67): prop status, state currentStatus + isUpdatingStatus, handler handleUpdateStatus optimistic + revert
+  - Render status bar trước Tabs: Badge bên trái (4 màu theo status) + 2 button "Duyệt"/"Từ chối" khi draft + button nhỏ "Đặt lại chờ duyệt" khi approved/rejected
+  - Native button consistency với existing pattern (không mix shadcn Button)
+- M2.4a: Refactor alert() → toast state (~5 phút)
+  - Unify với existing toast pattern handleSelectVariant, 3000ms auto-dismiss, finally block
+- M2.4b: Smoke test browser PASS 6 steps
+  - List page render labels OK, status bar approve flow optimistic OK, DB persist verified qua Supabase MCP (e5dc4bce status draft→approved), reject flow OK
+- Commit `8e3470f` feat(week1-day12-p2-m2)
+
+**M3: Sidebar badge count draft contents (~45 phút)**
+- M3.1: Implement (~30 phút)
+  - queries.ts +30 LOC: countDraftContentsForCurrentUser() dùng Supabase count exact head true + brands!inner join, silent fail return 0
+  - Sidebar pattern phát hiện: sidebar-nav.tsx là Client (usePathname), sidebar.tsx là Server, dashboard-shell.tsx là Server → fetch ở dashboard-shell pass props 2 nhánh (desktop + mobile)
+  - 5 file edit: queries + dashboard-shell (async fetch) + sidebar + mobile-drawer + sidebar-nav
+  - Badge UI: span bg-red-600 text-white rounded-full font-mono text-xs, render khi draftCount > 0, "99+" nếu >99
+  - draftCount optional prop (default 0) → backward compatible
+- M3.2: Fix preemptive revalidate layout + smoke test (~15 phút)
+  - Fix preemptive: thêm revalidatePath('/dashboard', 'layout') vào updateContentStatus actions.ts
+  - Lý do: sidebar render từ layout, revalidate page path KHÔNG re-render layout → badge stale
+  - Smoke test PASS 5 steps qua 4 screenshots: badge initial 4 → approve giảm 3 KHÔNG cần F5 → reject giảm 2 → mobile drawer cũng có badge → revert empty state
+- Commit `01a76cc` feat(week1-day12-p2-m3)
+
+**M4: Filter tabs by status với URL searchParams (~50 phút)**
+- M4.1: Implement (~35 phút)
+  - queries.ts +37 LOC: countContentsByStatusForCurrentUser() return Record<ContentStatus | 'all', number> aggregate client-side bằng reduce (Supabase JS không có GROUP BY native)
+  - queries.ts: getCurrentUserContents thêm param optional statusFilter?: ContentStatus, .eq('status', filter) khi có
+  - contents-filter-tabs.tsx mới 60 LOC: Server Component dùng <Link>, 4 tab "Tất cả / Chờ duyệt / Đã duyệt / Đã từ chối" với active border đỏ + count badge bg-red-100 active / bg-gray-200 inactive
+  - page.tsx 90→123 LOC (+33): Next.js 16 searchParams Promise pattern, await searchParams, parse status validate qua CONTENT_STATUS_VALUES.includes, Promise.all 2 queries song song, dynamic sub-header "{count} nội dung · {LABEL}", 4 empty state messages khác nhau theo filter
+  - Pattern URL: /dashboard/contents (all) | ?status=draft | ?status=approved | ?status=rejected. Invalid status fallback "Tất cả"
+- M4.2: Smoke test browser PASS 6 steps qua 6 screenshots
+  - Default 4 tabs render OK + counts đúng (Tất cả 5 / Chờ duyệt 1 / Đã duyệt 2 / Đã từ chối 2 - sau test M3 đã thay đổi state)
+  - Filter từng tab work + URL searchParams đúng + content list filter đúng
+  - Invalid status `?status=invalid` fallback "Tất cả" 5 contents
+  - Mobile responsive tabs scroll ngang (chữ "Đã từ chối" hơi chật, defer Week 2 nếu cần fix)
+- Commit `2b7251e` feat(week1-day12-p2-m4)
+
+**Last verified:** 13/05/2026 - Day 12 P2 close - 3 commits 8e3470f + 01a76cc + 2b7251e local, HANDOFF Day 12 P2 commit + push tất cả lên origin/main next. Production deploy auto sau push.
 
 ## 3. Done So Far
 
@@ -178,6 +233,14 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 **1 commit Day 12 + sắp có HANDOFF commit:**
 - `5e672f1` feat(week1-day12-p1): fix schedule preset timezone bug - utc cron + vn label
+
+### Day 12 P2 (13/05/2026)
+
+**3 commits Day 12 P2 + sắp có HANDOFF commit:**
+- `8e3470f` feat(week1-day12-p2-m2): content review status actions với approve/reject buttons + optimistic UI
+- `01a76cc` feat(week1-day12-p2-m3): sidebar badge count draft contents với revalidate layout
+- `2b7251e` feat(week1-day12-p2-m4): filter tabs by status với URL searchparams
+- `<sắp có>` docs(handoff): close Day 12 P2 - content review status actions
 
 ## 4. Architecture Decisions
 
@@ -219,6 +282,9 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **Optimistic UI cho select variant + revert on fail (Day 11 M5)** | UX mượt, perceived latency 0. Pattern Day 8 workflow toggle - đã verified production |
 | **Schedule preset cron UTC + display label VN (Day 12 P1)** | Industry standard (Postgres pg_cron, AWS EventBridge, GitHub Actions đều lưu UTC). Cron-parser tự nhiên parse UTC. Display layer convert UTC ↔ VN isolated dễ test. Migration đơn giản 1 workflow Ladysfit |
 | **DRY pattern z.enum(ARRAY.map())  thay vì literal union hardcode 2 chỗ (Day 12 P1)** | Lần đầu update timezone phát hiện literal union ScheduleCronValue (types.ts) và SCHEDULE_CRON_VALUES (schemas.ts) hardcode riêng → update 1 file mismatch type. Pattern DRY: schema derive từ constants array via map() + cast tuple type. Single source of truth |
+| **Content status varchar không CHECK constraint, enforce ở app layer (Day 12 P2 M1)** | Supabase MCP verify schema phát hiện status là varchar default 'generating'. KHÔNG migration ALTER TABLE giữa milestone (tránh schema drift risk). App layer enforce qua const CONTENT_STATUS_VALUES + ContentStatus literal union + Zod z.enum tuple cast. Pattern DRY single source of truth (RULE D12-4). Defer migration ADD CHECK constraint Week 2 nếu cần cứng schema |
+| **revalidatePath('/dashboard', 'layout') sau update status (Day 12 P2 M3.2)** | Sidebar badge render từ dashboard-shell.tsx ở /dashboard/layout.tsx, KHÔNG phải /dashboard/contents page. revalidatePath path-only invalidate page level, KHÔNG re-render layout level. Pattern Next.js 15+: revalidatePath(path, 'layout') để invalidate cả layout cấp dashboard. Fix preemptive trước khi test (badge stale nếu thiếu) |
+| **Filter tabs URL searchParams thay vì client-side state (Day 12 P2 M4)** | URL searchParams = bookmarkable + shareable + back/forward navigation work + SEO-friendly. Pattern Next.js 16: searchParams là Promise async, await trước khi đọc. Validate qua CONTENT_STATUS_VALUES.includes(), invalid status fallback "Tất cả" UX không crash. Aggregate counts client-side bằng reduce (Supabase JS chưa hỗ trợ GROUP BY native) |
 
 ## 5. Known Issues
 
@@ -266,6 +332,14 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 - **.env.local backup files dirty workspace:** Có 2 file `.env.local.backup` + `.env.local.backup-20260513-210731` trong working dir do debug saga. Đã được .gitignore cover (`.env*`) nhưng nên cleanup manual sau khi xác nhận production stable. Lệnh: `Remove-Item .env.local.backup*`
 
+### Issues Day 12 P2 (mới phát sinh)
+
+- **Mobile tab "Đã từ chối" overflow cắt chữ:** Filter tabs 4 nhãn quá dài trên viewport < 380px, overflow-x-auto work nhưng UX cảm giác chật. Defer Week 2: cân nhắc bỏ count badge mobile hoặc shorten label "Từ chối" thay "Đã từ chối"
+- **Filter tab transition animation thiếu:** Active border đổi instant khi click, không có sliding animation. UX acceptable nhưng có thể polish Week 3
+- **Empty state messages dynamic theo filter, nhưng KHÔNG có CTA "tạo workflow":** User vào tab "Chờ duyệt" rỗng chỉ thấy "Không có content nào chờ duyệt. 🎉" - thiếu hành động đi tiếp. Defer Week 2 cùng workflow types evergreen + promotional
+- **No bulk approve/reject:** User phải click từng content. Khi DB có >50 contents Week 4 sẽ cần bulk action. Defer Week 3
+- **No content edit inline:** User chỉ approve/reject nguyên text, KHÔNG sửa được body variant. Defer Week 2-3 cùng "Edit Brand Voice" UI
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -273,23 +347,23 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ## 6. Next Steps
 
-### Day 12 / Week 2: High Priority
+### Day 13 / Week 2: High Priority
 
-**P1 - Content review status actions:**
-- Button "Duyệt" + "Từ chối" trên detail page → update status DB
-- Sidebar nav badge count contents draft
-- Filter contents page by status
-
-**P2 - Workflow types evergreen + promotional:**
+**P1 - Workflow types evergreen + promotional:**
 - Day 9 logic chỉ work news_based. Extend Claude prompt template per type
 - Evergreen: topic_focus field thay vì news_sources
 - Promotional: product_link + offer field
 
-**P3 - Multi-source batch generation:**
+**P2 - Multi-source batch generation:**
 - Workflow `news_based` có thể có 3 nguồn RSS × 3 articles = 9 candidates
 - Loop generate multiple content per workflow run
 - Skip article đã có content (dedup theo source_url)
 - Test với 2-3 RSS sources VN (TuoiTre, Dantri, CafeBiz)
+
+**P3 - Content edit inline + bulk actions:**
+- Sửa body variant inline (textarea + save) thay vì readonly
+- Bulk approve/reject checkbox + action bar khi DB > 50 contents
+- Pagination /dashboard/contents song song với filter tabs hiện có
 
 ### Week 2-3: Content Review UI + Email delivery
 - Approve/reject UI với edit inline body
@@ -347,19 +421,26 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - Node version: v24.14.0 (shadcn CLI fail)
 - npm package manager
 
-### Day 11 file structure additions
+### Day 11-12 P2 file structure additions
 src/
 ├── app/dashboard/contents/
-│   ├── page.tsx (list)
-│   ├── actions.ts (selectVariant Server Action)
-│   └── [id]/page.tsx (detail)
+│   ├── page.tsx (list — UPDATED M2.2 + M4.1: CONTENT_STATUS_LABELS + searchParams Promise + 4 empty state)
+│   ├── actions.ts (selectVariant + UPDATED M2.2 + M3.2: updateContentStatus + revalidatePath layout)
+│   └── [id]/page.tsx (detail — UPDATED M2.2: CONTENT_STATUS_LABELS)
 ├── app/api/cron/run-workflows/
 │   └── route.ts (POST + GET healthcheck)
 ├── components/contents/
-│   └── content-variant-selector.tsx (Client Component 3 tabs)
+│   ├── content-variant-selector.tsx (Client Component 3 tabs — UPDATED M2.3 + M2.4a: status bar UI + toast unified)
+│   └── contents-filter-tabs.tsx (NEW M4.1: Server Component 4 tabs + count badges)
+├── components/dashboard/
+│   ├── dashboard-shell.tsx (UPDATED M3.1: async fetch draftCount + pass props)
+│   ├── sidebar.tsx (UPDATED M3.1: nhận draftCount prop)
+│   ├── mobile-drawer.tsx (UPDATED M3.1: nhận draftCount prop)
+│   └── sidebar-nav.tsx (UPDATED M3.1: render badge inline khi draftCount > 0)
 ├── lib/contents/
-│   ├── types.ts (Content + ContentWithWorkflow + normalizeHashtag)
-│   └── queries.ts (RLS-aware getCurrentUserContents + getContentById)
+│   ├── types.ts (Content + ContentWithWorkflow + normalizeHashtag — UPDATED M2.1: CONTENT_STATUS_VALUES + ContentStatus + CONTENT_STATUS_LABELS)
+│   ├── schemas.ts (NEW M2.1: updateStatusSchema z.enum tuple)
+│   └── queries.ts (RLS-aware getCurrentUserContents + getContentById — UPDATED M3 + M4: countDraftContentsForCurrentUser + countContentsByStatusForCurrentUser + getCurrentUserContents statusFilter param)
 ├── lib/cron/
 │   ├── should-trigger.ts (isCronInWindow + isOutsideDedupWindow)
 │   └── queries.ts (admin client fetchEnabledWorkflows + markWorkflowTriggered)
@@ -514,14 +595,37 @@ scheduleCron: z.enum(SCHEDULE_CRON_VALUES, {...})
 ```
 Lần sau thêm/sửa preset chỉ đụng constants.ts, schema tự reflect.
 
+### Bài học Day 12 P2 (3 RULES mới, nhẹ vì M2-M4 implement smooth)
+
+**RULE D12-P2-1: NEXT.JS 16 SEARCHPARAMS LÀ PROMISE ASYNC.**
+Pattern: export default async function Page({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }) { const params = await searchParams; const status = params.status; }
+KHÁC Next.js 14 (searchParams sync object). Áp dụng cho mọi page có searchParams Day 12 P2 trở đi.
+
+**RULE D12-P2-2: REVALIDATEPATH PATH-ONLY KHÔNG INVALIDATE LAYOUT.**
+Khi Server Action update DB cần re-render component render từ layout (vd sidebar badge), revalidatePath(path) KHÔNG đủ - chỉ invalidate page cấp đó. Pattern Next.js 15+: revalidatePath(path, 'layout') để invalidate cả layout level. Áp dụng cho mọi update mutation có UI render từ layout cấp trên (dashboard layout, root layout).
+
+**RULE D12-P2-3: LITERAL UNION TYPE + ZOD ENUM DRY DERIVE TỪ CONST ARRAY.**
+Tiếp tục pattern Day 12 P1 RULE D12-4: Tránh hardcode literal 2 chỗ (types.ts + schemas.ts). Pattern duy nhất:
+```typescript
+// types.ts: source of truth
+export const STATUS_VALUES = ['draft', 'approved', 'rejected'] as const;
+export type Status = (typeof STATUS_VALUES)[number];
+
+// schemas.ts: derive
+import { STATUS_VALUES, type Status } from './types';
+const tupleValues = STATUS_VALUES as [Status, ...Status[]];
+export const updateStatusSchema = z.object({ status: z.enum(tupleValues) });
+```
+Lần sau thêm/sửa status chỉ đụng const array source. Build production sẽ catch nếu mismatch.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Day 11-12 P1 PUSHED 7 commits** + 1 sắp có commit HANDOFF Day 12 P1. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
-- **Production smoke test STATUS:** Day 11 M3 verified content saved DB thật (id e5dc4bce). Day 11 M4 verified cron-job.org TEST RUN 200 OK. Pipeline production READY 100%.
-- Commit cuối local nên là `docs(handoff): close Day 12 P1 - schedule preset timezone fix utc+vn`
-- Day 12 P1 DONE. Day 12 P2 nếu tiếp tục: Content review status actions (Duyệt/Từ chối + sidebar badge + filter contents by status)
+- **Week 1 Day 1-12 P2 PUSHED 35 commits** (32 trước + 3 Day 12 P2 + 1 HANDOFF Day 12 P2). Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
+- **Production smoke test STATUS:** Day 11 M3 verified content saved DB thật (id e5dc4bce). Day 11 M4 verified cron-job.org TEST RUN 200 OK. Pipeline production READY 100%. Day 12 P2 chỉ test localhost - chưa deploy lên Vercel để verify production. Anh quyết: deploy ngay sau push hay defer milestone tiếp.
+- Commit cuối local nên là `docs(handoff): close Day 12 P2 - content review status actions`
+- Day 12 P2 DONE. Day 13 nếu tiếp tục: Workflow types evergreen + promotional (P1 mới) hoặc multi-source batch generation (P2 mới)
 - Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN hằng ngày qua cron-job.org
-- DB hiện có 5 contents (Day 9: 1 + Day 10: 1 + Day 11 M3 manual: 2 + Day 11 M4 localhost test: 1)
+- DB hiện có 5 contents: 1 draft + 2 approved + 2 rejected (sau test Day 12 P2 M3.2 + M4.2 anh đã reject thêm)
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
