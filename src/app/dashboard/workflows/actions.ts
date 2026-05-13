@@ -169,3 +169,51 @@ export async function deleteWorkflow(
   revalidatePath('/dashboard/workflows');
   return { ok: true };
 }
+
+/**
+ * Trigger manual run of a workflow.
+ * Calls POST /api/workflows/[id]/run internally.
+ * Returns success/error to client for toast display.
+ */
+export async function runWorkflow(
+  workflowId: string
+): Promise<{ success: boolean; error?: string; content_id?: string; source_title?: string }> {
+  try {
+    const { headers } = await import('next/headers');
+    const headersList = await headers();
+    const host = headersList.get('host');
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const baseUrl = `${protocol}://${host}`;
+
+    const cookieHeader = headersList.get('cookie') ?? '';
+
+    const response = await fetch(`${baseUrl}/api/workflows/${workflowId}/run`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookieHeader,
+      },
+      cache: 'no-store',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error ?? `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      success: true,
+      content_id: data.content_id,
+      source_title: data.source_article?.title,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+}

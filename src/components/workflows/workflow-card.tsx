@@ -1,7 +1,16 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Calendar, Newspaper, Pin, Megaphone, Clock, Trash2, Loader2 } from 'lucide-react';
+import { useEffect, useState, useTransition } from 'react';
+import {
+  Calendar,
+  Newspaper,
+  Pin,
+  Megaphone,
+  Clock,
+  Trash2,
+  Loader2,
+  Play,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,16 +30,31 @@ import {
   getScheduleLabel,
 } from '@/lib/workflows/constants';
 import type { WorkflowWithConfig } from '@/lib/workflows/types';
-import { toggleWorkflowEnabled, deleteWorkflow } from '@/app/dashboard/workflows/actions';
+import {
+  toggleWorkflowEnabled,
+  deleteWorkflow,
+  runWorkflow,
+} from '@/app/dashboard/workflows/actions';
 
 interface WorkflowCardProps {
   workflow: WorkflowWithConfig;
 }
 
+type ToastMessage = { type: 'success' | 'error'; text: string } | null;
+
 export function WorkflowCard({ workflow }: WorkflowCardProps) {
   const [isPending, startTransition] = useTransition();
+  const [isRunning, startRunTransition] = useTransition();
   const [enabled, setEnabled] = useState(workflow.enabled);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<ToastMessage>(null);
+
+  // Auto-dismiss toast sau 5s
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   const name =
     workflow.config?.name ??
@@ -71,6 +95,28 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
     });
   }
 
+  function handleRun() {
+    setToastMessage(null);
+    setErrorMsg(null);
+
+    startRunTransition(async () => {
+      const result = await runWorkflow(workflow.id);
+      if (result.success) {
+        setToastMessage({
+          type: 'success',
+          text: result.source_title
+            ? `Đã tạo content từ: ${result.source_title}`
+            : 'Đã tạo content thành công!',
+        });
+      } else {
+        setToastMessage({
+          type: 'error',
+          text: result.error ?? 'Không thể chạy workflow.',
+        });
+      }
+    });
+  }
+
   return (
     <Card className="transition hover:shadow-md">
       <CardContent className="p-5">
@@ -104,6 +150,19 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
               {errorMsg && (
                 <div className="mt-2 text-xs text-red-600">{errorMsg}</div>
               )}
+
+              {toastMessage && (
+                <div
+                  role="status"
+                  className={`mt-2 rounded-md border px-3 py-2 text-xs ${
+                    toastMessage.type === 'success'
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : 'border-red-200 bg-red-50 text-red-700'
+                  }`}
+                >
+                  {toastMessage.text}
+                </div>
+              )}
             </div>
           </div>
 
@@ -126,7 +185,7 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
               aria-checked={enabled}
               aria-label={enabled ? 'Tạm dừng workflow' : 'Bật workflow'}
               onClick={handleToggle}
-              disabled={isPending}
+              disabled={isPending || isRunning}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:opacity-50 ${
                 enabled ? 'bg-pink-600' : 'bg-zinc-300'
               }`}
@@ -138,6 +197,29 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
               />
             </button>
 
+            {/* Run-now button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRun}
+              disabled={!enabled || isRunning || isPending}
+              aria-label="Chạy workflow ngay"
+              className="h-8 gap-1.5 border-pink-200 text-pink-700 hover:bg-pink-50 hover:text-pink-800 disabled:opacity-50"
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Đang tạo content...
+                </>
+              ) : (
+                <>
+                  <Play className="h-3.5 w-3.5" />
+                  Chạy ngay
+                </>
+              )}
+            </Button>
+
             {/* Delete button + AlertDialog */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -145,7 +227,7 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-zinc-500 hover:bg-red-50 hover:text-red-600"
-                  disabled={isPending}
+                  disabled={isPending || isRunning}
                   aria-label="Xoá workflow"
                 >
                   <Trash2 className="h-4 w-4" />
