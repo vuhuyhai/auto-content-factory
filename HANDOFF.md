@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 11 - Production fetch-news bug FIXED + Cron auto-trigger PASS + Contents review UI live. End-to-end pipeline production READY.
+**Status:** Week 1 Day 12 P1 close - Schedule preset timezone bug FIXED. Cron lưu UTC + label hiển thị VN time. Migration workflow Ladysfit cron 0 7 * * * -> 0 0 * * * verified production endpoint OK.
 
 ## 2. Current State
 
@@ -40,7 +40,8 @@
 - ✅ Variant selector UI với 3 tab + select variant + copy clipboard
 - ✅ `npm run build` PASS - 14 routes (Static `/`, Dynamic `/dashboard/contents` `/dashboard/contents/[id]` `/api/cron/run-workflows`)
 - ✅ TypeScript zero error
-- **Last verified:** 13/05/2026 - Day 11 close - 6 commits Day 11 pushed (commit cuối `6dcfa81`), production deployment LIVE
+- ✅ Schedule preset timezone fix (Day 12 P1): cron lưu UTC + label VN time, 5 preset mới, DRY pattern schema-from-constants, migration Ladysfit OK
+- **Last verified:** 13/05/2026 - Day 12 P1 close - commit 5e672f1 pushed, Vercel deployment ready, production endpoint POST /api/cron/run-workflows trả 200 OK skipped:1 cron-not-in-window
 
 ### Day 11 additions (13/05/2026)
 
@@ -122,7 +123,39 @@
 - Logic `pathname.startsWith('/dashboard/contents')` cho detail page tự active đúng dòng "Nội dung"
 - Commit `6dcfa81` feat(week1-day11-m5)
 
-**Last verified:** 13/05/2026 - Day 11 close - 6 commits Day 11 pushed (1a64bf8, fb3bc56, ad0d6ae, 4ae8495, 6dcfa81 + sắp có commit HANDOFF), production deployment LIVE với end-to-end pipeline auto-trigger 7h UTC daily
+### Day 12 P1 additions (13/05/2026)
+
+**Schedule preset timezone fix (~3h gồm debug .env.local + build fix DRY schema):**
+- BUG Day 8 phát hiện: 5 preset "Mỗi sáng 7h" lưu cron `0 7 * * *` (UTC) = 14h chiều VN, KHÔNG phải 7h sáng VN như label hứa. Tất cả 5 preset đều lệch 7h.
+- Pattern fix chọn: Lưu cron UTC (industry standard) + display label VN time. KHÔNG dùng pattern "lưu local + convert runtime" để tránh phức tạp logic.
+- Refactor 3 file:
+  - `src/lib/workflows/types.ts`: ScheduleCronValue literal union mới (5 cron UTC) + DEFAULT_WORKFLOW_FORM_DATA.scheduleCron = '0 0 * * *'
+  - `src/lib/workflows/constants.ts`: 5 preset value/label mới với chữ "giờ Việt Nam" trong label + 2 helper mới `vnHourToUtcCron(hour, minute)` + `utcHourToVnHour(utcHour)` + `getScheduleLabel()` cập nhật fallback "Tuỳ chỉnh (cron UTC)"
+  - `src/lib/workflows/schemas.ts`: Refactor DRY - SCHEDULE_CRON_VALUES derive từ SCHEDULE_PRESETS.map() thay vì hardcode literal. Lần sau thêm/sửa preset chỉ đụng constants.ts.
+- 5 preset mới:
+  - "Mỗi sáng 7h (giờ Việt Nam)" → `0 0 * * *` UTC
+  - "Mỗi tối 8h (giờ Việt Nam)" → `0 13 * * *` UTC
+  - "2 lần mỗi ngày (7h sáng + 8h tối, giờ Việt Nam)" → `0 0,13 * * *` UTC
+  - "Mỗi thứ Hai 9h sáng (giờ Việt Nam)" → `0 2 * * 1` UTC
+  - "Thứ 2, 4, 6 lúc 9h sáng (giờ Việt Nam)" → `0 2 * * 1,3,5` UTC
+- Migration DB qua Supabase MCP: workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) `schedule_cron='0 7 * * *' → '0 0 * * *'`, `last_run_at=NULL` để unblock dedup
+- Files KHÔNG đụng (auto reflect qua DRY):
+  - `workflow-card.tsx` đã dùng `getScheduleLabel()` helper → tự reflect label mới
+  - `workflow-form.tsx` đã map qua `SCHEDULE_PRESETS` → tự reflect option mới
+- Build production PASS: 14 routes, TypeScript zero error, 13/13 static pages
+- Verify localhost + production endpoint: POST /api/cron/run-workflows trả `200 skipped:1 cron-not-in-window` (đúng vì test chiều VN = sáng UTC, không match cron 0h UTC)
+- Commit `5e672f1` feat(week1-day12-p1)
+
+**Debug saga `.env.local` (~1h - lessons learned 4 RULES mới):**
+- Lúc test localhost endpoint, em sai pattern PowerShell làm CRON_SECRET extract thất bại nhiều lần. 4 root causes phát hiện:
+  1. .env.local đã có CRON_SECRET (Day 11 add), em đưa lệnh Add-Content tạo dòng DUPLICATE
+  2. `$matches` là automatic variable của PowerShell regex `-match` operator, conflict khi dùng làm tên biến
+  3. `Select-String -SimpleMatch` TẮT regex hoàn toàn → anchor `^` `$` thành literal character → pattern `^CRON_SECRET=` match 0 dòng dù file có
+  4. `Set-Content -Encoding UTF8` PowerShell 5.x mặc định thêm BOM `EF BB BF` ở đầu file
+- Fix: dùng pattern `Select-String -Path ".env.local" -Pattern "^CRON_SECRET="` KHÔNG có `-SimpleMatch` để `^` hoạt động regex anchor + force `[string]$cronLine = (...).Line` ép kiểu single string
+- Backup file `.env.local.backup-20260513-210731` giữ lại an toàn
+
+**Last verified:** 13/05/2026 - Day 12 P1 close - commit 5e672f1 pushed, Vercel deployment ready, production endpoint POST /api/cron/run-workflows trả 200 OK skipped:1 cron-not-in-window
 
 ## 3. Done So Far
 
@@ -140,6 +173,11 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - `4ae8495` feat(week1-day11-m4): cron endpoint with auth + dedup + inngest trigger
 - `6dcfa81` feat(week1-day11-m5): contents review dashboard with variant selector
 - `<sắp có>` docs(handoff): close Day 11 - production pipeline live with auto-trigger
+
+### Day 12 P1 (13/05/2026)
+
+**1 commit Day 12 + sắp có HANDOFF commit:**
+- `5e672f1` feat(week1-day12-p1): fix schedule preset timezone bug - utc cron + vn label
 
 ## 4. Architecture Decisions
 
@@ -179,6 +217,8 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **5-minute window match + 5-minute dedup (Day 11 M4)** | cron-job.org trigger endpoint mỗi 5 phút, endpoint dùng CronExpressionParser.prev() match cửa sổ [now - 5min, now]. Dedup 5-minute via last_run_at update sau inngest.send() success tránh trigger 2 lần nếu cron-job.org spike. Trade-off: workflow cron `0 7 * * *` có thể trigger trong khoảng 7:00-7:05 UTC, không phải exact 7:00:00 |
 | **Tabs UI cho variant selector thay vì 3 card xếp dọc (Day 11 M5)** | 3 variants có hook/title/body/hashtags structure giống nhau, xem song song không cần thiết. Tabs giúp focus + screen real estate efficient mobile. Pattern Modern Indie SaaS Day 8 |
 | **Optimistic UI cho select variant + revert on fail (Day 11 M5)** | UX mượt, perceived latency 0. Pattern Day 8 workflow toggle - đã verified production |
+| **Schedule preset cron UTC + display label VN (Day 12 P1)** | Industry standard (Postgres pg_cron, AWS EventBridge, GitHub Actions đều lưu UTC). Cron-parser tự nhiên parse UTC. Display layer convert UTC ↔ VN isolated dễ test. Migration đơn giản 1 workflow Ladysfit |
+| **DRY pattern z.enum(ARRAY.map())  thay vì literal union hardcode 2 chỗ (Day 12 P1)** | Lần đầu update timezone phát hiện literal union ScheduleCronValue (types.ts) và SCHEDULE_CRON_VALUES (schemas.ts) hardcode riêng → update 1 file mismatch type. Pattern DRY: schema derive từ constants array via map() + cast tuple type. Single source of truth |
 
 ## 5. Known Issues
 
@@ -212,7 +252,6 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 ### Issues Day 11 (mới phát sinh)
 
 - **Vercel Hobby cron 1 lần/ngày only:** Vercel Cron không phù hợp ACF schedule granular. External cron (cron-job.org) là workaround Day 11 M4. Pros: free, mỗi phút trigger được. Cons: phụ thuộc third-party uptime. Backup plan Week 2: setup secondary cron GitHub Actions free reliable.
-- **Schedule preset timezone bug (Day 8 preset chưa convert UTC):** UI label "Mỗi sáng 7h" map sang cron `0 7 * * *` (7h UTC = 14h VN time, không phải 7h sáng VN). Workflow Ladysfit hiện trigger 14h VN. Fix Week 2: convert preset → UTC cron khi save, hiển thị label VN time khi load. Có 2 pattern decide: lưu cron UTC + label VN HOẶC lưu cron VN + convert runtime. Cần thiết kế Week 2.
 - **Inngest function chỉ scan workflow type='news_based':** Day 9 logic generate content chỉ work với news_based. Workflow type='evergreen' và 'promotional' tạo được nhưng KHÔNG generate. Sau khi cron-job.org trigger evergreen workflow, Inngest function sẽ skip silently. Fix Week 2 cùng prompt template per type.
 - **Contents duplicate khi workflow chạy lại cùng source:** Image dashboard Day 11 M5 hiển thị 2 cards cùng title "Người dân sắp nhận gói khám miễn phí" với time khác nhau (test multiple lần). Schema KHÔNG có unique constraint (workflow_id, source_url). Fix Week 2: add unique index hoặc check trước insert.
 - **PowerShell `Invoke-WebRequest` ErrorDetails.Message KHÔNG capture body 4xx/5xx:** Cần dùng pattern `$_.Exception.Response.GetResponseStream() + StreamReader` để đọc raw body. Day 11 M4.2 đã debug, RULE D11-3 ghi pattern.
@@ -223,6 +262,10 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - **No edit variant body inline:** User chỉ chọn variant nào tốt nhất, KHÔNG sửa được text. Defer Week 2-3 cùng "Edit Brand Voice" UI.
 - **deprecation warning DEP0169 url.parse() vẫn còn:** Có thể từ transitive dep rss-parser hoặc cron-parser. Defer fix khi deps update.
 
+### Issues Day 12 (mới phát sinh)
+
+- **.env.local backup files dirty workspace:** Có 2 file `.env.local.backup` + `.env.local.backup-20260513-210731` trong working dir do debug saga. Đã được .gitignore cover (`.env*`) nhưng nên cleanup manual sau khi xác nhận production stable. Lệnh: `Remove-Item .env.local.backup*`
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -232,23 +275,17 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ### Day 12 / Week 2: High Priority
 
-**P1 - Schedule preset timezone fix:**
-- Decide pattern: lưu cron UTC + label VN HOẶC lưu cron VN + convert runtime
-- Update Day 8 SCHEDULE_PRESETS với cron UTC chuẩn (vd "Mỗi sáng 7h VN" = `0 0 * * *` UTC)
-- Migration data: convert existing workflow cron production
-- Update workflow card display label theo timezone
-
-**P2 - Content review status actions:**
+**P1 - Content review status actions:**
 - Button "Duyệt" + "Từ chối" trên detail page → update status DB
 - Sidebar nav badge count contents draft
 - Filter contents page by status
 
-**P3 - Workflow types evergreen + promotional:**
+**P2 - Workflow types evergreen + promotional:**
 - Day 9 logic chỉ work news_based. Extend Claude prompt template per type
 - Evergreen: topic_focus field thay vì news_sources
 - Promotional: product_link + offer field
 
-**P4 - Multi-source batch generation:**
+**P3 - Multi-source batch generation:**
 - Workflow `news_based` có thể có 3 nguồn RSS × 3 articles = 9 candidates
 - Loop generate multiple content per workflow run
 - Skip article đã có content (dedup theo source_url)
@@ -436,14 +473,55 @@ Vercel docs chính thức (27/02/2026): Hobby plan cron-jobs chỉ chạy 1 lầ
 Workaround chuẩn: cron-job.org / Runhooks / GitHub Actions trigger endpoint từ ngoài Vercel. Free, mỗi phút trigger được. Endpoint tự match cron expression với current UTC time + dedup window.
 Pattern khi gặp limitation platform: Tách concerns - dùng platform cho compute, dùng external service cho scheduling.
 
+### Bài học Day 12 P1 (4 RULES mới)
+
+**RULE D12-1: TRƯỚC Add-Content VÀO .env.local LUÔN CHECK KEY ĐÃ TỒN TẠI CHƯA.**
+Day 12 P1 em đưa lệnh Add-Content CRON_SECRET vào .env.local mà KHÔNG check trước → tạo dòng DUPLICATE (Day 11 đã add rồi). Dotenv parse last-wins nên runtime OK, nhưng pattern PowerShell sau đó break vì $cronLine trả array.
+Pattern an toàn:
+```powershell
+$exists = Select-String -Path ".env.local" -Pattern "^FIELD=" -Quiet
+if (-not $exists) { Add-Content ".env.local" "`nFIELD=$value" }
+else { Write-Host "FIELD exists, manual edit if needed" }
+```
+
+**RULE D12-2: PowerShell `Select-String -SimpleMatch` TẮT REGEX → ANCHOR `^` `$` THÀNH LITERAL.**
+Pattern `Select-String -Pattern "^CRON_SECRET=" -SimpleMatch` KHÔNG match dòng `CRON_SECRET=value` ở đầu dòng. Vì `-SimpleMatch` treat `^` như literal character (Unicode caret).
+Pattern đúng:
+- Pattern có anchor `^FIELD=` → KHÔNG dùng `-SimpleMatch` (để `^` hoạt động regex anchor)
+- Pattern simple text "any text" không cần regex → dùng `-SimpleMatch` để escape special chars
+- Khi không chắc, bỏ `-SimpleMatch` mặc định
+
+**RULE D12-3: `Set-Content -Encoding UTF8` PowerShell 5.x MẶC ĐỊNH THÊM BOM `EF BB BF`.**
+Sau khi cleanup .env.local bằng `Set-Content -Encoding UTF8`, file có BOM ở đầu. Dotenv parse OK BOM (không crash) nhưng các tool khác (jq, awk, grep regex strict) có thể bị fool.
+Cách dùng đúng:
+- PowerShell 7+: `Set-Content -Encoding utf8NoBOM`
+- PowerShell 5.x: dùng `[System.IO.File]::WriteAllText(path, content, [System.Text.UTF8Encoding]::new($false))` để force no-BOM
+- Verify BOM: `[System.IO.File]::ReadAllBytes(path) | Select-Object -First 4` → nếu hex `EF BB BF` là BOM
+
+**RULE D12-4: LITERAL UNION TYPE PHẢI CÓ SINGLE SOURCE OF TRUTH (DRY PATTERN).**
+Day 12 P1 phát hiện ScheduleCronValue ở types.ts và SCHEDULE_CRON_VALUES ở schemas.ts hardcode literal 5 cron cũ riêng biệt. Update types.ts (5 cron mới) → forget schemas.ts → TypeScript build production FAIL với mismatch type. Dev mode Turbopack PASS, chỉ fail ở `npm run build` production.
+Pattern DRY:
+```typescript
+// constants.ts: source of truth
+export const SCHEDULE_PRESETS = [...] as const;
+
+// schemas.ts: derive
+const SCHEDULE_CRON_VALUES = SCHEDULE_PRESETS.map(p => p.value) as [
+  (typeof SCHEDULE_PRESETS)[number]['value'],
+  ...(typeof SCHEDULE_PRESETS)[number]['value'][]
+];
+scheduleCron: z.enum(SCHEDULE_CRON_VALUES, {...})
+```
+Lần sau thêm/sửa preset chỉ đụng constants.ts, schema tự reflect.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Day 11 PUSHED 5 commits** (1a64bf8 → 6dcfa81) + 1 sắp có commit HANDOFF. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
+- **Day 11-12 P1 PUSHED 7 commits** + 1 sắp có commit HANDOFF Day 12 P1. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
 - **Production smoke test STATUS:** Day 11 M3 verified content saved DB thật (id e5dc4bce). Day 11 M4 verified cron-job.org TEST RUN 200 OK. Pipeline production READY 100%.
-- Commit cuối local nên là `docs(handoff): close Day 11 - production pipeline live with auto-trigger`
-- Day 12 nếu anh tiếp tục: P1 fix schedule preset timezone bug (label "7h sáng" map đúng VN time = 0h UTC, không phải 7h UTC = 14h VN)
-- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) cron `0 7 * * *` = 7h UTC = 14h VN time, sẽ auto-trigger 14h VN hằng ngày qua cron-job.org
+- Commit cuối local nên là `docs(handoff): close Day 12 P1 - schedule preset timezone fix utc+vn`
+- Day 12 P1 DONE. Day 12 P2 nếu tiếp tục: Content review status actions (Duyệt/Từ chối + sidebar badge + filter contents by status)
+- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN hằng ngày qua cron-job.org
 - DB hiện có 5 contents (Day 9: 1 + Day 10: 1 + Day 11 M3 manual: 2 + Day 11 M4 localhost test: 1)
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
