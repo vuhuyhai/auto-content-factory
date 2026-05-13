@@ -8,9 +8,10 @@ import type { ArchetypeKey, OnboardingFormData } from "@/lib/onboarding/types"
 
 interface BrandVoiceCardProps {
   data: OnboardingFormData
-  isSubmitting: boolean
-  onConfirm: () => void
-  onEdit: (step: number) => void
+  isSubmitting?: boolean
+  onConfirm?: () => void
+  onEdit?: (step: number) => void
+  readonly?: boolean
 }
 
 function getIndustryLabel(value: string, custom: string): string {
@@ -65,9 +66,10 @@ function ToneBar({
 
 export function BrandVoiceCard({
   data,
-  isSubmitting,
+  isSubmitting = false,
   onConfirm,
   onEdit,
+  readonly = false,
 }: BrandVoiceCardProps) {
   const archetype = ARCHETYPES[data.archetype as ArchetypeKey]
   const industryLabel = getIndustryLabel(data.industry, data.industry_custom)
@@ -102,7 +104,7 @@ export function BrandVoiceCard({
                 {industryLabel}
               </p>
             </div>
-            <EditButton onClick={() => onEdit(1)} />
+            {!readonly && <EditButton onClick={() => onEdit?.(1)} />}
           </div>
         </section>
 
@@ -113,7 +115,8 @@ export function BrandVoiceCard({
           <SectionHeader
             icon="👤"
             title="Khách hàng lý tưởng"
-            onEdit={() => onEdit(2)}
+            onEdit={() => onEdit?.(2)}
+            readonly={readonly}
           />
           <div className="flex flex-wrap gap-1.5 text-xs">
             {data.age_range.map((a) => (
@@ -140,7 +143,8 @@ export function BrandVoiceCard({
               <SectionHeader
                 icon="🎭"
                 title="Giọng nói"
-                onEdit={() => onEdit(3)}
+                onEdit={() => onEdit?.(3)}
+                readonly={readonly}
               />
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{archetype.emoji}</span>
@@ -162,7 +166,8 @@ export function BrandVoiceCard({
           <SectionHeader
             icon="🎚️"
             title="Tone calibration"
-            onEdit={() => onEdit(4)}
+            onEdit={() => onEdit?.(4)}
+            readonly={readonly}
           />
           <div className="space-y-3">
             <ToneBar
@@ -193,7 +198,8 @@ export function BrandVoiceCard({
           <SectionHeader
             icon="💎"
             title="Điều khác biệt"
-            onEdit={() => onEdit(6)}
+            onEdit={() => onEdit?.(6)}
+            readonly={readonly}
           />
           <p className="text-sm text-slate-700">{data.usp}</p>
         </section>
@@ -205,7 +211,8 @@ export function BrandVoiceCard({
           <SectionHeader
             icon="📝"
             title="Chủ đề và Hashtag"
-            onEdit={() => onEdit(7)}
+            onEdit={() => onEdit?.(7)}
+            readonly={readonly}
           />
           <div>
             <p className="mb-1 text-xs font-medium text-slate-500">
@@ -237,7 +244,8 @@ export function BrandVoiceCard({
               <SectionHeader
                 icon="✨"
                 title="Bài viết mẫu đã cung cấp"
-                onEdit={() => onEdit(8)}
+                onEdit={() => onEdit?.(8)}
+                readonly={readonly}
               />
               <p className="text-xs italic text-emerald-700">
                 AI sẽ học phong cách từ {data.sample_content.length} ký tự
@@ -249,38 +257,40 @@ export function BrandVoiceCard({
       </article>
 
       {/* Action buttons */}
-      <div className="flex flex-col gap-3 md:flex-row-reverse">
-        <Button
-          type="button"
-          onClick={onConfirm}
-          disabled={isSubmitting}
-          className="flex-1 gap-2"
-          size="lg"
-        >
-          {isSubmitting ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Đang lưu...
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4" />
-              Xác nhận và bắt đầu
-            </>
-          )}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => onEdit(1)}
-          disabled={isSubmitting}
-          className="flex-1 gap-2"
-          size="lg"
-        >
-          <Pencil className="h-4 w-4" />
-          Sửa lại từ đầu
-        </Button>
-      </div>
+      {!readonly && (
+        <div className="flex flex-col gap-3 md:flex-row-reverse">
+          <Button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="flex-1 gap-2"
+            size="lg"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Xác nhận và bắt đầu
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onEdit?.(1)}
+            disabled={isSubmitting}
+            className="flex-1 gap-2"
+            size="lg"
+          >
+            <Pencil className="h-4 w-4" />
+            Sửa lại từ đầu
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -289,10 +299,12 @@ function SectionHeader({
   icon,
   title,
   onEdit,
+  readonly = false,
 }: {
   icon: string
   title: string
   onEdit: () => void
+  readonly?: boolean
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -300,7 +312,7 @@ function SectionHeader({
         <span className="text-base">{icon}</span>
         {title}
       </p>
-      <EditButton onClick={onEdit} />
+      {!readonly && <EditButton onClick={onEdit} />}
     </div>
   )
 }
