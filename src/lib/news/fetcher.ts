@@ -1,6 +1,4 @@
 import Parser from 'rss-parser';
-import { Readability } from '@mozilla/readability';
-import { JSDOM } from 'jsdom';
 import type { NewsArticle, FetchError, FetchNewsResult } from './types';
 
 const FETCH_TIMEOUT_MS = 8000;
@@ -34,6 +32,11 @@ async function fetchArticleContent(url: string): Promise<string> {
     }
 
     const html = await response.text();
+
+    // Lazy dynamic import to avoid Vercel production bundling issue (ERR_REQUIRE_ESM)
+    const { JSDOM } = await import('jsdom');
+    const { Readability } = await import('@mozilla/readability');
+
     const dom = new JSDOM(html, { url });
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
