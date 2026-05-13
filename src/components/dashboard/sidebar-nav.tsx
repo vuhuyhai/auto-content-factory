@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Sparkles, Zap, Settings } from "lucide-react"
+import { Sparkles, Zap, FileText, Settings } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/dashboard", label: "Brand Voice", icon: Sparkles },
   { href: "/dashboard/workflows", label: "Workflows", icon: Zap },
+  { href: "/dashboard/contents", label: "Nội dung", icon: FileText },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
