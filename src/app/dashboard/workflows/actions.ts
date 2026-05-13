@@ -177,7 +177,7 @@ export async function deleteWorkflow(
  */
 export async function runWorkflow(
   workflowId: string
-): Promise<{ success: boolean; error?: string; content_id?: string; source_title?: string }> {
+): Promise<{ success: boolean; error?: string; job_id?: string; message?: string }> {
   try {
     const { headers } = await import('next/headers');
     const headersList = await headers();
@@ -207,8 +207,8 @@ export async function runWorkflow(
 
     return {
       success: true,
-      content_id: data.content_id,
-      source_title: data.source_article?.title,
+      job_id: data.job_id,
+      message: data.message,
     };
   } catch (err) {
     return {

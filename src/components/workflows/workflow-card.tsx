@@ -104,9 +104,7 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
       if (result.success) {
         setToastMessage({
           type: 'success',
-          text: result.source_title
-            ? `Đã tạo content từ: ${result.source_title}`
-            : 'Đã tạo content thành công!',
+          text: result.message ?? 'Đã enqueue. Content sẽ hiện sau 1-2 phút.',
         });
       } else {
         setToastMessage({
