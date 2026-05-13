@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 9 - Manual run workflow + Claude API content generation DONE ✅, LOCALHOST-ONLY (defer production deploy Day 10)
+**Status:** Week 1 Day 10 - Inngest background job pipeline deployed to production ✅, smoke test fail at fetch-news step (VnExpress block Vercel IP), defer fix Day 11
 
 ## 2. Current State
 
@@ -82,6 +82,27 @@
 - ⚠️ KHÔNG deploy production - Vercel Hobby timeout 10s blocks 59s Claude generate (Path 1: defer deploy Day 10 với background job)
 
 **Last verified:** 13/05/2026 - Day 9 close - Smoke test all PASS, content generated Ladysfit/VnExpress success, localhost-only
+
+### Day 10 additions (13/05/2026)
+
+- ✅ Inngest SDK 4.4.0 + Inngest Cloud account (vuhai-acf org, auto-content-factory app)
+- ✅ Inngest client singleton tại src/inngest/client.ts với app id 'auto-content-factory'
+- ✅ Inngest API route serve tại src/app/api/inngest/route.ts (GET/POST/PUT)
+- ✅ Supabase admin client tại src/lib/supabase/admin.ts (singleton, service_role bypass RLS)
+- ✅ Inngest queries lib tại src/lib/inngest/queries.ts với 2 hàm fetchWorkflowByIdAdmin (JOIN brands user_id verify ownership) + fetchBrandByUserIdAdmin
+- ✅ Inngest function workflowRunner tại src/inngest/functions/workflow-runner.ts với 4 step (fetch-workflow-and-brand, fetch-news, generate-content, save-content), concurrency 5, retries 3, trigger event 'workflow/run.requested'
+- ✅ Refactor /api/workflows/[id]/run thành trigger endpoint (49 LOC, giảm từ 127 LOC) - chỉ auth + ownership + inngest.send(), response < 1s
+- ✅ Server Action runWorkflow update return type thành { success, job_id, message } (từ { content_id, source_article })
+- ✅ UI toast workflow-card.tsx update message thành "Đã enqueue. Content sẽ lưu vào DB sau 1-2 phút."
+- ✅ Vercel env vars: ANTHROPIC_API_KEY + INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY (3 environments: Production + Preview + Development)
+- ✅ Fix lazy import jsdom + @mozilla/readability trong src/lib/news/fetcher.ts (top-level eager import crash Vercel ERR_REQUIRE_ESM)
+- ✅ vercel.json config maxDuration 60s cho /api/inngest route (Hobby plan max)
+- ✅ Inngest Cloud production sync với https://auto-content-factory.vercel.app/api/inngest (SDK 4.4.0 success 17:21:14 13/5/2026)
+- ✅ Localhost end-to-end test M3 PASS: Inngest run completed trong ~70s, content_id 4d2829ce-ab65-4d81-b312-86a1db9de90d
+- ⚠️ Production smoke test FAIL ở step fetch-news (3 retries × ~41s mỗi attempt) - VnExpress trả error hoặc Vercel IP bị block. Defer debug Day 11.
+- ✅ Production deployment LIVE - Inngest pipeline architect đúng, chỉ còn 1 bug data fetching network-specific.
+
+**Last verified:** 13/05/2026 - Day 10 close - production deploy SUCCESS, smoke test fetch-news fail, defer Day 11
 
 ## 3. Done So Far
 
@@ -337,6 +358,65 @@
 - `4ed2437` feat(week1-day9-m4): manual run endpoint + chay ngay button + content save
 - `<sắp có>` docs(handoff): close Day 9 - claude api content generation localhost-only
 
+### Day 10 (13/05/2026)
+
+**M1: Inngest SDK + API endpoint setup (~45 phút)**
+- Signup Inngest account, lấy INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY (Production env)
+- Install Inngest SDK v4.4.0 (188 packages)
+- Create src/inngest/client.ts với Inngest({id: 'auto-content-factory', eventKey})
+- Create src/app/api/inngest/route.ts với serve() export GET/POST/PUT
+- Add 3 env vars vào .env.local: INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY + INNGEST_DEV=1
+- Debug: curl endpoint trả "Unauthorized" → Inngest SDK production mode mặc định, cần INNGEST_DEV=1 cho localhost bypass signature verify (RULE D10-1)
+- Verify localhost: function_count 0, mode dev, 2 key loaded
+
+**M2: Refactor /api/workflows/[id]/run thành trigger endpoint nhanh (~25 phút)**
+- Endpoint cũ 127 LOC chứa 8 step logic Day 9 (Claude generate 59s) → refactor thành 49 LOC trigger only
+- Giữ Step 1 (auth) + Step 2 (workflow ownership) ở Vercel request (có user session)
+- Move Step 3-8 sang Inngest function (M3 sẽ tạo)
+- Pass userId + workflowId qua event data
+- Verify: trigger < 1s, event xuất hiện ở Inngest dashboard, "Functions triggered: No functions triggered" (đúng vì M3 chưa tạo function)
+- False alarm: nghi encoding corrupt khi PowerShell display Vietnamese rác - fix bằng `chcp 65001 + -Encoding UTF8`, file thật OK (RULE D10-3)
+
+**M3: Tạo Inngest function workflowRunner với 4 step (~75 phút)**
+- Tạo 3 file mới: src/lib/supabase/admin.ts (singleton admin client) + src/lib/inngest/queries.ts (2 fetch hàm) + src/inngest/functions/workflow-runner.ts (function chính)
+- Update src/app/api/inngest/route.ts register workflowRunner
+- 4 step: fetch-workflow-and-brand → fetch-news → generate-content (chậm nhất 60s) → save-content
+- Config: concurrency 5, retries 3
+- Debug 3 bug đoán schema/syntax:
+  - Bug 1 (TS2554 Expected 2 arguments): Inngest v4 đổi API gộp config + trigger thành 1 object - em đoán sai 2 lần → RULE D10-4 đọc TypeScript signature thật node_modules/inngest trước khi viết
+  - Bug 2 (TS2353 never type insert): Supabase admin client không có schema types → fix bằng `as never` type assertion (RULE D10-5)
+  - Bug 3 runtime "column workflows.user_id does not exist": workflows table KHÔNG có user_id, chỉ có brand_id → fix bằng INNER JOIN brands user_id (RULE D10-6)
+  - Bug 4 runtime "Could not find the 'hashtags' column": contents table KHÔNG có hashtags column, hashtags chứa trong variants JSONB → xoá field hashtags khỏi insert payload (RULE D10-6)
+- Localhost end-to-end test PASS: Inngest run 70s, content_id 4d2829ce, variants_count 3, last_run_at workflow update
+
+**M4: UI update workflow card cho async pattern (~20 phút)**
+- Update Server Action runWorkflow return type: { content_id, source_title } → { job_id, message }
+- Update UI workflow-card.tsx toast message: "Đã tạo content thành công!" → "Đã enqueue. Content sẽ lưu vào DB sau 1-2 phút."
+- Verify tsc + grep keyword "enqueue" True + "Đã tạo content thành công" False
+
+**M5: Deploy production + Inngest Cloud sync (~75 phút)**
+- Add 3 env vars vào Vercel (ANTHROPIC_API_KEY + INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY) cho 3 environments
+- Tạo vercel.json với maxDuration 60s cho /api/inngest
+- Build local pass + push origin main
+- Deployment build ~67s success, 12 routes có /api/inngest + /api/workflows/[id]/run
+- First curl production: HTML 500 with "Failed to load external module jsdom: ERR_REQUIRE_ESM"
+- Fix: lazy dynamic import jsdom + readability bên trong fetchArticleContent function (xoá top-level import) → RULE D10-9 Vercel production strict ESM bundling
+- Push fix → redeploy → curl production trả {"message":"Unauthorized"} (Inngest production mode, expected, không phải bug)
+- Sync Inngest Cloud manually với URL https://auto-content-factory.vercel.app/api/inngest → SUCCESS 17:21:14 13/5/2026, SDK 4.4.0, 1 function (Workflow Runner)
+- Smoke test production: trigger endpoint < 1s OK, Inngest run start, step fetch-workflow-and-brand 564ms ✅
+- ❌ Step fetch-news FAIL: 3 retries × ~41s, error "No articles fetched" với VnExpress URL. Localhost cùng code pass 1.2s.
+- Diagnose: có thể VnExpress block Vercel IP range (Singapore region) hoặc anti-bot. Bug data-specific, không phải code logic.
+- Decision: Defer fix Day 11. Production architecture đã verify đúng (Inngest sync OK, endpoint không 500, lazy import fix work, trigger nhanh).
+
+**Commits Day 10 (6 commits + 1 sắp có):**
+- `5b15c65` chore(week1-day10-m1): install inngest sdk + setup api endpoint
+- `0a34f80` refactor(week1-day10-m2): convert run endpoint to inngest trigger
+- `f510bf2` feat(week1-day10-m3): inngest workflow-runner with 4-step background job
+- `134fbdf` feat(week1-day10-m4): update ui toast for async enqueue pattern
+- `87b4b26` fix(week1-day10-m5): lazy import jsdom + readability for vercel production
+- `d86199f` chore(week1-day10-m5): add vercel.json with maxDuration 60 for inngest route
+- `<sắp có>` docs(handoff): close Day 10 - inngest deployed, fetch-news bug defer Day 11
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -368,6 +448,11 @@
 | **Tone bucket low/mid/high cho Claude prompt (Day 9)** | Map 0-10 scale thành 3 bucket dễ hiểu cho LLM. Claude understand "Lịch sự rõ ràng, dùng anh/chị" tốt hơn "formality 8/10". Áp dụng cho cả 3 dimension formality/humor/emotion. |
 | **Schema variants JSONB column thay vì TEXT serialize (Day 9)** | Schema Day 1 hardcode facebook_post TEXT lệch spec Day 9 (3 variants). Migration ADD COLUMN nullable JSONB (low-risk, 0 row existing). Pattern matches image_prompts JSONB đã có. Future: user select variant updates selected_variant_index thay vì rewrite data. |
 | **Localhost-only Day 9 deploy (Path 1) (Day 9)** | Vercel Hobby timeout 10s không support 59s Claude generate. 3 alternatives: (A) Upgrade Pro $20/mo, (B) Background job Inngest, (C) Streaming response. Chosen Path 1: defer deploy Day 10 với background job pattern - robust nhất, scale tốt, không tốn tiền sớm. |
+| **Inngest background job pattern (Day 10)** | Vercel Hobby timeout 10s không support 60s Claude generate. Inngest free tier 50k step/tháng đủ MVP, có dashboard + retry built-in, không cần port code Deno (như Supabase Edge Functions) |
+| **4 step.run trong Inngest function thay vì 1 step monolith (Day 10)** | Cached kết quả mỗi step thành công → retry chỉ step fail (không gọi lại Claude API tốn $) + debug dashboard log từng step. Trade-off: 4 webhook call từ Inngest Cloud về Vercel (mỗi step) thay vì 1 |
+| **Admin client (service_role) trong Inngest function (Day 10)** | Inngest function chạy ở environment riêng, KHÔNG có user session cookie → RLS-aware client fail. Pattern: filter manual bằng userId từ event payload, JOIN brands cho ownership verify |
+| **Lazy dynamic import jsdom + readability (Day 10)** | Vercel production bundle nghiêm ngặt hơn localhost (Turbopack dev). Top-level import jsdom crash ERR_REQUIRE_ESM với transitive dep encoding-lite.js (ESM). Dynamic `await import()` bên trong function tránh bundle ESM khi register function |
+| **maxDuration 60s cho /api/inngest route (Day 10)** | Inngest function chia 4 step, mỗi step = 1 webhook call. Step Claude generate 60s, save-content 1s. Vercel Hobby max 60s/function-call. KHÔNG sai khi tổng function 70s vì chia step. |
 
 ## 5. Known Issues
 
@@ -414,6 +499,15 @@
 - **No content review UI:** Content saved status='draft' nhưng chưa có /dashboard/contents page hiển thị. Week 3 build Content Review UI với variant selection (update selected_variant_index).
 - **deprecation warning DEP0169 url.parse():** Node v24 deprecation warning từ một transitive dependency (có thể rss-parser hoặc anthropic-sdk). Không break, defer fix khi deps update.
 
+### Issues Day 10 (mới phát sinh)
+
+- **Production fetch-news FAIL với VnExpress URL (HIGH PRIORITY):** Localhost cùng code pass 1.2s, production retry 3 lần × ~41s mỗi attempt → "No articles fetched". Có thể VnExpress trả error hoặc block Vercel iad1/Singapore IP. Day 11 debug: (1) Test với RSS source khác (TuoiTre/Dantri), (2) Verify User-Agent header production, (3) Add fallback dùng RSS description nếu Readability fail.
+- **Inngest v4 SDK API breaking từ v3:** `createFunction({...config, triggers: [{event:...}]}, handler)` thay vì v3 `createFunction(config, {event}, handler)`. Em đoán sai 2 lần Day 10 M3. Apply RULE D10-4 cho mọi SDK lạ.
+- **vercel.json maxDuration KHÔNG nest functions/api/inngest/route.ts được nhận đúng:** Em set maxDuration 60 nhưng bug fetch-news không phải timeout (mỗi attempt 41s < 60s). Config có thể vẫn ổn cho future, nhưng chưa verify hard limit production thực tế.
+- **PowerShell hiển thị Vietnamese rác mặc định trên Windows:** Codepage 850/1252 không render UTF-8 trong `Get-Content`. Pattern fix: `chcp 65001 + -Encoding UTF8`. False alarm encoding corrupt khi PowerShell display lỗi.
+- **Vercel env vars chỉ apply cho deployments mới sau khi save (RULE D10-8):** Em paranoia case này nhưng thực ra commit M4 push SAU khi anh save env → OK. Nếu add env sau push, phải redeploy.
+- **Supabase admin client không có schema types:** `from('table').insert()` infer thành `never`. Workaround: `as never` cast payload + `as { id: string }` cast result. Pattern dài hạn: chạy `supabase gen types typescript` Day 11+ để generate Database types.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env (overwrite .env.local)
@@ -421,13 +515,24 @@
 
 ## 6. Next Steps
 
-### Day 10 / Week 2: Background job pattern + Production deploy
-- Setup Inngest hoặc Vercel Queue cho long-running content generation
-- Refactor /api/workflows/[id]/run thành 2 endpoint: trigger (fast) + worker (background)
-- UI update: trigger button enqueue job → polling status hoặc realtime via Supabase Realtime
-- Deploy production Vercel (Hobby plan vẫn dùng được vì trigger endpoint < 1s)
-- Setup Vercel.json cron schedule cho auto-run workflows
-- Validate RSS URL trong workflow create form (RULE D9-5 fix)
+### Day 11 / Week 2: Fix production fetch-news bug + Cron handler
+
+**Priority 1 - Fix production smoke test fail:**
+- Verify VnExpress block Vercel IP qua test curl từ Vercel function với User-Agent debug
+- Test với RSS source khác (TuoiTre, Dantri, CafeBiz) để confirm VnExpress-specific
+- Implement fallback: nếu Readability extract fail, dùng RSS description (200-300 chars enough cho Claude prompt)
+- Add detailed error logging trong fetcher.ts để Vercel runtime logs show HTTP status code thật
+- Validate RSS URL trong workflow create form (RULE D9-5 cũ)
+
+**Priority 2 - Cron handler:**
+- Setup Vercel cron schedule cho auto-run workflows
+- POST /api/cron/run-workflows endpoint dùng inngest.send() batch cho mọi enabled workflow
+- Filter workflow theo schedule_cron + last_run_at để tránh trigger trùng
+
+**Priority 3 - Content review UI:**
+- Build /dashboard/contents page list contents generated
+- Variant selector UI (3 cards radio) → update selected_variant_index
+- Approve/reject UI
 
 ### Day 11 / Week 2: Batch generation + Multi-source
 - Loop generate multiple content per workflow run (3 nguồn × 3 articles = 3 contents)
@@ -673,14 +778,36 @@ Fix Week 2:
 3. Add link "Tìm RSS feed của site phổ biến" với list VnExpress, TuoiTre, ThanhNien
 Day 9 workaround: anh update DB qua Supabase MCP. Production cần validate đúng để UX tốt.
 
+### Bài học Day 10 (10 RULES mới)
+
+**RULE D10-1: INNGEST SDK PRODUCTION MODE MẶC ĐỊNH → CẦN `INNGEST_DEV=1` CHO LOCALHOST.** Không có flag dev mode, SDK assume production → curl trả {"message":"Unauthorized"} (demand signing key verify từ Inngest Cloud). Add INNGEST_DEV=1 vào .env.local localhost, KHÔNG add Vercel env production.
+
+**RULE D10-2: POWERSHELL `Get-Content` PARSE `[...]` LÀ WILDCARD.** Path Next.js dynamic route `[id]` bị PowerShell hiểu là pattern matching. Fix: `Get-Content -LiteralPath 'path/[id]/file.ts'` (single quote).
+
+**RULE D10-3: TRƯỚC KHI BÁO ENCODING CORRUPT, CHẠY `chcp 65001` + `-Encoding UTF8`.** PowerShell Windows mặc định codepage 850/1252 không render UTF-8 ở terminal output dù file thật UTF-8. Chỉ alarm corrupt khi `Select-String` match pattern rác (case True).
+
+**RULE D10-4: INNGEST V4 DÙNG `triggers: [{event: '...'}]` (ARRAY).** v3 `createFunction(config, {event}, handler)` 3 args. v4 `createFunction({...config, triggers: [{event}]}, handler)` 2 args. Đọc `node_modules/<pkg>/types` qua Get-Content TRƯỚC khi viết với SDK lạ, KHÔNG đoán dù tự tin.
+
+**RULE D10-5: SUPABASE CLIENT KHÔNG CÓ SCHEMA TYPES → INSERT/UPDATE INFER `NEVER`.** `@supabase/supabase-js` v2 không generate types từ DB → table operations bị `never`. Workaround: `as never` cast payload + cast result. Pattern dài hạn: `supabase gen types typescript` để generate Database types.
+
+**RULE D10-6: VERIFY MỌI CỘT DB TRƯỚC KHI INSERT/UPDATE/SELECT - DÙNG SUPABASE MCP HOẶC ĐỌC SCHEMA.TS.** 3 bug Day 10 vì đoán cột: workflows.user_id, contents.created_at, contents.hashtags. Pattern PRE-WRITE: `SELECT column_name FROM information_schema.columns WHERE table_name = 'X'` hoặc đọc Drizzle schema. KHÔNG đoán dù đã làm với bảng đó.
+
+**RULE D10-7: SYNC INNGEST PRODUCTION CHỈ KHI VERCEL DEPLOYMENT READY.** Code mới push → Vercel build 30-60s → READY → mới sync Inngest. Sync sớm = Inngest gọi URL khi route chưa tồn tại → "Internal server error response from URL" (HTTP 500).
+
+**RULE D10-8: VERCEL ENV VARS CHỈ APPLY CHO DEPLOYMENTS MỚI SAU KHI SAVE.** Thêm env trước push code OK. Thêm sau push thì deployment hiện tại không có env, phải redeploy. Verify timeline "Added X ago" của env var vs `createdAt` deployment.
+
+**RULE D10-9: VERCEL PRODUCTION KHÔNG BUNDLE ES MODULES NHƯ LOCALHOST DEV. LAZY IMPORT MODULE CÓ ESM TRANSITIVE DEPS.** Localhost Turbopack dev bundle ESM/CJS mượt. Vercel production strict → top-level import jsdom crash ERR_REQUIRE_ESM với transitive dep html-encoding-sniffer → encoding-lite.js (ESM). Fix: dynamic `await import()` bên trong function. Trade-off: cold-start +50-100ms.
+
+**RULE D10-10: VERCEL HOBBY MAX_DURATION 60s ÁP DỤNG CHO MỖI INNGEST STEP RIÊNG.** Function 70s tổng OK nếu chia thành 4 step (mỗi step < 60s). Step Claude generate 60s, step save-content 1s. Inngest dashboard hiện duration tổng nhưng Vercel webhook tính từng step. Set `maxDuration: 60` trong vercel.json cho route `/api/inngest`.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- ⚠️ **Day 9 LOCALHOST-ONLY**: commits Day 9 (M1-M4) **CHƯA push origin main**. Day 10 sẽ push sau khi có background job pattern. KHÔNG attempt deploy với code Day 9 hiện tại vì Vercel Hobby timeout 10s.
-- Commit cuối local nên là `docs(handoff): close Day 9 - claude api content generation localhost-only`
-- Day 10 nếu anh tiếp tục: ưu tiên Inngest setup → refactor manual run endpoint → push deploy với background pattern
-- Content "Bác sĩ cảnh báo nồi chiên không dầu" đã saved DB cho brand Ladysfit, content_id f41f0a16-2cc7-4471-9c08-c1c322e7b84d, 3 variants verified quality
-- ANTHROPIC_API_KEY đã có trong .env.local local. **Day 10 trước deploy CẦN add vào Vercel env** cả 3 environments (Production + Preview + Development)
-- Workflow Ladysfit có news_sources = "https://vnexpress.net/rss/suc-khoe.rss", schedule 7h sáng (cron 0 7 * * *) - khi deploy + cron handler ready Day 10, tự động chạy mỗi ngày 7h
-- Production URL https://auto-content-factory.vercel.app vẫn LIVE từ Day 5-8 (Day 9 không deploy thêm)
+- **Day 10 DEPLOYED production**: 6 commits Day 10 + 5 commits Day 9 đã có trên local, sẽ push origin ở commit HANDOFF cuối. Production URL https://auto-content-factory.vercel.app LIVE với Inngest pipeline architect đúng.
+- **Production smoke test STATUS:** Trigger endpoint OK, Inngest function discovered, step fetch-workflow-and-brand PASS, **step fetch-news FAIL** với VnExpress (timeout/block). Day 11 priority 1.
+- Commit cuối local nên là `docs(handoff): close Day 10 - inngest deployed, fetch-news bug defer Day 11`
+- Day 11 nếu anh tiếp tục: ưu tiên debug fetch-news production trước → test RSS source khác hoặc User-Agent debug
+- Inngest Cloud production app `auto-content-factory` đã sync, SDK 4.4.0, function Workflow Runner trigger event `workflow/run.requested`
+- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) news_sources = `https://vnexpress.net/rss/suc-khoe.rss`, schedule 7h sáng - CHƯA có cron handler Day 11 sẽ làm
+- DB hiện có 2 contents (Day 9 04:52 + Day 10 M3 09:57), Day 10 M5 production fail nên không có content thứ 3
