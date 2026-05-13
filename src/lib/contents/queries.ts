@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Content, ContentWithWorkflow } from './types';
+import type { Content, ContentStatus, ContentWithWorkflow } from './types';
+
+export type ContentStatusCounts = Record<ContentStatus | 'all', number>;
 
 type ContentRow = {
   id: string;
@@ -34,10 +36,12 @@ function rowToContent(row: ContentRow): ContentWithWorkflow {
   };
 }
 
-export async function getCurrentUserContents(): Promise<ContentWithWorkflow[]> {
+export async function getCurrentUserContents(
+  statusFilter?: ContentStatus
+): Promise<ContentWithWorkflow[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('contents')
     .select(`
       id, workflow_id, brand_id, status, source_url, source_title, source_tier,
@@ -47,9 +51,62 @@ export async function getCurrentUserContents(): Promise<ContentWithWorkflow[]> {
     .order('generated_at', { ascending: false })
     .limit(50);
 
+  if (statusFilter) {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
+
   if (error || !data) return [];
 
   return (data as unknown as ContentRow[]).map(rowToContent);
+}
+
+export async function countContentsByStatusForCurrentUser(): Promise<ContentStatusCounts> {
+  const empty: ContentStatusCounts = { all: 0, generating: 0, draft: 0, approved: 0, rejected: 0 };
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return empty;
+
+  const { data, error } = await supabase
+    .from('contents')
+    .select('status, brands!inner(user_id)')
+    .eq('brands.user_id', user.id);
+
+  if (error || !data) return empty;
+
+  return (data as unknown as { status: ContentStatus }[]).reduce<ContentStatusCounts>(
+    (acc, row) => {
+      acc.all += 1;
+      acc[row.status] += 1;
+      return acc;
+    },
+    { ...empty }
+  );
+}
+
+export async function countDraftContentsForCurrentUser(): Promise<number> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from('contents')
+    .select('id, brands!inner(user_id)', { count: 'exact', head: true })
+    .eq('status', 'draft')
+    .eq('brands.user_id', user.id);
+
+  if (error || count === null) return 0;
+
+  return count;
 }
 
 export async function getContentById(id: string): Promise<ContentWithWorkflow | null> {

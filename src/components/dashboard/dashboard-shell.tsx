@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 
+import { countDraftContentsForCurrentUser } from "@/lib/contents/queries"
 import Sidebar from "./sidebar"
 import MobileDrawer from "./mobile-drawer"
 import UserMenu from "./user-menu"
@@ -8,13 +9,15 @@ interface DashboardShellProps {
   children: ReactNode
 }
 
-export default function DashboardShell({ children }: DashboardShellProps) {
+export default async function DashboardShell({ children }: DashboardShellProps) {
+  const draftCount = await countDraftContentsForCurrentUser()
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar draftCount={draftCount} />
 
       <header className="md:hidden h-16 flex items-center justify-between px-4 bg-white border-b border-gray-200 sticky top-0 z-20">
-        <MobileDrawer />
+        <MobileDrawer draftCount={draftCount} />
         <span className="text-base font-bold text-gray-900">Auto Content</span>
         <UserMenu />
       </header>

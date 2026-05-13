@@ -11,7 +11,11 @@ import {
 } from "@/components/ui/sheet"
 import SidebarNav from "./sidebar-nav"
 
-export default function MobileDrawer() {
+interface MobileDrawerProps {
+  draftCount?: number
+}
+
+export default function MobileDrawer({ draftCount = 0 }: MobileDrawerProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -32,7 +36,7 @@ export default function MobileDrawer() {
           </span>
         </div>
         <SheetTitle className="sr-only">Menu</SheetTitle>
-        <SidebarNav onItemClick={() => setOpen(false)} />
+        <SidebarNav onItemClick={() => setOpen(false)} draftCount={draftCount} />
       </SheetContent>
     </Sheet>
   )

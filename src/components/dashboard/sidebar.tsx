@@ -2,7 +2,11 @@ import { Sparkles } from "lucide-react"
 
 import SidebarNav from "./sidebar-nav"
 
-export default function Sidebar() {
+interface SidebarProps {
+  draftCount?: number
+}
+
+export default function Sidebar({ draftCount = 0 }: SidebarProps) {
   return (
     <aside className="hidden md:flex md:flex-col md:w-60 md:fixed md:inset-y-0 md:left-0 md:border-r md:border-gray-200 md:bg-white md:z-30">
       <div className="h-16 flex items-center px-4 border-b border-gray-200">
@@ -12,7 +16,7 @@ export default function Sidebar() {
         </span>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <SidebarNav />
+        <SidebarNav draftCount={draftCount} />
       </div>
     </aside>
   )
