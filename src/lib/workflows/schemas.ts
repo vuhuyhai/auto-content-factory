@@ -1,14 +1,16 @@
 import { z } from 'zod';
+import { SCHEDULE_PRESETS } from './constants';
 
 const CONTENT_TYPE_VALUES = ['news_based', 'evergreen', 'promotional'] as const;
 
-const SCHEDULE_CRON_VALUES = [
-  '0 7 * * *',
-  '0 20 * * *',
-  '0 7,20 * * *',
-  '0 9 * * 1',
-  '0 9 * * 1,3,5',
-] as const;
+/**
+ * Source of truth: SCHEDULE_PRESETS từ constants.ts.
+ * Schema tự reflect khi thêm/sửa preset (chỉ đụng 1 file).
+ */
+const SCHEDULE_CRON_VALUES = SCHEDULE_PRESETS.map((p) => p.value) as [
+  (typeof SCHEDULE_PRESETS)[number]['value'],
+  ...(typeof SCHEDULE_PRESETS)[number]['value'][],
+];
 
 export const workflowFormSchema = z
   .object({

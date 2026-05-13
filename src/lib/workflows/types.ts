@@ -14,12 +14,21 @@ export interface WorkflowFormData {
 
 export type ContentType = 'news_based' | 'evergreen' | 'promotional';
 
+/**
+ * Cron expressions LƯU UTC (industry standard).
+ * Display layer convert sang VN time qua getScheduleLabel().
+ * 
+ * VN = UTC + 7h, nên:
+ *   - 7h sáng VN = 0h UTC = '0 0 * * *'
+ *   - 8h tối VN  = 13h UTC = '0 13 * * *'
+ *   - 9h sáng VN = 2h UTC = '0 2 * * *'
+ */
 export type ScheduleCronValue =
-  | '0 7 * * *'
-  | '0 20 * * *'
-  | '0 7,20 * * *'
-  | '0 9 * * 1'
-  | '0 9 * * 1,3,5';
+  | '0 0 * * *'        // 7h sáng VN
+  | '0 13 * * *'       // 8h tối VN
+  | '0 0,13 * * *'     // 7h + 20h VN
+  | '0 2 * * 1'        // Thứ 2 9h sáng VN
+  | '0 2 * * 1,3,5';   // Thứ 2/4/6 9h sáng VN
 
 /**
  * Structure của workflow.config JSONB column.
@@ -39,7 +48,7 @@ export interface WorkflowWithConfig extends Workflow {
 export const DEFAULT_WORKFLOW_FORM_DATA: WorkflowFormData = {
   name: '',
   type: 'news_based',
-  scheduleCron: '0 7 * * *',
+  scheduleCron: '0 0 * * *',  // Default "Mỗi sáng 7h VN"
   newsSources: [],
   enabled: true,
 };
