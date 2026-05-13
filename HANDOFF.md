@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 10 - Inngest background job pipeline deployed to production ✅, smoke test fail at fetch-news step (VnExpress block Vercel IP), defer fix Day 11
+**Status:** Week 1 Day 11 - Production fetch-news bug FIXED + Cron auto-trigger PASS + Contents review UI live. End-to-end pipeline production READY.
 
 ## 2. Current State
 
@@ -15,407 +15,131 @@
 - ✅ Next.js 16.2.6 + TypeScript + Tailwind v4 + Turbopack
 - ✅ Supabase Pro plan connected (region ap-southeast-1)
 - ✅ Drizzle ORM + 6 table với RLS enabled 6/6
-- ✅ GitHub repo `vuhuyhai/auto-content-factory` với 19 commits (Day 6 close)
+- ✅ GitHub repo `vuhuyhai/auto-content-factory` với 31 commits (Day 11 close)
 - ✅ Supabase Auth (email/password + Google OAuth)
 - ✅ Middleware/Proxy bảo vệ /dashboard + force redirect /onboarding nếu chưa có brand
 - ✅ Login + Signup + Confirm-email pages
-- ✅ Dashboard placeholder (Day 7 sẽ build thật)
 - ✅ Schema profiles: 8 cột, trigger `handle_new_user` auto-create
 - ✅ RLS verified dual-client SQL + UI smoke test
-- ✅ shadcn/ui base 12 components (Button, Card, Badge, Separator, Input, Textarea, Label, Slider, Form, Checkbox, RadioGroup, Select - tất cả manual paste do Node v24)
+- ✅ shadcn/ui base 14 components (Button, Card, Badge, Separator, Input, Textarea, Label, Slider, Form, Checkbox, RadioGroup, Select, AlertDialog, Avatar, DropdownMenu, Sheet - tất cả manual paste do Node v24)
 - ✅ Landing page 7 sections (Bento Grid + BRIDGE Framework)
 - ✅ Production: ✅ LIVE - https://auto-content-factory.vercel.app
-- ✅ **Onboarding flow 8 câu hỏi hoàn chỉnh:**
-  - Multi-step form Typeform style với Framer Motion slide transitions
-  - localStorage auto-save (RULE D6-1 fix: pass nextStep explicit)
-  - Validation zod tiếng Việt 29 i18n messages
-  - 8 step components: Brand basics, Audience, Archetype 6 cards, Tone 3 sliders, Pain points, USP, Topics + auto-hashtag, Sample content
-  - BrandVoiceCard preview với inline edit buttons từng section
-  - Server Action saveBrandVoice với RLS-enforced insert
-  - Field-level error display (RULE D6-3) với label tiếng Việt + câu số
-  - First brand "Ladysfit" saved successfully (8/8 JSON keys verified)
-- ✅ `npm run build` PASS - 8 routes (Static `/`, Dynamic `/onboarding` `/dashboard`)
-- ✅ TypeScript zero error
-- ✅ Migrate middleware.ts → proxy.ts (Next.js 16 idiom, no deprecation warning)
-- ✅ Dashboard layout với sidebar collapsible (desktop) + mobile drawer (shadcn Sheet)
-- ✅ 4 dashboard components: dashboard-shell, sidebar, mobile-drawer, sidebar-nav
-- ✅ 3 sidebar nav items: Brand Voice (active /dashboard), Workflows, Settings
-- ✅ shadcn/ui Avatar + DropdownMenu components (manual paste, RULE D5-3)
-- ✅ User avatar dropdown với email + Logout button (Server + Client composition for Radix Portal)
-- ✅ signOut Server Action tại src/app/(auth)/logout/actions.ts
+- ✅ Onboarding flow 8 câu hỏi hoàn chỉnh
+- ✅ Dashboard layout với sidebar (4 nav items: Brand Voice + Workflows + Nội dung + Settings) + mobile drawer
+- ✅ User avatar dropdown với Logout
 - ✅ Brand Voice Card readonly display trên /dashboard
-- ✅ BrandVoiceCard component nhận optional prop readonly?: boolean (backward compat Day 6)
-- ✅ src/lib/brands/queries.ts với getCurrentUserBrand() (Supabase client, RLS-aware, 12-field type Brand snake_case match DB)
-- ✅ src/lib/brands/converters.ts với guideToFormData() convert BrandVoiceGuide → OnboardingFormData
-- ✅ Workflow CRUD layer hoàn chỉnh: types + constants + zod schemas + Supabase queries (4 file src/lib/workflows/)
-- ✅ Workflow list page `/dashboard/workflows` với empty state + workflow card (Server Component fetch RLS-aware)
-- ✅ Workflow create form `/dashboard/workflows/new` (react-hook-form 7.75 + zod 4.4, 5 field, conditional news_sources)
-- ✅ 3 Server Actions: createWorkflow + toggleWorkflowEnabled + deleteWorkflow (auth check + RLS insert/update/delete + revalidatePath)
-- ✅ Workflow card với toggle switch (optimistic update + revert on fail) + delete confirm dialog (shadcn AlertDialog)
-- ✅ shadcn/ui AlertDialog component (manual paste, RULE D5-3 Node v24, @radix-ui/react-alert-dialog 1.1.6)
-- ✅ Workflow lưu DB: name + news_sources lưu trong config JSONB (không migration), brand_id link RLS-aware
-- ✅ 5 schedule preset cron + 3 content type (news_based / evergreen / promotional)
-- ✅ Field-level error display (pattern RULE D6-3): banner đỏ list lỗi với label tiếng Việt
-- ✅ Workflow "Tin sáng Ladysfit" verified DB qua Supabase MCP (id b01973cb-7c76-49ec-adf7-6f980d3b7480)
-- **Last verified:** 13/05/2026 - Day 8 close - Smoke test Phase 1-3+6-7 PASS, build 4.2s success, RLS 4 policies workflows verified
+- ✅ Workflow CRUD: list + create + toggle + delete + "Chạy ngay"
+- ✅ Anthropic Claude Sonnet 4.6 integration với brand voice prompt
+- ✅ News Fetcher (RSS-only, KHÔNG dùng jsdom): RSS feed → description → Claude prompt (Day 11 M2)
+- ✅ Content Generator: 3 variants JSON với hook/title/body/hashtags
+- ✅ Inngest background job 4-step (fetch-workflow → fetch-news → generate-content → save-content)
+- ✅ Production Inngest pipeline LIVE: end-to-end run ~60-90s, content saved DB tự động (Day 11 M3 verified)
+- ✅ Cron-job.org auto-trigger /api/cron/run-workflows mỗi 5 phút (Day 11 M4)
+- ✅ Endpoint /api/cron/run-workflows với Authorization Bearer secret + cron-parser window match + 5-minute dedup
+- ✅ Contents review dashboard `/dashboard/contents` list + `/dashboard/contents/[id]` detail (Day 11 M5)
+- ✅ Variant selector UI với 3 tab + select variant + copy clipboard
+- ✅ `npm run build` PASS - 14 routes (Static `/`, Dynamic `/dashboard/contents` `/dashboard/contents/[id]` `/api/cron/run-workflows`)
+- ✅ TypeScript zero error
+- **Last verified:** 13/05/2026 - Day 11 close - 6 commits Day 11 pushed (commit cuối `6dcfa81`), production deployment LIVE
 
-### Day 9 additions (13/05/2026)
+### Day 11 additions (13/05/2026)
 
-- ✅ Anthropic SDK 0.95.2 + rss-parser 3.13.0 + @mozilla/readability 0.6.0 + jsdom 29.1.1 installed
-- ✅ Anthropic client singleton tại src/lib/claude/client.ts với model claude-sonnet-4-6 + DEFAULT_MAX_TOKENS 4000
-- ✅ News Fetcher Library (src/lib/news/): types.ts + fetcher.ts với Hybrid RSS + Readability strategy
-- ✅ Verified VnExpress suc-khoe.rss: 1.34s fetch, 3 articles, 0 errors, tiếng Việt clean
-- ✅ Content Generator Library (src/lib/content/): types.ts + prompts.ts + generator.ts
-- ✅ buildSystemPrompt inject brand voice (archetype, tone bucket low/mid/high, vocabulary yes/no words, principles, signature_move)
-- ✅ generateContent với Claude Sonnet 4.6: 3-stage error handling (api_call / json_parse / schema_validate)
-- ✅ Smart quote normalization (U+201C/D, U+2018/9 → ASCII) + markdown code block extraction
-- ✅ Zod schema validate response (3 variants, body 200-3000 chars, 2-8 hashtags)
-- ✅ Verified first-shot quality: 3 variants distinct (question/story/stat), voice tone Ladysfit match perfect
-- ✅ Migration add_variants_to_contents: variants JSONB + selected_variant_index INTEGER DEFAULT 0
-- ✅ src/lib/content/queries.ts: insertGeneratedContent + updateWorkflowLastRun (RLS-aware via Supabase client)
-- ✅ POST /api/workflows/[id]/run route handler với 8-step flow + maxDuration 60 + runtime nodejs
-- ✅ Server Action runWorkflow() trong actions.ts (internal HTTP fetch + cookie forwarding)
-- ✅ Workflow card UI: button "Chạy ngay" với Play icon + loading state Loader2 + toast inline (success xanh / error đỏ, auto-dismiss 5s)
-- ✅ End-to-end localhost test PASS: workflow "Tin sáng Ladysfit" → 59s → 3 variants → content_id f41f0a16-2cc7-4471-9c08-c1c322e7b84d
-- ✅ Brand voice quality verified: "mình", "bạn", "chị em xung quanh mình" tone match perfect everyman archetype
-- ✅ Smoke test 5 phases PASS (Pre-flight + TS + Build + DB + Security)
-- ⚠️ KHÔNG deploy production - Vercel Hobby timeout 10s blocks 59s Claude generate (Path 1: defer deploy Day 10 với background job)
+**M1: Logging detailed cho fetcher.ts (~30 phút)**
+- Thêm 11 log calls vào src/lib/news/fetcher.ts với prefix `[news-fetcher]` cho Vercel Runtime Logs capture
+- Refactor RSS parse: thay `parser.parseURL(feedUrl)` bằng raw `fetch()` + `parser.parseString()` để kiểm soát timeout, headers, log HTTP status, response size, duration
+- Log structure: start / rss-fetch-start / rss-fetch-response (status + content-type + size + duration) / rss-fetch-body / rss-parse-ok / rss-items-filter / article-fetch-start / article-fetch-ok hoặc article-fetch-error / done
+- Mục đích: Debug production fetch-news fail (Day 10 hypothesis VnExpress block Vercel IP)
+- Commit `1a64bf8` debug(week1-day11-m1)
 
-**Last verified:** 13/05/2026 - Day 9 close - Smoke test all PASS, content generated Ladysfit/VnExpress success, localhost-only
+**M2: Replace jsdom + readability với RSS description (~50 phút)**
+- ROOT CAUSE phát hiện: KHÔNG phải VnExpress block IP. Day 11 M1 logs cho biết RSS fetch PASS HTTP 200 với 60 items, 3 recent items, NHƯNG step Readability article extract FAIL với `ERR_REQUIRE_ESM` từ transitive dep `@exodus/bytes/encoding-lite.js` của `html-encoding-sniffer` (jsdom dep). Day 10 lazy `await import('jsdom')` CHƯA đủ - Vercel production strict CJS loader vẫn crash transitive ESM
+- Quyết định: Bỏ jsdom + Readability hoàn toàn (KHÔNG fix ESM bundling vì sẽ tốn cuộc chiến dài hạn)
+- Refactor src/lib/news/fetcher.ts: xoá hàm `fetchArticleContent` (44 LOC) + dynamic import jsdom/readability. Thêm helper `extractDescription(item)` đọc `contentSnippet → content → description` với HTML strip + entity decode + min 80 chars threshold
+- Verify RSS description đủ context: VnExpress description ~200 chars/item, đầy đủ Who/What/Where/When, Claude generate 3 variants chất lượng cao (verified Day 11 M3)
+- Trade-off accepted: Content ngắn hơn (~200 chars vs ~2000 chars Readability) đổi lấy production reliability + 5MB bundle savings
+- Commit `fb3bc56` fix(week1-day11-m2)
 
-### Day 10 additions (13/05/2026)
+**M3: Production smoke test end-to-end PASS (~25 phút)**
+- Deploy M2 fix → trigger workflow Ladysfit production qua "Chạy ngay" button
+- Inngest run COMPLETED 1m 2s: fetch-workflow 1.071s → fetch-news 947ms ✅ (vs Day 10 fail 41s × 3 retries) → generate-content 54.481s → save-content 2.740s
+- DB verified: content "Người Việt tăng huyết áp, tim mạch do thói quen ăn mặn" saved (id e5dc4bce-68e8-419c-adce-eeffaa283c26), 3 variants chất lượng cao, voice Ladysfit Everyman archetype match perfect ("mình", "bạn", "chị em mình", "nghe mà giật mình")
+- 4 voice signature verified: tone match + audience fit + topic link + pivot pattern
+- Day 10 bug ERR_REQUIRE_ESM FIXED hoàn toàn
 
-- ✅ Inngest SDK 4.4.0 + Inngest Cloud account (vuhai-acf org, auto-content-factory app)
-- ✅ Inngest client singleton tại src/inngest/client.ts với app id 'auto-content-factory'
-- ✅ Inngest API route serve tại src/app/api/inngest/route.ts (GET/POST/PUT)
-- ✅ Supabase admin client tại src/lib/supabase/admin.ts (singleton, service_role bypass RLS)
-- ✅ Inngest queries lib tại src/lib/inngest/queries.ts với 2 hàm fetchWorkflowByIdAdmin (JOIN brands user_id verify ownership) + fetchBrandByUserIdAdmin
-- ✅ Inngest function workflowRunner tại src/inngest/functions/workflow-runner.ts với 4 step (fetch-workflow-and-brand, fetch-news, generate-content, save-content), concurrency 5, retries 3, trigger event 'workflow/run.requested'
-- ✅ Refactor /api/workflows/[id]/run thành trigger endpoint (49 LOC, giảm từ 127 LOC) - chỉ auth + ownership + inngest.send(), response < 1s
-- ✅ Server Action runWorkflow update return type thành { success, job_id, message } (từ { content_id, source_article })
-- ✅ UI toast workflow-card.tsx update message thành "Đã enqueue. Content sẽ lưu vào DB sau 1-2 phút."
-- ✅ Vercel env vars: ANTHROPIC_API_KEY + INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY (3 environments: Production + Preview + Development)
-- ✅ Fix lazy import jsdom + @mozilla/readability trong src/lib/news/fetcher.ts (top-level eager import crash Vercel ERR_REQUIRE_ESM)
-- ✅ vercel.json config maxDuration 60s cho /api/inngest route (Hobby plan max)
-- ✅ Inngest Cloud production sync với https://auto-content-factory.vercel.app/api/inngest (SDK 4.4.0 success 17:21:14 13/5/2026)
-- ✅ Localhost end-to-end test M3 PASS: Inngest run completed trong ~70s, content_id 4d2829ce-ab65-4d81-b312-86a1db9de90d
-- ⚠️ Production smoke test FAIL ở step fetch-news (3 retries × ~41s mỗi attempt) - VnExpress trả error hoặc Vercel IP bị block. Defer debug Day 11.
-- ✅ Production deployment LIVE - Inngest pipeline architect đúng, chỉ còn 1 bug data fetching network-specific.
+**M3.5: Cleanup deps (~15 phút)**
+- npm uninstall jsdom @mozilla/readability @types/jsdom → removed 42 packages (jsdom + 41 transitive deps)
+- Build time 4.0s (Day 9: 5.0s, Day 8: 4.2s) - giảm 20% nhờ bỏ jsdom
+- Verify zero match `jsdom|readability` trong src/, package.json, build pass
+- Commit `ad0d6ae` chore(week1-day11-m3)
 
-**Last verified:** 13/05/2026 - Day 10 close - production deploy SUCCESS, smoke test fetch-news fail, defer Day 11
+**M4.1: Build /api/cron/run-workflows endpoint (~60 phút)**
+- Install cron-parser@5 cho cron expression match logic
+- Generate CRON_SECRET base64 24 bytes (~32 chars) bằng PowerShell RNGCryptoServiceProvider
+- Create 3 file:
+  - src/lib/cron/should-trigger.ts (23 LOC): `isCronInWindow(cronExpr, now)` dùng CronExpressionParser.prev() match cửa sổ 5 phút trở lại + `isOutsideDedupWindow(lastRunAt, now)` 5-minute dedup
+  - src/lib/cron/queries.ts (46 LOC): `fetchEnabledWorkflows()` admin client (bypass RLS) JOIN brands lấy user_id + `markWorkflowTriggered(workflowId)` update last_run_at sau khi inngest.send() OK
+  - src/app/api/cron/run-workflows/route.ts (81 LOC): POST endpoint với 8 log call, Authorization Bearer auth, batch inngest.send() cho workflows match cron + GET healthcheck (không auth)
+- 6 test localhost PASS:
+  - GET healthcheck → 200 OK JSON
+  - POST no auth → 401
+  - POST sai secret → 401
+  - POST đúng secret cron 0 7 * * * → 200 `triggered:0, skipped:1, reason:cron-not-in-window` ✅
+  - Update workflow cron `* * * * *` + last_run_at NULL → POST → 200 `triggered:1, triggered_ids:[ladysfit-id]` ✅
+  - POST lại ngay → 200 `triggered:0, skipped:1, reason:dedup-window-active` ✅
+- End-to-end Inngest run thật từ localhost trigger COMPLETED 2m39s, content "Tăng huyết áp" saved DB
+- Bug encounter: Localhost test 5 đầu fail "fetch failed" do INNGEST_DEV=1 → redirect event sang dev server localhost:8288 (chưa start). Fix tạm: comment INNGEST_DEV=1, restart dev, event đi lên Cloud production thay → PASS. Sau test restore INNGEST_DEV=1
+- Commit `4ae8495` feat(week1-day11-m4)
+
+**M4.2: cron-job.org setup + production verify (~30 phút)**
+- Add CRON_SECRET vào Vercel env (3 environments) + redeploy
+- Production smoke 3 test:
+  - GET healthcheck production → 200 ✅
+  - POST no auth → 401 ✅
+  - POST với secret đúng → 200 `triggered:0, skipped:1, reason:cron-not-in-window` ✅
+- Setup cron-job.org job "ACF Workflow Runner":
+  - URL https://auto-content-factory.vercel.app/api/cron/run-workflows
+  - Schedule `*/5 * * * *` (every 5 minutes)
+  - Method POST + Authorization header
+  - Timezone UTC + Timeout 30s
+- TEST RUN manual cron-job.org → Status 200 OK, Duration 2.35s, Response body verified `checked:1, triggered:0, skipped:1, cron-not-in-window`
+- Production cron pipeline LIVE: cron-job.org → Vercel endpoint → Inngest Cloud → Production function → Claude API → DB
+- Note: PowerShell `Invoke-WebRequest` ErrorDetails.Message KHÔNG capture body 401 → cần dùng GetResponseStream() để đọc raw body
+
+**M5.1+5.2: Contents review dashboard (~75 phút)**
+- Tạo 6 file:
+  - src/lib/contents/types.ts (22 LOC): Content + ContentWithWorkflow interfaces + normalizeHashtag helper
+  - src/lib/contents/queries.ts (61 LOC): getCurrentUserContents (JOIN workflows lấy config name) + getContentById (RLS-aware Supabase client) - Cursor extract rowToContent helper DRY pattern
+  - src/app/dashboard/contents/actions.ts (26 LOC): Server Action selectVariant(contentId, variantIndex) update DB + revalidatePath
+  - src/app/dashboard/contents/page.tsx (90 LOC): Server Component list page, empty state, card với title/badge/workflow/relative-time/variant-count, line-clamp-2, hover border đỏ
+  - src/app/dashboard/contents/[id]/page.tsx (84 LOC): Server Component detail page, back link, header + source URL link, render ContentVariantSelector
+  - src/components/contents/content-variant-selector.tsx (117 LOC): Client Component 3 tab Variant 1/2/3, title h2 + hook box border đỏ trái + body whitespace-pre-wrap + hashtags badges, button "Chọn variant này" (Server Action optimistic) + "Copy nội dung" (clipboard API)
+- Localhost test PASS: list page 5 contents hiển thị đẹp + detail page 3 tab variants + select variant + copy clipboard
+- Voice quality verified visual: variant 1 "Thói quen ăn mặn..." perfect Ladysfit voice với hook scroll-stopping + body 400 chars + 5 hashtags
+
+**M5.3: Sidebar nav update (~5 phút)**
+- Sửa src/components/dashboard/sidebar-nav.tsx: thêm 1 entry "Nội dung" với icon FileText giữa Workflows và Settings
+- Order: Brand Voice → Workflows → Nội dung → Settings
+- Logic `pathname.startsWith('/dashboard/contents')` cho detail page tự active đúng dòng "Nội dung"
+- Commit `6dcfa81` feat(week1-day11-m5)
+
+**Last verified:** 13/05/2026 - Day 11 close - 6 commits Day 11 pushed (1a64bf8, fb3bc56, ad0d6ae, 4ae8495, 6dcfa81 + sắp có commit HANDOFF), production deployment LIVE với end-to-end pipeline auto-trigger 7h UTC daily
 
 ## 3. Done So Far
 
-### Day 1 (12/05/2026)
-- Cài Cursor pack v2.0
-- Init Next.js 16.2.6 + TypeScript + Tailwind + Turbopack
-- Install 33 packages, setup `.env.local`
-- Schema 6 table + push migration lên Supabase production
-- Smoke test localhost OK
+### Day 1-10 (12-13/05/2026)
+Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Google OAuth), Day 4 RLS, Day 5 landing page BRIDGE, Day 6 onboarding 8-step, Day 7 dashboard sidebar + brand voice readonly, Day 8 workflow CRUD, Day 9 Claude API content generator localhost-only (Vercel Hobby timeout block deploy), Day 10 Inngest background job deploy production (architect PASS, fetch-news bug defer Day 11).
 
-**Commits Day 1:** `81a10bd`, `b6c2bc3`, `bae7638`
+**Commits Day 1-10:** 25 commits từ `81a10bd` Initial → `2cd1e4b` HANDOFF Day 10 close.
 
-### Day 2 (12/05/2026)
-- Supabase Auth helpers + middleware protect /dashboard
-- Login + Signup page với Server Action
-- Confirm-email + Dashboard placeholder
-- Smoke test E2E PASS 4/4
+### Day 11 (13/05/2026)
 
-**Commits Day 2:** `25c6e5f`, `a13830a`, `67d6226`, `08d23b3`, `98d1053`, `d50ba32`
-
-### Day 3 (12/05/2026)
-- Google OAuth setup (Console + Supabase provider + callback)
-- GoogleSignInButton component + Suspense fix
-- Fix Vietnamese encoding corrupt
-- Smoke test E2E Chrome PASS 6/6
-- Domain corrected to autocontent.online
-
-**Commits Day 3:** `ab31bb3`, `f970116`
-
-### Day 4 (12/05/2026)
-- Schema migration: thêm avatar_url + updated_at
-- Function handle_new_user SECURITY DEFINER + trigger on_auth_user_created
-- Enable RLS 6/6 bảng với 16 policies tổng
-- Dual-client SQL test pass + UI smoke test pass
-- Cleanup test-day2 user
-
-**Commits Day 4:** `0102af8`, `b4096cd`, `e2a3a13`, `398c329`, `8b2c3ff`
-
-### Day 5 (12/05/2026)
-- LANDING_CONTENT.md - BRIDGE Framework 8 phần đầy đủ (skill bridge-framework-vuhai)
-- shadcn/ui base init - MANUAL PASTE 4 components (CLI fail Node v24)
-- Build 7 landing sections theo BRIDGE flow
-- Polish 4 vấn đề: hero card height, pricing align, bonus spacing, total value baseline
-- Deploy production - https://auto-content-factory.vercel.app LIVE
-
-**Commits Day 5:** `cbe77ee`, `d585d67`, `1a2fdc3`, `56a6805`, `2dcd994`, `a52ff0c`, `0cd077f`, `f1a9198`, deploy commit
-
-### Day 6 (12/05/2026)
-
-**M1: Foundation**
-- Sync Drizzle schema: add BrandVoiceGuide TypeScript interface for brand_voice_guide JSONB
-- Install 4 npm deps: react-hook-form 7.75, @hookform/resolvers 5.2, zod 4.4, framer-motion 12.38
-- Install 5 Radix deps: react-slider, react-label, react-select, react-radio-group, react-checkbox
-- Add 5 shadcn components manual paste: input, textarea, label, slider, form
-- Create onboarding lib: types.ts, constants.ts (12 industries + 6 archetypes + topics per industry + pain point placeholders), archetype-mapping.ts (rule-based synthesizer)
-- Create route skeleton: src/app/onboarding/{layout,page}.tsx
-- Update middleware: force redirect to /onboarding if user signed in but no brand
-
-**M2: Form Engine**
-- Add zod schemas per step + full schema with TypeScript inference
-- Add 3 shadcn UI components manual paste: checkbox, radio-group, select
-- Build OnboardingShell with Framer Motion slide transitions
-- Add OnboardingProgressBar (animated 0-100%) + StepNavigation
-- Custom hook useOnboardingState: form + localStorage autosave + step navigation
-- Fix RULE D6-1 bug: pass nextStep explicit to saveDraft (avoid React state staleness)
-- 8 step components:
-  - Step 1: Brand basics (Input + Select 12 industries + conditional custom field)
-  - Step 2: Audience (Checkbox age max 2 + Radio gender + Textarea persona)
-  - Step 3: Archetype card selector (6 cards với active ring)
-  - Step 4: Tone sliders (3 sliders với live sample text)
-  - Step 5: Pain points (Textarea với industry-specific placeholder)
-  - Step 6: USP (Textarea với min 30 chars - RULE D6-4)
-  - Step 7: Topics multi-select + auto hashtag generator (Vietnamese slug)
-  - Step 8: Sample content (optional, +30% quality badge)
-
-**M4: Brand Voice Card Preview + Server Action Save**
-- Add Server Action saveBrandVoice với auth check + zod validation + RLS insert
-- Build BrandVoiceCard component (9KB) - 7 sections preview với inline edit buttons
-- Wire showPreview state in useOnboardingState (step 8 finish reveals card)
-- Add field-level error display (RULE D6-3) với label tiếng Việt + câu số
-- Migrate fullOnboardingSchema messages to Vietnamese (29 i18n strings)
-- Lower USP min length 50 to 30 chars (RULE D6-4: tighter for Vietnamese)
-- Handle confirmation flow: server save → resetDraft → router.push(/dashboard)
-- Verified: brand "Ladysfit" saved với full JSON brand_voice_guide đúng 8/8 keys
-
-**M5: Smoke Test + Deploy**
-- Smoke test 7 phases PASS (Pre-flight + TS + Build + Runtime + DB + Security)
-- Update HANDOFF.md
-- Deploy production
-
-**Commits Day 6 (3 commits + 1 sắp có):**
-- `616378c` feat(week1-day6-m1): foundation for onboarding flow
-- `5f8c648` feat(week1-day6-m2): build 8-step onboarding form engine
-- `c21251e` feat(week1-day6-m4): brand voice card preview + server action save
-- `<sắp có>` docs(handoff): close Day 6 - onboarding flow deployed
-
-### Day 7 (13/05/2026)
-
-**M1: Migrate middleware → proxy (Next.js 16)**
-- Rename src/middleware.ts → src/proxy.ts
-- Rename function `middleware` → `proxy` (Next.js 16 export contract)
-- Verified: dev server log `proxy.ts: XXXms`, curl 307 redirect /login, no deprecation warning
-- Time: ~30 min (vì em hoảng vụ Incognito cookie leak, không phải bug)
-
-**M2: Dashboard layout với sidebar + mobile drawer**
-- Install @radix-ui/react-dialog@1.1.6
-- Manual paste shadcn/ui Sheet component (RULE D5-3 Node v24)
-- Build 4 components: sidebar-nav.tsx (client), sidebar.tsx (server), mobile-drawer.tsx (client, Sheet wrapper), dashboard-shell.tsx (server root)
-- Wire DashboardShell vào src/app/dashboard/layout.tsx
-- Tested: desktop sidebar 240px fixed, mobile drawer slide animation + auto-close, active nav state
-
-**M3: Avatar dropdown + Logout**
-- Install @radix-ui/react-avatar@1.1.3 + @radix-ui/react-dropdown-menu@2.1.6
-- Manual paste shadcn/ui Avatar + DropdownMenu (manual paste, RULE D5-3)
-- Create signOut Server Action at src/app/(auth)/logout/actions.ts
-- Build Server + Client composition: user-menu.tsx (server fetch user) + user-menu-client.tsx (client UI + onSelect handler)
-- First implementation dùng <form action={signOut}> FAIL (hydration mismatch + form submission canceled - root cause: Radix Portal tách button khỏi form parent)
-- Fix bằng onSelect + void signOut() pattern (chuẩn shadcn docs)
-- Tested: click avatar → dropdown → Đăng xuất → redirect /login + clear cookie
-
-**M4: Brand Voice Card readonly display**
-- Create src/lib/brands/queries.ts với getCurrentUserBrand() - 4 sai schema schema → final dùng Supabase client (RLS-aware) + 12-field snake_case type Brand đúng chính xác DB
-- Create src/lib/brands/converters.ts với guideToFormData() (nested camelCase JSON → flat snake_case form shape)
-- Modify BrandVoiceCard: add optional `readonly?: boolean` prop (default false, backward compat Day 6 onboarding)
-- Conditional render: 7 Pencil edit buttons + Confirm/Reset action buttons ẩn khi readonly=true
-- Rewrite src/app/dashboard/page.tsx: remove Day 2 placeholder, fetch brand via Server Component, render BrandVoiceCard readonly
-- Empty state defensive (proxy đã handle redirect /onboarding nếu chưa có brand)
-- Tested: brand "Ladysfit" hiện đủ 7 sections readonly, KHÔNG có Pencil/Confirm buttons
-
-**M5: Smoke test + HANDOFF update + Deploy**
-- Smoke test Phase 1-3 PASS (Pre-flight git clean + tsc zero error + npm run build 4.8s success)
-- Build route table: `/dashboard` Dynamic (M4 đúng), `/_not-found` Static, `ƒ Proxy (Middleware)` đúng (M1 đúng), 9/9 static pages
-- Update HANDOFF.md (in progress)
-- Deploy: push origin main → Vercel auto-deploy
-
-**Commits Day 7 (5 commits + HANDOFF + deploy):**
-- `e42c382` chore(week1-day7-m1): migrate middleware.ts to proxy.ts (Next.js 16)
-- `b0e3bfd` feat(week1-day7-m2): build dashboard layout with sidebar + mobile drawer
-- `57031ef` feat(week1-day7-m3): add user avatar dropdown with logout
-- `06b110e` feat(week1-day7-m4): display brand voice card readonly on dashboard
-- `<sắp có>` docs(handoff): close Day 7 - dashboard + brand voice readonly deployed
-
-### Day 8 (13/05/2026)
-
-**M1: Workflows lib foundation**
-- Verify schema workflows trong DB qua Supabase MCP (8 cột, 5 NOT NULL, name lưu trong config JSONB không cần migration)
-- Create src/lib/workflows/types.ts: WorkflowFormData + ContentType + ScheduleCronValue + WorkflowConfig + WorkflowWithConfig + DEFAULT_WORKFLOW_FORM_DATA
-- Create src/lib/workflows/constants.ts: 3 CONTENT_TYPES + 5 SCHEDULE_PRESETS + helper getScheduleLabel/getContentTypeLabel
-- Create src/lib/workflows/schemas.ts: zod 4 syntax workflowFormSchema với superRefine (news_based requires news_sources) - fix RULE D8-1 zod 3 vs 4 API
-- Create src/lib/workflows/queries.ts: getCurrentUserWorkflows + getWorkflowById dùng Supabase client RLS-aware (pattern Day 7 RULE D7-6)
-
-**M2: List page + empty state**
-- Verify sidebar-nav.tsx đã link /dashboard/workflows từ Day 7 (không cần sửa)
-- Create src/components/workflows/workflow-empty-state.tsx (icon Workflow + button "Tạo workflow đầu tiên")
-- Create src/components/workflows/workflow-card.tsx readonly v1 (Server Component-compatible, icon theo type, badge enabled, format relative time tiếng Việt)
-- Create src/app/dashboard/workflows/page.tsx (Server Component fetch via getCurrentUserWorkflows, conditional render empty/list)
-- Smoke runtime: sidebar nav active state đúng, empty state hiện đẹp với button CTA hồng
-
-**M3: Create form + Server Action**
-- Create src/app/dashboard/workflows/actions.ts: Server Action createWorkflow với auth check + zod validate + fetch brand_id + insert + revalidatePath + redirect
-- Create src/app/dashboard/workflows/new/page.tsx Server Component check brand exists (redirect /onboarding nếu chưa có brand)
-- Create src/app/dashboard/workflows/new/workflow-form.tsx Client Component (react-hook-form 7.75 + zod resolver, fix RULE D8-2 useForm<Input, Context, Output> generic 3 slot cho zod 4 default)
-- 5 field: name (input), type (radio cards), scheduleCron (select preset), newsSources (URL list add/remove, conditional theo type), enabled (checkbox)
-- Field-level error display banner đỏ với label tiếng Việt (pattern Day 6 RULE D6-3)
-- Smoke runtime: validation client-side + server-side hoạt động, URL invalid bị reject, submit thành công redirect về list, workflow "Tin tức mớ về giảm cân" verified DB qua Supabase MCP
-
-**M4: Toggle enabled + Delete**
-- Install @radix-ui/react-alert-dialog 1.1.6
-- Manual paste shadcn/ui AlertDialog component vào src/components/ui/alert-dialog.tsx (RULE D5-3 Node v24, fix RULE D8-3 verify dep trước khi viết import, RULE D8-4 phân biệt Format C vs Format A)
-- Add 2 Server Action vào actions.ts: toggleWorkflowEnabled (update enabled) + deleteWorkflow (hard delete) - cả 2 auth check + RLS-aware
-- Rewrite workflow-card.tsx thành Client Component: useState cho optimistic update toggle, useTransition cho async action, custom Switch button + Trash2 icon
-- AlertDialog confirm xoá: title "Xoá workflow?" + description chứa tên workflow in đậm + button "Huỷ" outline / "Xoá" đỏ + loading state
-- Smoke runtime 4 case PASS: render UI mới, toggle optimistic working, dialog confirm clean, delete xoá khỏi DB
-- Workflow test "Tin tức mớ về giảm cân" delete thành công, workflow "Tin sáng Ladysfit" re-insert qua Supabase MCP (id b01973cb-7c76-49ec-adf7-6f980d3b7480)
-
-**M5: Smoke test 5 phases + HANDOFF update**
-- Phase 1 Pre-flight: working tree clean, ahead origin 4 commits, Node v24, npm v11.9.0 PASS
-- Phase 2 Static: npx tsc --noEmit zero error PASS
-- Phase 3 Build: npm run build 4.2s success, 10 routes + Proxy middleware, /dashboard/workflows và /new đều Dynamic ƒ PASS
-- Phase 6 DB: RLS enabled true, 4 policy CRUD workflows, workflow "Tin sáng Ladysfit" verified link đúng brand Ladysfit PASS
-- Phase 7 Security: .gitignore cover .env*.local, không leak Stripe/Supabase service token pattern PASS
-- Update HANDOFF.md với Day 8 closure
-
-**Commits Day 8 (4 commits + 1 sắp có):**
-- `798b312` feat(week1-day8-m1): create workflows lib (types, constants, schemas, queries)
-- `498f4e4` feat(week1-day8-m2): workflow list page with empty state + workflow card
-- `3a4c7b3` feat(week1-day8-m3): workflow create form + server action
-- `d094c77` feat(week1-day8-m4): workflow toggle enabled + delete with confirm dialog
-- `<sắp có>` docs(handoff): close Day 8 - workflow CRUD deployed
-
-### Day 9 (13/05/2026)
-
-**M1: Anthropic SDK + News Fetcher dependencies (~50 phút)**
-- Install @anthropic-ai/sdk@0.95.2 + rss-parser@3.13.0 + @mozilla/readability@0.6.0 + jsdom@29.1.1 + @types/jsdom (dev)
-- Add ANTHROPIC_API_KEY to .env.local (Vercel env sync Week 2)
-- Create src/lib/claude/client.ts: singleton Anthropic + CLAUDE_MODEL constant 'claude-sonnet-4-6' + DEFAULT_MAX_TOKENS 4000
-- Add scripts/ to .gitignore (test scripts not committed)
-- Debug RULE D9-1 (placeholder env var not replaced) + RULE D9-2 (ES Module hoisting prevents dotenv config order)
-- Final fix: `npx tsx --env-file=.env.local scripts/test-claude.ts` (Node 20.6+ flag pattern)
-- Smoke test API call verified: claude-sonnet-4-6 callable, key length 108, Vietnamese response clean
-
-**M2: News Fetcher Library (~25 phút)**
-- Create src/lib/news/types.ts: NewsArticle + FetchError + FetchNewsResult interfaces
-- Create src/lib/news/fetcher.ts: fetchNewsFromSources() với Hybrid RSS + Readability
-- Design choices: timeout 8s/source, max 3 articles/source, 24h lookback, partial success pattern, custom User-Agent
-- Whitespace cleanup on Readability extracted text
-- Verified VnExpress suc-khoe.rss: 1.34s, 3 articles, 0 errors, tiếng Việt clean
-
-**M3: Content Generator với Claude API (~45 phút)**
-- Create src/lib/content/types.ts: ContentVariant + SourceArticleRef + GeneratedContent + BrandVoiceGuide (5 interfaces)
-- Create src/lib/content/prompts.ts: buildSystemPrompt + buildUserPrompt
-  - System prompt inject brand voice: archetype description, tone bucket low/mid/high, vocabulary yes/no, principles, signature_move
-  - 3 hook patterns required (question/story/stat) for variant distinction
-  - JSON-only output, forbid double quotes + newlines trong string values
-- Create src/lib/content/generator.ts: generateContent() với Claude Sonnet 4.6
-  - 3-stage error handling: api_call / json_parse / schema_validate via custom ContentGenerationError class
-  - Smart quote normalization (U+201C/D, U+2018/9) + markdown code block extraction with brace matching fallback
-  - Zod validate: 3 variants, hook 10-300, body 200-3000, hashtags 2-8
-  - Full response log to stderr on parse fail (debug aid)
-- First-shot quality verified: 3 variants distinct (V1 question, V2 story chị bạn 34 tuổi, V3 5 facts với % data)
-- Voice tone match: "mình", "bạn", "chị em", thân mật, no luxury words
-- Audience fit: explicitly mentions "văn phòng 34 tuổi" matching Ladysfit persona
-- Topic link to fitness without forced selling (CTA mời comment, không hard sell)
-
-**M4: Manual Run Endpoint + UI Button + Schema Migration (~55 phút)**
-- Apply migration add_variants_to_contents qua Supabase MCP: ADD COLUMN variants JSONB + selected_variant_index INTEGER DEFAULT 0
-- Create src/lib/content/queries.ts: insertGeneratedContent + updateWorkflowLastRun (RLS-aware Supabase client)
-- Backward compat: copy variants[0].body to facebook_post column for existing UI patterns
-- Create src/app/api/workflows/[id]/run/route.ts: POST endpoint 8-step flow
-  - Auth check, workflow ownership via RLS, content_type filter, news_sources extract, brand fetch, news fetch (502 if all fail), Claude generate (500 if fail), DB save
-  - runtime = 'nodejs' (jsdom requires Node), maxDuration = 60 (Vercel Pro 60s, Hobby 10s)
-- Add Server Action runWorkflow() in actions.ts (internal HTTP fetch with cookie forwarding)
-- Update src/components/workflows/workflow-card.tsx: button "Chạy ngay" với Play icon, Loader2 loading, toast inline auto-dismiss 5s
-- useTransition isRunning state separate from isPending toggle/delete
-- Bug fix: route.ts em assumed workflow.content_type field nhưng thực tế là workflow.type (camelCase WorkflowWithConfig) → fix
-- Bug discovered: workflow "Tin sáng Ladysfit" config.news_sources = "https://www.healthandfitness.org/" (HTML homepage, không phải RSS) → update via Supabase MCP sang "https://vnexpress.net/rss/suc-khoe.rss"
-- End-to-end localhost test PASS: 59s duration (3851 in + 2680 out tokens, ~$0.055/run), content_id f41f0a16-2cc7-4471-9c08-c1c322e7b84d
-- last_run_at workflow updated 2026-05-13 04:51:49 UTC
-
-**M5: Smoke Test + HANDOFF + Path 1 Strategy (~30 phút)**
-- Phase 1 Pre-flight: working tree clean ahead origin 4 commits PASS
-- Phase 2 Static: npx tsc --noEmit zero error PASS
-- Phase 3 Build: npm run build 5.0s success, 11 routes + /api/workflows/[id]/run Dynamic ƒ PASS
-- Phase 6 DB via Supabase MCP: migration columns verified, content count 1 last 24h, RLS enabled 3/3 tables PASS
-- Phase 7 Security: no .env tracked, no hardcoded ANTHROPIC_API_KEY in src/, scripts/ ignored PASS
-- Path 1 selected: localhost-only Day 9, defer production deploy Day 10 after background job pattern
-- Update HANDOFF.md closing Day 9
-
-**Commits Day 9 (5 commits + 1 sắp có):**
-- `1444146` chore(week1-day9-m1): install anthropic sdk + rss parser dependencies
-- `dc3fee7` feat(week1-day9-m2): hybrid rss + readability news fetcher
-- `a3e7680` feat(week1-day9-m3): claude api content generator with brand voice prompts
-- `4ed2437` feat(week1-day9-m4): manual run endpoint + chay ngay button + content save
-- `<sắp có>` docs(handoff): close Day 9 - claude api content generation localhost-only
-
-### Day 10 (13/05/2026)
-
-**M1: Inngest SDK + API endpoint setup (~45 phút)**
-- Signup Inngest account, lấy INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY (Production env)
-- Install Inngest SDK v4.4.0 (188 packages)
-- Create src/inngest/client.ts với Inngest({id: 'auto-content-factory', eventKey})
-- Create src/app/api/inngest/route.ts với serve() export GET/POST/PUT
-- Add 3 env vars vào .env.local: INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY + INNGEST_DEV=1
-- Debug: curl endpoint trả "Unauthorized" → Inngest SDK production mode mặc định, cần INNGEST_DEV=1 cho localhost bypass signature verify (RULE D10-1)
-- Verify localhost: function_count 0, mode dev, 2 key loaded
-
-**M2: Refactor /api/workflows/[id]/run thành trigger endpoint nhanh (~25 phút)**
-- Endpoint cũ 127 LOC chứa 8 step logic Day 9 (Claude generate 59s) → refactor thành 49 LOC trigger only
-- Giữ Step 1 (auth) + Step 2 (workflow ownership) ở Vercel request (có user session)
-- Move Step 3-8 sang Inngest function (M3 sẽ tạo)
-- Pass userId + workflowId qua event data
-- Verify: trigger < 1s, event xuất hiện ở Inngest dashboard, "Functions triggered: No functions triggered" (đúng vì M3 chưa tạo function)
-- False alarm: nghi encoding corrupt khi PowerShell display Vietnamese rác - fix bằng `chcp 65001 + -Encoding UTF8`, file thật OK (RULE D10-3)
-
-**M3: Tạo Inngest function workflowRunner với 4 step (~75 phút)**
-- Tạo 3 file mới: src/lib/supabase/admin.ts (singleton admin client) + src/lib/inngest/queries.ts (2 fetch hàm) + src/inngest/functions/workflow-runner.ts (function chính)
-- Update src/app/api/inngest/route.ts register workflowRunner
-- 4 step: fetch-workflow-and-brand → fetch-news → generate-content (chậm nhất 60s) → save-content
-- Config: concurrency 5, retries 3
-- Debug 3 bug đoán schema/syntax:
-  - Bug 1 (TS2554 Expected 2 arguments): Inngest v4 đổi API gộp config + trigger thành 1 object - em đoán sai 2 lần → RULE D10-4 đọc TypeScript signature thật node_modules/inngest trước khi viết
-  - Bug 2 (TS2353 never type insert): Supabase admin client không có schema types → fix bằng `as never` type assertion (RULE D10-5)
-  - Bug 3 runtime "column workflows.user_id does not exist": workflows table KHÔNG có user_id, chỉ có brand_id → fix bằng INNER JOIN brands user_id (RULE D10-6)
-  - Bug 4 runtime "Could not find the 'hashtags' column": contents table KHÔNG có hashtags column, hashtags chứa trong variants JSONB → xoá field hashtags khỏi insert payload (RULE D10-6)
-- Localhost end-to-end test PASS: Inngest run 70s, content_id 4d2829ce, variants_count 3, last_run_at workflow update
-
-**M4: UI update workflow card cho async pattern (~20 phút)**
-- Update Server Action runWorkflow return type: { content_id, source_title } → { job_id, message }
-- Update UI workflow-card.tsx toast message: "Đã tạo content thành công!" → "Đã enqueue. Content sẽ lưu vào DB sau 1-2 phút."
-- Verify tsc + grep keyword "enqueue" True + "Đã tạo content thành công" False
-
-**M5: Deploy production + Inngest Cloud sync (~75 phút)**
-- Add 3 env vars vào Vercel (ANTHROPIC_API_KEY + INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY) cho 3 environments
-- Tạo vercel.json với maxDuration 60s cho /api/inngest
-- Build local pass + push origin main
-- Deployment build ~67s success, 12 routes có /api/inngest + /api/workflows/[id]/run
-- First curl production: HTML 500 with "Failed to load external module jsdom: ERR_REQUIRE_ESM"
-- Fix: lazy dynamic import jsdom + readability bên trong fetchArticleContent function (xoá top-level import) → RULE D10-9 Vercel production strict ESM bundling
-- Push fix → redeploy → curl production trả {"message":"Unauthorized"} (Inngest production mode, expected, không phải bug)
-- Sync Inngest Cloud manually với URL https://auto-content-factory.vercel.app/api/inngest → SUCCESS 17:21:14 13/5/2026, SDK 4.4.0, 1 function (Workflow Runner)
-- Smoke test production: trigger endpoint < 1s OK, Inngest run start, step fetch-workflow-and-brand 564ms ✅
-- ❌ Step fetch-news FAIL: 3 retries × ~41s, error "No articles fetched" với VnExpress URL. Localhost cùng code pass 1.2s.
-- Diagnose: có thể VnExpress block Vercel IP range (Singapore region) hoặc anti-bot. Bug data-specific, không phải code logic.
-- Decision: Defer fix Day 11. Production architecture đã verify đúng (Inngest sync OK, endpoint không 500, lazy import fix work, trigger nhanh).
-
-**Commits Day 10 (6 commits + 1 sắp có):**
-- `5b15c65` chore(week1-day10-m1): install inngest sdk + setup api endpoint
-- `0a34f80` refactor(week1-day10-m2): convert run endpoint to inngest trigger
-- `f510bf2` feat(week1-day10-m3): inngest workflow-runner with 4-step background job
-- `134fbdf` feat(week1-day10-m4): update ui toast for async enqueue pattern
-- `87b4b26` fix(week1-day10-m5): lazy import jsdom + readability for vercel production
-- `d86199f` chore(week1-day10-m5): add vercel.json with maxDuration 60 for inngest route
-- `<sắp có>` docs(handoff): close Day 10 - inngest deployed, fetch-news bug defer Day 11
+**6 commits Day 11 + 1 sắp có:**
+- `1a64bf8` debug(week1-day11-m1): add detailed logging + raw fetch RSS parse
+- `fb3bc56` fix(week1-day11-m2): replace jsdom+readability with RSS description
+- `ad0d6ae` chore(week1-day11-m3): uninstall jsdom + readability + types (42 packages)
+- `4ae8495` feat(week1-day11-m4): cron endpoint with auth + dedup + inngest trigger
+- `6dcfa81` feat(week1-day11-m5): contents review dashboard with variant selector
+- `<sắp có>` docs(handoff): close Day 11 - production pipeline live with auto-trigger
 
 ## 4. Architecture Decisions
 
@@ -426,129 +150,116 @@
 | RLS 6/6 bảng với subquery pattern | MVP < 1000 user không cần optimize |
 | Tailwind v4 + @theme inline | Next.js 16 default, syntax mới khác v3 |
 | shadcn/ui MANUAL PASTE (không qua CLI) | shadcn CLI v4.7.0 fail với Node v24 (@babel/parser bug) |
-| 12 shadcn components base only | KISS, không thêm component chưa dùng |
+| 14 shadcn components base only | KISS, không thêm component chưa dùng |
 | Server Components cho TẤT CẢ landing sections | Static prerender → SEO + speed |
 | Content first (BRIDGE) trước design | Không thiết kế xong rồi nhồi chữ |
-| **Multi-step form Typeform style cho onboarding** | Conversion rate +15-25% vs single page (Day 6) |
-| **localStorage primary + 1 final DB save** | 0 network call giữa steps → UX mượt mobile (Day 6) |
-| **Rule-based archetype mapping (không Claude API ở Day 6)** | Speed > polish MVP, Claude API defer Week 2 |
-| **6 archetype thay vì 12 Jung gốc** | Rút gọn cho SMB Việt Nam, avoid paralysis (Day 6) |
-| **1 brand per user trong MVP** | Đơn giản hoá validation + UX, multi-brand defer Week 4 |
-| **Force redirect onboarding nếu chưa có brand** | Core flow của ACF, không có voice = không generate content |
-| **Vietnamese typography: whiteSpace nowrap cho từ ghép** | Tránh cắt "đều đặn", "giọng brand", "tự viết" |
-| **Server + Client composition cho Radix Portal + Server Action** | Day 7 M3 phát hiện: <form action> trong DropdownMenu Portal gây hydration mismatch + form canceled. Pattern fix: Server Component fetch data → Client Component nhận props + onSelect handler |
-| **Supabase client cho DB queries thay vì Drizzle** | Day 7 M4 thử Drizzle nhưng fail "password authentication failed for user ASUS" (DATABASE_URL chưa setup) + Drizzle bypass RLS. Rollback Supabase client (Day 2-6 pattern) - RLS-aware, không cần env config thêm |
-| **Type Brand inline snake_case (manual sync DB schema) thay vì Drizzle $inferSelect** | Drizzle dùng camelCase nhưng Supabase client trả snake_case → conflict. Inline type snake_case match exact 12 fields DB |
-| **BrandVoiceCard readonly prop optional thay vì refactor base/wrapper components** | Day 6 component đã verified pass, em chọn add prop để minimize risk regression. Week 2 refactor cùng Claude API integration |
-| **Workflow name lưu trong config JSONB thay vì migration thêm column** | Day 8 M1: tránh migration giữa milestone, JSONB đã nullable sẵn, đủ flexibility cho future fields (news_sources, content_tone_override). Trade-off: query lọc theo name phải dùng `config->>'name'` thay vì column index. Đủ MVP < 1000 user. |
-| **5 schedule cron preset thay vì cron string raw input** | Day 8 M1: SMB Việt Nam 30-50 tuổi không biết cron syntax. Preset 5 option (sáng 7h, tối 8h, 2 lần/ngày, thứ Hai 9h, T246 9h) đủ 80% use case. Cron raw defer Phase 2 nếu user request. |
-| **Optimistic UI update cho toggle thay vì block UI đợi server response** | Day 8 M4: UX mượt mobile, perceived latency 0. Trade-off: phải revert state nếu server fail (đã handle). Pattern phù hợp với action không critical (toggle on/off khác hẳn delete). |
-| **Hybrid RSS + Readability cho news fetching (Day 9)** | Miễn phí, lấy được full content (RSS chỉ có summary 200-300 chars). 1.34s fetch verified VnExpress. Pattern: rss-parser parse XML → @mozilla/readability extract main content từ HTML link. Compatible Vercel serverless (không cần playwright nặng). Day 10 generalize cho mọi báo Việt Nam. |
-| **3 hook patterns trong system prompt (question/story/stat) (Day 9)** | Variants tự nhiên distinct, tránh Claude generate 3 hook tương tự nhau. Pattern từ skill `vuhai-content`. First-shot quality verified: 3 hooks không bị duplicate. |
-| **Tone bucket low/mid/high cho Claude prompt (Day 9)** | Map 0-10 scale thành 3 bucket dễ hiểu cho LLM. Claude understand "Lịch sự rõ ràng, dùng anh/chị" tốt hơn "formality 8/10". Áp dụng cho cả 3 dimension formality/humor/emotion. |
-| **Schema variants JSONB column thay vì TEXT serialize (Day 9)** | Schema Day 1 hardcode facebook_post TEXT lệch spec Day 9 (3 variants). Migration ADD COLUMN nullable JSONB (low-risk, 0 row existing). Pattern matches image_prompts JSONB đã có. Future: user select variant updates selected_variant_index thay vì rewrite data. |
-| **Localhost-only Day 9 deploy (Path 1) (Day 9)** | Vercel Hobby timeout 10s không support 59s Claude generate. 3 alternatives: (A) Upgrade Pro $20/mo, (B) Background job Inngest, (C) Streaming response. Chosen Path 1: defer deploy Day 10 với background job pattern - robust nhất, scale tốt, không tốn tiền sớm. |
-| **Inngest background job pattern (Day 10)** | Vercel Hobby timeout 10s không support 60s Claude generate. Inngest free tier 50k step/tháng đủ MVP, có dashboard + retry built-in, không cần port code Deno (như Supabase Edge Functions) |
-| **4 step.run trong Inngest function thay vì 1 step monolith (Day 10)** | Cached kết quả mỗi step thành công → retry chỉ step fail (không gọi lại Claude API tốn $) + debug dashboard log từng step. Trade-off: 4 webhook call từ Inngest Cloud về Vercel (mỗi step) thay vì 1 |
-| **Admin client (service_role) trong Inngest function (Day 10)** | Inngest function chạy ở environment riêng, KHÔNG có user session cookie → RLS-aware client fail. Pattern: filter manual bằng userId từ event payload, JOIN brands cho ownership verify |
-| **Lazy dynamic import jsdom + readability (Day 10)** | Vercel production bundle nghiêm ngặt hơn localhost (Turbopack dev). Top-level import jsdom crash ERR_REQUIRE_ESM với transitive dep encoding-lite.js (ESM). Dynamic `await import()` bên trong function tránh bundle ESM khi register function |
-| **maxDuration 60s cho /api/inngest route (Day 10)** | Inngest function chia 4 step, mỗi step = 1 webhook call. Step Claude generate 60s, save-content 1s. Vercel Hobby max 60s/function-call. KHÔNG sai khi tổng function 70s vì chia step. |
+| Multi-step form Typeform style cho onboarding | Conversion rate +15-25% vs single page (Day 6) |
+| localStorage primary + 1 final DB save | 0 network call giữa steps → UX mượt mobile (Day 6) |
+| Rule-based archetype mapping (không Claude API ở Day 6) | Speed > polish MVP, Claude API defer Week 2 |
+| 6 archetype thay vì 12 Jung gốc | Rút gọn cho SMB Việt Nam, avoid paralysis (Day 6) |
+| 1 brand per user trong MVP | Đơn giản hoá validation + UX, multi-brand defer Week 4 |
+| Force redirect onboarding nếu chưa có brand | Core flow của ACF, không có voice = không generate content |
+| Server + Client composition cho Radix Portal + Server Action | Day 7 M3 phát hiện: <form action> trong DropdownMenu Portal gây hydration mismatch + form canceled |
+| Supabase client cho DB queries thay vì Drizzle | Day 7 M4 fail "password authentication" (DATABASE_URL chưa setup) + Drizzle bypass RLS. Rollback Supabase client (Day 2-6 pattern) - RLS-aware |
+| Type Brand/Content inline snake_case (manual sync DB schema) | Drizzle dùng camelCase nhưng Supabase client trả snake_case → conflict. Inline type snake_case match exact DB |
+| Workflow name lưu trong config JSONB thay vì migration thêm column | Day 8 M1: tránh migration giữa milestone, JSONB đã nullable sẵn, đủ flexibility cho future fields |
+| 5 schedule cron preset thay vì cron string raw input | Day 8 M1: SMB Việt Nam 30-50 tuổi không biết cron syntax. Preset 5 option đủ 80% use case |
+| Optimistic UI update cho toggle thay vì block UI đợi server response | Day 8 M4: UX mượt mobile, perceived latency 0 |
+| **Hybrid RSS + Readability cho news fetching (Day 9) → DEPRECATED Day 11** | Day 9 hợp lý localhost, Day 10-11 fail production ERR_REQUIRE_ESM. Day 11 M2 thay bằng RSS description-only |
+| 3 hook patterns trong system prompt (question/story/stat) | Variants tự nhiên distinct (Day 9) |
+| Tone bucket low/mid/high cho Claude prompt | Map 0-10 scale thành bucket dễ hiểu cho LLM (Day 9) |
+| Schema variants JSONB column thay vì TEXT serialize | Day 9: 3 variants per content, future user select variant updates selected_variant_index |
+| Inngest background job pattern (Day 10) | Vercel Hobby timeout 10s không support 60s Claude generate. Free tier 50k step/tháng đủ MVP |
+| 4 step.run trong Inngest function thay vì 1 step monolith | Cached kết quả mỗi step thành công → retry chỉ step fail (không gọi lại Claude tốn $) + debug dashboard log từng step |
+| Admin client (service_role) trong Inngest function | Inngest function chạy environment riêng, KHÔNG có user session cookie → RLS fail. Pattern: filter manual bằng userId từ event payload, JOIN brands cho ownership verify |
+| Lazy dynamic import jsdom + readability (Day 10) → REMOVED Day 11 | Day 10 fix temporary ERR_REQUIRE_ESM, Day 11 bỏ jsdom hoàn toàn vì transitive ESM dep vẫn crash |
+| maxDuration 60s cho /api/inngest route (Day 10) | Inngest function chia 4 step, mỗi step = 1 webhook call. Vercel Hobby max 60s/function-call |
+| **RSS description-only thay vì Readability full article (Day 11 M2)** | VnExpress RSS description 200 chars đủ context cho Claude (Who/What/Where/When). Bỏ jsdom 5MB + 41 transitive deps. Trade-off content ngắn hơn nhưng Claude generate quality vẫn cao (M3 verified). Tránh cuộc chiến ESM/CJS dài hạn với Vercel bundler |
+| **External cron service (cron-job.org) thay vì Vercel Cron (Day 11 M4)** | Vercel Hobby plan: cron jobs chỉ chạy 1 lần/ngày (limitation chính thức từ docs 27/02/2026). ACF cần granular schedule (7h sáng, 8h tối, 2 lần/ngày) → Vercel Cron không đủ. Pro upgrade $20/tháng tốn khi chưa có doanh thu. cron-job.org free forever, mỗi 5 phút trigger, có dashboard + history. Endpoint /api/cron/run-workflows tự match cron expression với current UTC time |
+| **5-minute window match + 5-minute dedup (Day 11 M4)** | cron-job.org trigger endpoint mỗi 5 phút, endpoint dùng CronExpressionParser.prev() match cửa sổ [now - 5min, now]. Dedup 5-minute via last_run_at update sau inngest.send() success tránh trigger 2 lần nếu cron-job.org spike. Trade-off: workflow cron `0 7 * * *` có thể trigger trong khoảng 7:00-7:05 UTC, không phải exact 7:00:00 |
+| **Tabs UI cho variant selector thay vì 3 card xếp dọc (Day 11 M5)** | 3 variants có hook/title/body/hashtags structure giống nhau, xem song song không cần thiết. Tabs giúp focus + screen real estate efficient mobile. Pattern Modern Indie SaaS Day 8 |
+| **Optimistic UI cho select variant + revert on fail (Day 11 M5)** | UX mượt, perceived latency 0. Pattern Day 8 workflow toggle - đã verified production |
 
 ## 5. Known Issues
 
-### Issues Day 5 (vẫn outstanding)
-- Git history thừa 1 commit hero (1a2fdc3 + 56a6805 cùng message) - không critical
+### Issues Day 5-10 (vẫn outstanding)
+- Git history thừa 1 commit hero Day 5 - không critical
 - shadcn CLI fail Node v24 - manual paste workaround vẫn dùng
 - Lucide-react brand icons removed - inline SVG Facebook trong footer
-- Next.js 16 warning middleware → proxy (Day 7 sẽ migrate)
-- Supabase maintenance scheduled 13-14/05/2026 - có thể ảnh hưởng deploy
+- Supabase maintenance scheduled 13-14/05/2026
 - PayOS chưa setup (Week 4)
 - Resend chưa verify domain (Week 3)
 - Cloudflare R2 bucket acf-assets chưa tạo (Week 2-3)
-- contents.brand_id denormalized có nguy cơ drift - cần CHECK constraint (Day 7+)
+- contents.brand_id denormalized có nguy cơ drift - cần CHECK constraint
 - CTA "Xem cách hoạt động" trong Hero link tới /#how-it-works - chưa có section đó
+- getBrandPrefix logic sai "Ladysfit" → `LT_` thay vì `LF_`. Fix Week 2.
+- saveError banner persistent trong onboarding sau khi user edit thành công
+- `npm run lint` script missing trong package.json
+- Claude API chưa integrate cho synthesize brand voice trong onboarding (Day 6 dùng rule-based)
+- Signup error message quá generic
+- Sub-header BrandVoiceCard "Xem lại và confirm" không hợp dashboard readonly
+- Drizzle client chưa setup DATABASE_URL env
+- Workflow card không có button "Sửa workflow" (edit name/sources/schedule)
+- Vercel Cron handler workflow timezone bug (workflow `0 7 * * *` UTC = 14h VN time, không phải 7h sáng VN)
+- Workflow type 'evergreen' và 'promotional' chưa có content config Day 9 logic
+- Delete workflow cascade contents chưa test với data thật
+- 220 LOC actions.ts workflow vượt 200 LOC limit
+- Workflow create form chưa validate URL là RSS feed (RULE D9-5)
+- signature_move column truncated giữa câu Day 6 (maxLength HTML attribute)
+- No batch generation Day 9 (chỉ fetch + generate FIRST article per run)
+- Deprecation warning DEP0169 url.parse() từ transitive dep
 
-### Issues Day 6 (mới phát sinh)
-- **getBrandPrefix logic sai cho single-word brand:** "Ladysfit" → `LT_` thay vì `LF_` (lấy first+last letter). Fix Week 2.
-- **saveError banner persistent:** Sau khi user edit + click "Xác nhận" lần 2, banner đỏ cũ vẫn hiển thị mặc dù validation đã pass. UX issue. Fix Week 2.
-- **`npm run lint` script missing trong package.json:** TypeScript đã clean, build chứa lint ngầm. Add script Week 2.
-- **Claude API chưa integrate cho synthesize brand voice:** Day 6 dùng rule-based mapping (theo plan). Week 2 sẽ thay bằng Claude API để JSON quality cao hơn.
+### Issues Day 11 (mới phát sinh)
 
-### Issues Day 7 (mới phát sinh)
-- **Signup error message quá generic ("Khong the tao tai khoan. Vui long thu lai.")** - Day 2 swallow Supabase API error trong try/catch. User không biết lý do (email exists / password short / etc). Cần fix Week 2: bubble error chi tiết
-- **Onboarding flow Day 6 không test live sau M4 modification** - Backward compat verified qua tsc + build PASS, BrandVoiceCard add OPTIONAL prop. Defer test full signup flow Week 2 (sau khi fix signup error message)
-- **Sub-header "Xem lại và confirm. Bạn có thể edit từng phần nếu cần." trong BrandVoiceCard không hợp ngữ cảnh dashboard readonly** - Day 6 copy không update khi readonly. Defer Week 2 refactor cùng Claude API
-- **Drizzle client chưa setup DATABASE_URL env** - Khi cần Drizzle ORM cho features khác (vd workflow query) cần config DATABASE_URL trong .env.local + Vercel env
-
-### Issues Day 8 (mới phát sinh)
-- **Workflow card không có button "Sửa workflow":** Day 8 chỉ có toggle + delete, chưa có edit (đổi tên / đổi nguồn / đổi schedule). Defer Day 10 hoặc Week 2 cùng "Edit Brand Voice".
-- **`getCurrentUserBrand` query không match Type Brand 12 fields chuẩn:** Khi truy cập `brand.brand_voice_guide?.brand_basics?.name` trong new/page.tsx em assume field tồn tại. Hoạt động vì Day 7 query select đầy đủ. Nếu Day 9+ refactor query để optimize, có thể break. Cần thêm select() explicit hoặc dùng zod parse runtime.
-- **Vercel Cron handler chưa wire-up:** Workflow tạo ra với schedule cron, nhưng chưa có endpoint cron consume. Day 9 sẽ implement /api/cron/run-workflows. Hiện workflow chỉ là metadata, không có execution.
-- **Workflow type 'evergreen' và 'promotional' chưa có content config:** Day 8 chỉ news_based có news_sources. 2 type còn lại có thể cần fields khác (topic_focus, product_link...). Defer khi build Claude API content generation Day 9-10.
-- **Delete workflow không cascade contents:** Schema có FK `contents.workflow_id ON DELETE CASCADE` nhưng chưa test với data thật vì contents chưa có row. Verify Day 9 sau khi cron sinh content.
-
-### Issues Day 9 (mới phát sinh)
-
-- **Vercel Hobby timeout 10s blocks production "Chạy ngay":** Claude Sonnet 4.6 generate 3 variants ~30-60s. Hobby plan timeout 10s, Pro plan 60s. Day 9 localhost-only, defer fix Day 10 với background job pattern (Inngest hoặc Vercel Queue).
-- **Workflow create form lacks RSS URL validation (RULE D9-5):** Day 8 zod chỉ check .url() pass, KHÔNG check RSS feed format. User tạo workflow với homepage URL → fetcher fail 502. Workaround: update DB qua MCP. Fix Week 2: add regex `.regex(/\.(rss|xml)$|\/rss\/|\/feed\//)` + placeholder example.
-- **getBrandPrefix function tạo prefix `LT_` cho "Ladysfit" thay vì `LF_`:** Day 6 known issue persistent. Claude API tự override pattern (dùng `#Ladysfit` thay vì `#LT_GiamCan` trong test M3) → output đúng hơn DB. Defer fix Week 2.
-- **signature_move column truncated giữa câu khi Day 6 lưu DB:** Value cắt ở "...toàn q...". JSONB column không có size limit Postgres, có thể là Day 6 onboarding TEXTAREA maxLength HTML attribute. Defer fix Week 2 cùng "Edit Brand Voice".
-- **Workflow card có 220 LOC, workflow-card.tsx 291 LOC vượt 200 LOC limit:** CLAUDE.md rule. Cân nhắc tách RunButton + Toast + DeleteDialog thành sub-components. Defer Week 2 refactor.
-- **actions.ts có 220 LOC vượt 200 LOC limit:** Cân nhắc tách actions/create.ts + actions/toggle.ts + actions/delete.ts + actions/run.ts + barrel. Defer Week 2.
-- **No batch generation:** Day 9 chỉ fetch + generate FIRST article per run. Workflow news_based có thể có 3 nguồn × 3 articles = 9 candidates. Day 10 implement loop generate multiple contents per run.
-- **No content review UI:** Content saved status='draft' nhưng chưa có /dashboard/contents page hiển thị. Week 3 build Content Review UI với variant selection (update selected_variant_index).
-- **deprecation warning DEP0169 url.parse():** Node v24 deprecation warning từ một transitive dependency (có thể rss-parser hoặc anthropic-sdk). Không break, defer fix khi deps update.
-
-### Issues Day 10 (mới phát sinh)
-
-- **Production fetch-news FAIL với VnExpress URL (HIGH PRIORITY):** Localhost cùng code pass 1.2s, production retry 3 lần × ~41s mỗi attempt → "No articles fetched". Có thể VnExpress trả error hoặc block Vercel iad1/Singapore IP. Day 11 debug: (1) Test với RSS source khác (TuoiTre/Dantri), (2) Verify User-Agent header production, (3) Add fallback dùng RSS description nếu Readability fail.
-- **Inngest v4 SDK API breaking từ v3:** `createFunction({...config, triggers: [{event:...}]}, handler)` thay vì v3 `createFunction(config, {event}, handler)`. Em đoán sai 2 lần Day 10 M3. Apply RULE D10-4 cho mọi SDK lạ.
-- **vercel.json maxDuration KHÔNG nest functions/api/inngest/route.ts được nhận đúng:** Em set maxDuration 60 nhưng bug fetch-news không phải timeout (mỗi attempt 41s < 60s). Config có thể vẫn ổn cho future, nhưng chưa verify hard limit production thực tế.
-- **PowerShell hiển thị Vietnamese rác mặc định trên Windows:** Codepage 850/1252 không render UTF-8 trong `Get-Content`. Pattern fix: `chcp 65001 + -Encoding UTF8`. False alarm encoding corrupt khi PowerShell display lỗi.
-- **Vercel env vars chỉ apply cho deployments mới sau khi save (RULE D10-8):** Em paranoia case này nhưng thực ra commit M4 push SAU khi anh save env → OK. Nếu add env sau push, phải redeploy.
-- **Supabase admin client không có schema types:** `from('table').insert()` infer thành `never`. Workaround: `as never` cast payload + `as { id: string }` cast result. Pattern dài hạn: chạy `supabase gen types typescript` Day 11+ để generate Database types.
+- **Vercel Hobby cron 1 lần/ngày only:** Vercel Cron không phù hợp ACF schedule granular. External cron (cron-job.org) là workaround Day 11 M4. Pros: free, mỗi phút trigger được. Cons: phụ thuộc third-party uptime. Backup plan Week 2: setup secondary cron GitHub Actions free reliable.
+- **Schedule preset timezone bug (Day 8 preset chưa convert UTC):** UI label "Mỗi sáng 7h" map sang cron `0 7 * * *` (7h UTC = 14h VN time, không phải 7h sáng VN). Workflow Ladysfit hiện trigger 14h VN. Fix Week 2: convert preset → UTC cron khi save, hiển thị label VN time khi load. Có 2 pattern decide: lưu cron UTC + label VN HOẶC lưu cron VN + convert runtime. Cần thiết kế Week 2.
+- **Inngest function chỉ scan workflow type='news_based':** Day 9 logic generate content chỉ work với news_based. Workflow type='evergreen' và 'promotional' tạo được nhưng KHÔNG generate. Sau khi cron-job.org trigger evergreen workflow, Inngest function sẽ skip silently. Fix Week 2 cùng prompt template per type.
+- **Contents duplicate khi workflow chạy lại cùng source:** Image dashboard Day 11 M5 hiển thị 2 cards cùng title "Người dân sắp nhận gói khám miễn phí" với time khác nhau (test multiple lần). Schema KHÔNG có unique constraint (workflow_id, source_url). Fix Week 2: add unique index hoặc check trước insert.
+- **PowerShell `Invoke-WebRequest` ErrorDetails.Message KHÔNG capture body 4xx/5xx:** Cần dùng pattern `$_.Exception.Response.GetResponseStream() + StreamReader` để đọc raw body. Day 11 M4.2 đã debug, RULE D11-3 ghi pattern.
+- **Cron-job.org dependency:** ACF hiện phụ thuộc cron-job.org để trigger workflows. Nếu cron-job.org down hoặc miss event, workflow tự động ngừng. Backup plan: Setup cron job thứ 2 ở GitHub Actions (free, reliable) làm secondary trigger Week 2.
+- **No content review UI status actions:** Day 11 M5 chỉ select variant + copy clipboard. Status chỉ display, KHÔNG action được (chưa có button "Duyệt"/"Từ chối"/"Đăng Facebook"). Defer Week 2-3.
+- **No /dashboard/contents pagination:** Hiện limit 50 contents trong query. Khi user có > 50 content sẽ miss. Fix Week 3 cùng filter/search.
+- **content-variant-selector.tsx 117 LOC** + page list 90 LOC + page detail 84 LOC - đều dưới 200 LOC limit, OK Day 11.
+- **No edit variant body inline:** User chỉ chọn variant nào tốt nhất, KHÔNG sửa được text. Defer Week 2-3 cùng "Edit Brand Voice" UI.
+- **deprecation warning DEP0169 url.parse() vẫn còn:** Có thể từ transitive dep rss-parser hoặc cron-parser. Defer fix khi deps update.
 
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
-- D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env (overwrite .env.local)
+- D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
 - D5-8: Phải add env vào Vercel cho cả 3 environments (Production + Preview + Development)
 
 ## 6. Next Steps
 
-### Day 11 / Week 2: Fix production fetch-news bug + Cron handler
+### Day 12 / Week 2: High Priority
 
-**Priority 1 - Fix production smoke test fail:**
-- Verify VnExpress block Vercel IP qua test curl từ Vercel function với User-Agent debug
-- Test với RSS source khác (TuoiTre, Dantri, CafeBiz) để confirm VnExpress-specific
-- Implement fallback: nếu Readability extract fail, dùng RSS description (200-300 chars enough cho Claude prompt)
-- Add detailed error logging trong fetcher.ts để Vercel runtime logs show HTTP status code thật
-- Validate RSS URL trong workflow create form (RULE D9-5 cũ)
+**P1 - Schedule preset timezone fix:**
+- Decide pattern: lưu cron UTC + label VN HOẶC lưu cron VN + convert runtime
+- Update Day 8 SCHEDULE_PRESETS với cron UTC chuẩn (vd "Mỗi sáng 7h VN" = `0 0 * * *` UTC)
+- Migration data: convert existing workflow cron production
+- Update workflow card display label theo timezone
 
-**Priority 2 - Cron handler:**
-- Setup Vercel cron schedule cho auto-run workflows
-- POST /api/cron/run-workflows endpoint dùng inngest.send() batch cho mọi enabled workflow
-- Filter workflow theo schedule_cron + last_run_at để tránh trigger trùng
+**P2 - Content review status actions:**
+- Button "Duyệt" + "Từ chối" trên detail page → update status DB
+- Sidebar nav badge count contents draft
+- Filter contents page by status
 
-**Priority 3 - Content review UI:**
-- Build /dashboard/contents page list contents generated
-- Variant selector UI (3 cards radio) → update selected_variant_index
-- Approve/reject UI
+**P3 - Workflow types evergreen + promotional:**
+- Day 9 logic chỉ work news_based. Extend Claude prompt template per type
+- Evergreen: topic_focus field thay vì news_sources
+- Promotional: product_link + offer field
 
-### Day 11 / Week 2: Batch generation + Multi-source
-- Loop generate multiple content per workflow run (3 nguồn × 3 articles = 3 contents)
-- Round-robin hoặc randomize article selection logic
-- Test workflow với 2-3 RSS sources Việt Nam (TuoiTre, Dantri, CafeBiz)
-- Workflow type 'evergreen' (topic-based, không cần news_sources) + 'promotional' (product CTA strong)
+**P4 - Multi-source batch generation:**
+- Workflow `news_based` có thể có 3 nguồn RSS × 3 articles = 9 candidates
+- Loop generate multiple content per workflow run
+- Skip article đã có content (dedup theo source_url)
+- Test với 2-3 RSS sources VN (TuoiTre, Dantri, CafeBiz)
 
 ### Week 2-3: Content Review UI + Email delivery
-- Build /dashboard/contents page list contents generated
-- Variant selector UI (3 cards radio) → update selected_variant_index
-- Status workflow: draft → approved → published (manual hoặc auto)
-- Approve/reject UI với edit inline
+- Approve/reject UI với edit inline body
 - Resend integration gửi content draft email cho user review
 - Cloudflare R2 storage cho media assets
 
-### Week 3: Fix Day 6+7+8+9 known issues
+### Week 3: Fix outstanding known issues
 - getBrandPrefix logic fix
 - saveError persistent banner trong onboarding
 - Add npm run lint script vào package.json
@@ -556,8 +267,10 @@
 - Workflow edit form (reuse create form mode=edit)
 - "Edit Brand Voice" button trên dashboard
 - workflow-card.tsx + actions.ts refactor < 200 LOC
-- Improve signup error message (bubble Supabase API detail)
-- signature_move truncation fix (Day 6)
+- Improve signup error message
+- Content duplicate constraint
+- Pagination /dashboard/contents
+- Backup cron GitHub Actions
 
 ### Week 4: Payment + Polish + Launch
 - PayOS integration cho 3 tier (Free/Starter/Pro)
@@ -569,17 +282,19 @@
 ## 7. Context cho AI
 
 ### Stack
-- Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (12 components manual)
+- Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
 - Forms: react-hook-form 7.75 + zod 4.4 + @hookform/resolvers 5.2 + framer-motion 12.38
 - Backend: Next.js Server Actions + API routes
 - DB: Supabase Postgres + Drizzle ORM (RLS 6/6 bảng)
 - Auth: Supabase Auth (email/password + Google OAuth)
-- AI: Claude API Sonnet 4.6 (Week 2-3)
+- AI: Claude API Sonnet 4.6 với brand voice prompt
+- Background jobs: Inngest 4.4.0 (free tier 50k step/tháng)
+- News: rss-parser 3.13.0 (RSS description-only, KHÔNG dùng jsdom/readability sau Day 11 M2)
+- Cron: cron-job.org external service + cron-parser 5
 - Email: Resend (Week 3)
-- Cron: Vercel Cron
 - Payment: PayOS (Week 4)
 - Storage: Cloudflare R2 bucket acf-assets (Week 2-3)
-- Hosting: Vercel
+- Hosting: Vercel Hobby plan
 - Monitoring: Sentry (Week 4+)
 
 ### Working Environment
@@ -589,37 +304,29 @@
 - Production URL: https://auto-content-factory.vercel.app (autocontent.online connect Week 4)
 - Vercel project: auto-content-factory (vuhuyhais-projects)
 - Supabase: fnhgtxxuudnqxxmzdpjx (Pro plan, ap-southeast-1)
+- Inngest: vuhai-acf / auto-content-factory production app, SDK 4.4.0
+- cron-job.org: "ACF Workflow Runner" job */5 * * * * UTC
 - Admin email: fitnessviet@gmail.com
-- Node version: v24.14.0 (lưu ý shadcn CLI + npx shadcn fail)
+- Node version: v24.14.0 (shadcn CLI fail)
 - npm package manager
 
-### Onboarding structure (Day 6)
+### Day 11 file structure additions
 src/
-├── app/onboarding/
-│   ├── layout.tsx (full-screen wrapper)
-│   ├── page.tsx (auth check + brand existence check)
-│   └── actions.ts (Server Action saveBrandVoice)
-├── components/onboarding/
-│   ├── onboarding-shell.tsx (orchestrator)
-│   ├── onboarding-progress-bar.tsx (animated 0-100%)
-│   ├── step-navigation.tsx (Back/Next buttons)
-│   ├── brand-voice-card.tsx (Card preview 7 sections)
-│   └── steps/
-│       ├── step-1-brand-basics.tsx
-│       ├── step-2-audience.tsx
-│       ├── step-3-archetype.tsx
-│       ├── step-4-tone.tsx
-│       ├── step-5-pain-points.tsx
-│       ├── step-6-usp.tsx
-│       ├── step-7-topics.tsx
-│       └── step-8-sample.tsx
-├── lib/onboarding/
-│   ├── types.ts (OnboardingFormData + DEFAULT_FORM_DATA)
-│   ├── constants.ts (12 industries + 6 archetypes + topics per industry + LS_DRAFT_KEY)
-│   ├── schemas.ts (zod step schemas + fullOnboardingSchema)
-│   ├── archetype-mapping.ts (rule-based synthesizer)
-│   └── use-onboarding-state.ts (custom hook)
-└── lib/db/schema.ts (Drizzle + BrandVoiceGuide TypeScript interface)
+├── app/dashboard/contents/
+│   ├── page.tsx (list)
+│   ├── actions.ts (selectVariant Server Action)
+│   └── [id]/page.tsx (detail)
+├── app/api/cron/run-workflows/
+│   └── route.ts (POST + GET healthcheck)
+├── components/contents/
+│   └── content-variant-selector.tsx (Client Component 3 tabs)
+├── lib/contents/
+│   ├── types.ts (Content + ContentWithWorkflow + normalizeHashtag)
+│   └── queries.ts (RLS-aware getCurrentUserContents + getContentById)
+├── lib/cron/
+│   ├── should-trigger.ts (isCronInWindow + isOutsideDedupWindow)
+│   └── queries.ts (admin client fetchEnabledWorkflows + markWorkflowTriggered)
+└── lib/news/fetcher.ts (REFACTORED M2: bỏ jsdom, extractDescription helper)
 
 ### Brand Voice Profile JSON schema (lưu vào brands.brand_voice_guide)
 {
@@ -632,182 +339,111 @@ src/
     principles: string[]
   },
   messaging: {
-    pain_points: string[],
-    usp, topics: string[], hashtags: string[]
+    pain_points: string[], usp, topics: string[], hashtags: string[]
   },
   vocabulary: { yes_words: string[], no_words: string[] },
   signature_move: string,
   example_hooks: string[],
   sample_content_provided: boolean,
-  sample_content_analysis?: { ... },
   created_at, last_updated
 }
+
+### Content variants JSON schema (lưu vào contents.variants)
+[
+  {
+    hook: "Hook scroll-stopping 1-2 câu",
+    title: "Title bài",
+    body: "Body 300-400 chữ với CTA",
+    hashtags: ["#Ladysfit", "#SucKhoeChiEm", ...]  // có hoặc không # prefix, normalizeHashtag() handle cả 2
+  },
+  // variant 2, variant 3
+]
 
 ### Mental model
 - Productized Service first, SaaS second
 - Vietnamese SMB owner 30-50 tuổi, mobile-first
 - Quality over quantity
 - Speed over polish (MVP scrappy hơn beautiful broken)
-- Content first - design after (BRIDGE Framework chuẩn)
-- 1 brand = 1 voice = 1 source of truth cho mọi content engine sau này
+- Content first - design after
+- 1 brand = 1 voice = 1 source of truth cho mọi content engine
 
-### Bài học Day 5 (RULES vẫn áp dụng)
+### Bài học Day 1-10 (RULES vẫn áp dụng)
 
-**RULE D5-1:** VERIFY CURSOR OUTPUT BẰNG GREP KEYWORD CỤ THỂ, KHÔNG TIN CAM KẾT "ĐÃ CHÈN ĐÚNG".
-
-**RULE D5-2:** POWERSHELL HERE-STRING KHÔNG SAFE VỚI TYPESCRIPT GENERIC `<T>`. Dùng Cursor Composer paste.
-
+**RULE D5-1:** VERIFY CURSOR OUTPUT BẰNG GREP KEYWORD CỤ THỂ.
+**RULE D5-2:** POWERSHELL HERE-STRING KHÔNG SAFE VỚI TYPESCRIPT GENERIC.
 **RULE D5-3:** SHADCN CLI v4.7.0 FAIL VỚI NODE v24. Manual paste workaround.
-
 **RULE D5-4:** TASK PLAN PHẢI CÓ "CONTENT FIRST" TRƯỚC "DESIGN AFTER".
-
 **RULE D5-5:** NEXT.JS 16 KHÔNG SHOW BUNDLE SIZE Ở BUILD OUTPUT.
 
-### Bài học Day 6 (4 RULES mới)
+**RULE D6-1:** REACT STATE UPDATES KHÔNG SYNCHRONOUS. Pass value mới explicit như parameter.
+**RULE D6-2:** PowerShell `Get-ChildItem -Filter` chỉ nhận 1 string. Dùng `-Include "*.ts","*.tsx" -Recurse`.
+**RULE D6-3:** SERVER ACTION VALIDATION ERROR CẦN FIELD-LEVEL DETAILS với label tiếng Việt.
+**RULE D6-4:** SCHEMA VALIDATION THRESHOLD PHẢI TEST VỚI REAL VIETNAMESE DATA.
 
-**RULE D6-1: REACT STATE UPDATES KHÔNG SYNCHRONOUS.** Khi gọi `setState(x)` rồi gọi function khác đọc state cùng tick, function đó vẫn đọc giá trị CŨ. Fix: pass value mới explicit như parameter, KHÔNG dựa vào state đọc lại.
-*Bug Day 6:* F5 ở step 6 → quay về step 5 vì `saveDraft()` đọc currentStep stale từ closure cũ.
-*Fix:* `saveDraft(stepOverride?: number)` với param explicit.
+**RULE D7-1:** `git add <file>` KHÔNG TỰ STAGE DELETION. Dùng `git add -A`.
+**RULE D7-2:** INCOGNITO CHROME KHÔNG TỰ XOÁ COOKIE GIỮA TAB CÙNG SESSION.
+**RULE D7-3:** KHÔNG dùng `<form action={serverAction}>` với button trong Radix Portal.
+**RULE D7-4:** KHÔNG ĐOÁN SCHEMA DB. VERIFY SCHEMA.TS + ACTIONS.TS TRƯỚC.
+**RULE D7-5:** PowerShell `Select-String` mặc định match per line.
+**RULE D7-6:** KHÔNG đổi DB access mechanism (Drizzle vs Supabase client) giữa milestone.
 
-**RULE D6-2: PowerShell `Get-ChildItem -Filter` chỉ nhận 1 string, không nhận array.** Dùng `-Include "*.ts","*.tsx" -Recurse` thay thế nếu muốn match nhiều pattern.
+**RULE D8-1:** VERIFY THƯ VIỆN VERSION TRƯỚC KHI VIẾT SYNTAX MỚI (zod 3 vs 4).
+**RULE D8-2:** ZOD 4 + react-hook-form CẦN useForm<Input, Context, Output> RÕ RÀNG.
+**RULE D8-3:** VERIFY SHADCN COMPONENT TỒN TẠI TRƯỚC KHI VIẾT IMPORT.
+**RULE D8-4:** PHÂN BIỆT RÕ FORMAT C `[PASTE VÀO FILE]` VS FORMAT A `[POWERSHELL]`. Dùng Format B (PROMPT CURSOR).
 
-**RULE D6-3: SERVER ACTION VALIDATION ERROR CẦN FIELD-LEVEL DETAILS.** Generic "Dữ liệu không hợp lệ" frustrate user. Pattern: `schema.safeParse` → map issues thành `Record<field, message>` → client display list với label tiếng Việt rõ ràng kèm câu số.
-*Bug Day 6:* User không biết quay step nào để fix lỗi → field details + label "Câu N" mở fix nhanh.
+**RULE D9-1:** PLACEHOLDER ENV VAR PHẢI VERIFY REPLACE TRƯỚC KHI DÙNG.
+**RULE D9-2:** ES MODULE HOISTING - DOTENV PHẢI LOAD QUA NODE FLAG (--env-file).
+**RULE D9-3:** CLAUDE API JSON OUTPUT - HANDLE markdown wrapper + smart quotes + embedded quotes.
+**RULE D9-4:** VERCEL HOBBY TIMEOUT 10s - CLAUDE GENERATE > 10s CẦN BACKGROUND JOB.
+**RULE D9-5:** WORKFLOW CREATE FORM PHẢI VALIDATE URL LÀ RSS FEED.
 
-**RULE D6-4: SCHEMA VALIDATION THRESHOLD PHẢI TEST VỚI REAL VIETNAMESE DATA.** Min 50 ký tự ổn với English, nhưng tiếng Việt cô đọng - 30 ký tự có thể đủ ý.
-*Bug Day 6:* USP "Môi trường thân thiện và phương pháp đơn giản" (45 chars) bị reject. Lower threshold 50→30.
+**RULE D10-1:** INNGEST SDK PRODUCTION MODE MẶC ĐỊNH → CẦN `INNGEST_DEV=1` CHO LOCALHOST.
+**RULE D10-2:** POWERSHELL `Get-Content` PARSE `[...]` LÀ WILDCARD. Dùng `-LiteralPath`.
+**RULE D10-3:** TRƯỚC KHI BÁO ENCODING CORRUPT, CHẠY `chcp 65001` + `-Encoding UTF8`.
+**RULE D10-4:** INNGEST V4 DÙNG `triggers: [{event: '...'}]` (ARRAY).
+**RULE D10-5:** SUPABASE CLIENT KHÔNG CÓ SCHEMA TYPES → CAST `as never`.
+**RULE D10-6:** VERIFY MỌI CỘT DB TRƯỚC KHI INSERT/UPDATE/SELECT - DÙNG SUPABASE MCP HOẶC ĐỌC SCHEMA.TS.
+**RULE D10-7:** SYNC INNGEST PRODUCTION CHỈ KHI VERCEL DEPLOYMENT READY.
+**RULE D10-8:** VERCEL ENV VARS CHỈ APPLY CHO DEPLOYMENTS MỚI SAU KHI SAVE.
+**RULE D10-9:** VERCEL PRODUCTION KHÔNG BUNDLE ES MODULES NHƯ LOCALHOST DEV. LAZY IMPORT KHÔNG ĐỦ - PHẢI BỎ HẲN DEP CÓ ESM TRANSITIVE.
+**RULE D10-10:** VERCEL HOBBY MAX_DURATION 60s ÁP DỤNG CHO MỖI INNGEST STEP RIÊNG.
 
-### Bài học Day 7 (4 RULES mới)
+### Bài học Day 11 (4 RULES mới)
 
-**RULE D7-1: `git add <file>` KHÔNG TỰ STAGE DELETION.**
-Khi rename file thủ công bằng `Move-Item`, phải dùng `git add -A` hoặc `git add <old-file>` để git biết file cũ đã xoá. Nếu không, commit sẽ chỉ có file mới, gây duplicate trong working tree.
+**RULE D11-1: PRODUCTION FAIL ≠ NETWORK BLOCK. ĐỌC LOG TRƯỚC KHI ĐOÁN.**
+Day 10 em đoán VnExpress block Vercel IP (41s timeout × 3 retries fail "No articles fetched"). Day 11 M1 logs cho biết RSS fetch HTTP 200 1093ms thành công, fail thực ở bước Readability article extract với ERR_REQUIRE_ESM. Hypothesis "block IP" sai hoàn toàn.
+Pattern đúng: Trước khi đoán root cause, ALWAYS thêm logging chi tiết tại MỖI step → deploy → quan sát log thật → mới quyết hypothesis. Tránh debug dựa trên triệu chứng bề mặt (timeout duration) hoặc bias xác nhận (kỳ vọng = network).
 
-**RULE D7-2: INCOGNITO CHROME KHÔNG TỰ XOÁ COOKIE GIỮA CÁC TAB CÙNG SESSION.**
-Test logout/auth flow phải XOÁ cookie ở DevTools hoặc ĐÓNG HẾT cửa sổ Incognito trước. Mở 2 tab Incognito = cùng cookie session. Em đã hoảng tưởng có security bug khi /dashboard trong Incognito hiện User ID - thực ra Incognito còn cookie từ session cũ.
+**RULE D11-2: LAZY DYNAMIC IMPORT KHÔNG GIẢI QUYẾT ESM/CJS BUNDLING TRIỆT ĐỂ.**
+Day 10 fix `await import('jsdom')` thay top-level. Day 11 production vẫn crash vì transitive deps của jsdom (html-encoding-sniffer → encoding-lite.js) là ESM mà Vercel bundle bằng require(). Lazy import outer module KHÔNG giúp transitive deps. 
+Quyết định: Khi dep có ESM transitive + Vercel production strict CJS, **BỎ DEP THAY VÌ FIX BUNDLING**. Trade-off feature đơn giản hơn vs. cuộc chiến ESM dài hạn không scaling.
+Pattern phát hiện sớm: Localhost dev Turbopack bundle ESM/CJS mượt mà → KHÔNG là dấu hiệu production OK. Phải test production deploy thật sau mỗi dep update.
 
-**RULE D7-3: KHÔNG dùng `<form action={serverAction}>` với button bên trong Radix Portal.**
-Radix DropdownMenu, Dialog, Popover render content qua React Portal - DOM node bị tách khỏi form parent. Browser tìm form chứa submit button không thấy → "Form submission canceled because the form is not connected". Đồng thời asChild + Portal gây hydration mismatch.
-Fix pattern (chuẩn shadcn docs):
-- Tách Server Component (fetch data) + Client Component (UI + handlers)
-- Server pass data qua props
-- Client dùng onSelect của DropdownMenuItem: { onSelect={(e) => { e.preventDefault(); void serverAction() }} }
-
-**RULE D7-4: KHÔNG ĐOÁN SCHEMA DB. VERIFY SCHEMA.TS + ACTIONS.TS TRƯỚC KHI VIẾT TYPE.**
-Em đã sai 4 lần trong M4: thêm `industry_custom`, `brand_prefix`, `updated_at` vào type Brand (không có trong DB), và đoán BrandVoiceCard là default export (thực ra named export).
-Pattern đúng: Đọc src/lib/db/schema.ts (Drizzle table definition) + src/app/<feature>/actions.ts (xem code insert/update field gì) TRƯỚC khi viết type. KHÔNG thêm field "có vẻ logic". KHÔNG tin trí nhớ về 30 dòng đầu file - dùng Select-String verify thật.
-
-**RULE D7-5: PowerShell `Select-String` mặc định match per line.**
-Pattern multi-line bị xuống dòng (Cursor format Drizzle chain `db\n    .select()`) sẽ KHÔNG match. Workaround: pattern ngắn match từng phần (`.select`, `.from`, `.where`) thay vì `db.select`.
-Bonus: pattern chứa `"` phải bọc bằng single quote bên ngoài (`'@/lib/db"'`), không dùng escape `\"`.
-
-**RULE D7-6: KHÔNG đổi DB access mechanism (Drizzle vs Supabase client) giữa milestone.**
-Em đã refactor sang Drizzle ORM ở M4 vì nghĩ "type cleaner". Bug: 1) Day 6 chưa setup DATABASE_URL nên Drizzle fail auth → fallback Windows username "ASUS". 2) Drizzle bypass RLS (security regression). 3) Cần config Vercel env mới.
-Default: dùng pattern feature trước đó đã pass. Day 2-6 dùng Supabase client → M4 cũng dùng Supabase client. Đổi tech stack giữa chừng = bug.
-
-### Bài học Day 8 (4 RULES mới)
-
-**RULE D8-1: VERIFY THƯ VIỆN VERSION TRƯỚC KHI VIẾT SYNTAX MỚI.**
-Zod 4 đổi API: gộp `required_error` + `invalid_type_error` thành `message` duy nhất. `z.enum(VALUES, { required_error: '...' })` zod 3 → `z.enum(VALUES, { message: '...' })` zod 4. Pattern đúng: `Get-Content package.json | Select-String -Pattern '"zod"'` để confirm major version TRƯỚC khi viết schema.
-*Bug Day 8 M1:* 3 lỗi tsc trong schemas.ts vì em viết zod 3 syntax trong khi project dùng zod 4. Fix: đổi sang `message` key. Bài học bổ sung: đáng lẽ đọc file `src/lib/onboarding/schemas.ts` Day 6 làm reference thay vì đoán.
-
-**RULE D8-2: ZOD 4 + react-hook-form CẦN useForm<Input, Context, Output> RÕ RÀNG.**
-Trong zod 4, `.default()` + `.optional()` tạo Input type ≠ Output type (input có optional field, output đã apply default). `useForm<Schema>` 1-slot default ngầm Schema=Output → khi user gõ form (input partial) mismatch. Pattern đúng:
-```ts
-type Input = z.input<typeof schema>;
-type Output = z.output<typeof schema>;
-useForm<Input, unknown, Output>({ resolver, defaultValues });
-function onSubmit(values: Output) { ... }
+**RULE D11-3: POWERSHELL `Invoke-WebRequest` ErrorDetails.Message KHÔNG CAPTURE BODY 4XX/5XX.**
+Day 11 M4.2 production POST endpoint trả 401 nhưng `$_.ErrorDetails.Message` rỗng → em sai diagnosis là 500 server error. Phải dùng pattern:
+```powershell
+try { Invoke-WebRequest ... } catch {
+  $stream = $_.Exception.Response.GetResponseStream()
+  $reader = New-Object System.IO.StreamReader($stream)
+  $body = $reader.ReadToEnd()
+}
 ```
-*Bug Day 8 M3:* 2 lỗi tsc trong workflow-form.tsx. Day 6 onboarding không gặp vì không dùng `.default()` ở optional field.
+Pattern này đọc raw response body bất kể status code. Áp dụng cho mọi PowerShell test HTTP với 4xx/5xx response.
 
-**RULE D8-3: VERIFY SHADCN COMPONENT TỒN TẠI TRƯỚC KHI VIẾT IMPORT.**
-Day 8 M4 em đưa prompt rewrite workflow-card.tsx import AlertDialog TRƯỚC khi anh chạy prompt verify file alert-dialog.tsx có chưa. May Cursor flag được, nhưng nếu Cursor không flag thì build fail.
-Pattern đúng: với mỗi shadcn component import mới, chạy `Get-ChildItem src\components\ui\<name>.tsx` + `Get-Content package.json | Select-String "<radix-package>"` TRƯỚC khi viết code dùng.
-
-**RULE D8-4: PHÂN BIỆT RÕ FORMAT C `[PASTE VÀO FILE]` VS FORMAT A `[POWERSHELL]`.**
-Format C = tạo file mới trong Cursor (Right-click → New File → paste nội dung qua editor). KHÔNG paste vào terminal PowerShell vì PowerShell parse code TypeScript như command → 10+ syntax error.
-*Bug Day 8 M4:* Em đưa prompt format C nhưng anh paste vào PowerShell, terminal trả về 9 ParserError. Fix bằng Format B (PROMPT CURSOR) - Cursor tự tạo file + fill nội dung trong 1 thao tác, an toàn hơn vì không qua terminal.
-Pattern em sẽ dùng cho mọi shadcn paste sau này: **Format B chứ không phải Format C**.
-
-### Bài học Day 9 (5 RULES mới)
-
-**RULE D9-1: PLACEHOLDER ENV VAR PHẢI VERIFY REPLACE TRƯỚC KHI DÙNG.**
-Khi đưa lệnh `Add-Content` với placeholder text (vd `PASTE_KEY_THAT_VAO_DAY`), user dễ quên paste key thật. Pattern fix:
-1. Đưa lệnh add placeholder
-2. NHẮC RÕ user mở file paste key thật + save
-3. VERIFY placeholder bị xoá bằng `Select-String -Pattern "=PLACEHOLDER" -Quiet` → phải trả `False`
-Bug Day 9 M1: Em đưa lệnh add ANTHROPIC_API_KEY=PASTE_KEY_THAT_VAO_DAY, anh tưởng xong nhưng chưa save file thật. Fail test API 3 lần debug mới phát hiện. 5 phút lãng phí.
-
-**RULE D9-2: ES MODULE HOISTING - DOTENV PHẢI LOAD QUA NODE FLAG, KHÔNG QUA `import`.**
-ES Module `import` statements được hoist lên TRƯỚC mọi code khác trong file, kể cả `config()` viết phía trên trong source. Khi file được import (vd client.ts) đọc `process.env` ngay khi load, dotenv config từ caller script KHÔNG kịp.
-3 cách fix theo độ ưu tiên:
-1. **Best (Node 20.6+):** `tsx --env-file=.env.local script.ts` hoặc `node --env-file=.env.local --import tsx script.ts`
-2. **OK:** Dynamic `await import()` sau khi `config()` chạy xong
-3. **Anti-pattern (KHÔNG dùng):** Static `import` + `config()` trong cùng file - hoisting làm `config()` chạy SAU import
-Pattern áp dụng cho mọi script utility chạy ngoài Next.js framework. Next.js auto-load .env.local nên không bị issue này.
-
-**RULE D9-3: CLAUDE API JSON OUTPUT - PHẢI HANDLE EDGE CASES.**
-Khi dùng Claude trả JSON, 3 cases phổ biến cần handle:
-1. **Markdown wrapper:** Claude thường wrap JSON trong ` ```json ... ``` ` - cần regex extract
-2. **Smart quotes:** Claude sometimes dùng `"…"` `'…'` Unicode thay vì ASCII - cần normalize
-3. **Embedded quotes/newlines:** Nếu string value có `"` chưa escape hoặc `\n` literal, JSON.parse fail
-Pattern fix:
-1. Try markdown code block extract first (regex ```json...```)
-2. Fallback brace matching `{...}`
-3. Replace smart quotes → ASCII
-4. JSON.parse
-5. Zod validate schema for additional safety
-Defer alternative: Anthropic tool use với `input_schema` để force structured output, bypass JSON parse hoàn toàn. Day 9 chỉ cần text parse, refactor sang tool use nếu cần robust hơn.
-
-**RULE D9-4: VERCEL HOBBY TIMEOUT 10S - CLAUDE GENERATE > 10S CẦN BACKGROUND JOB.**
-Sonnet 4.6 generate 2-3k output tokens ~30-60s. Vercel Hobby plan timeout 10s, Pro 60s. Manual run endpoint cần xử lý:
-- Dev local: OK, không timeout
-- Production Hobby: FAIL ngay
-- Production Pro: Edge case > 60s vẫn fail
-3 patterns recommend (theo priority):
-1. **Background job (Inngest / Vercel Queue):** Best, scale tốt
-2. **Streaming response:** Robust, UX tốt nhưng phức tạp
-3. **Upgrade Pro + retry logic:** Quick fix, monthly cost
-Day 9 chosen Path 1: Localhost only, deploy defer Day 10 với background job.
-
-**RULE D9-5: WORKFLOW CREATE FORM PHẢI VALIDATE URL LÀ RSS FEED.**
-Day 8 form chỉ check URL valid (zod `.url()`) nhưng KHÔNG check là RSS feed. User dễ paste homepage hoặc article URL → fetcher fail.
-Fix Week 2:
-1. Add zod regex check `.regex(/\.(rss|xml)$|\/rss\/|\/feed\//, 'URL phải là RSS feed')`
-2. Add helpful placeholder: `"vd: https://vnexpress.net/rss/suc-khoe.rss"`
-3. Add link "Tìm RSS feed của site phổ biến" với list VnExpress, TuoiTre, ThanhNien
-Day 9 workaround: anh update DB qua Supabase MCP. Production cần validate đúng để UX tốt.
-
-### Bài học Day 10 (10 RULES mới)
-
-**RULE D10-1: INNGEST SDK PRODUCTION MODE MẶC ĐỊNH → CẦN `INNGEST_DEV=1` CHO LOCALHOST.** Không có flag dev mode, SDK assume production → curl trả {"message":"Unauthorized"} (demand signing key verify từ Inngest Cloud). Add INNGEST_DEV=1 vào .env.local localhost, KHÔNG add Vercel env production.
-
-**RULE D10-2: POWERSHELL `Get-Content` PARSE `[...]` LÀ WILDCARD.** Path Next.js dynamic route `[id]` bị PowerShell hiểu là pattern matching. Fix: `Get-Content -LiteralPath 'path/[id]/file.ts'` (single quote).
-
-**RULE D10-3: TRƯỚC KHI BÁO ENCODING CORRUPT, CHẠY `chcp 65001` + `-Encoding UTF8`.** PowerShell Windows mặc định codepage 850/1252 không render UTF-8 ở terminal output dù file thật UTF-8. Chỉ alarm corrupt khi `Select-String` match pattern rác (case True).
-
-**RULE D10-4: INNGEST V4 DÙNG `triggers: [{event: '...'}]` (ARRAY).** v3 `createFunction(config, {event}, handler)` 3 args. v4 `createFunction({...config, triggers: [{event}]}, handler)` 2 args. Đọc `node_modules/<pkg>/types` qua Get-Content TRƯỚC khi viết với SDK lạ, KHÔNG đoán dù tự tin.
-
-**RULE D10-5: SUPABASE CLIENT KHÔNG CÓ SCHEMA TYPES → INSERT/UPDATE INFER `NEVER`.** `@supabase/supabase-js` v2 không generate types từ DB → table operations bị `never`. Workaround: `as never` cast payload + cast result. Pattern dài hạn: `supabase gen types typescript` để generate Database types.
-
-**RULE D10-6: VERIFY MỌI CỘT DB TRƯỚC KHI INSERT/UPDATE/SELECT - DÙNG SUPABASE MCP HOẶC ĐỌC SCHEMA.TS.** 3 bug Day 10 vì đoán cột: workflows.user_id, contents.created_at, contents.hashtags. Pattern PRE-WRITE: `SELECT column_name FROM information_schema.columns WHERE table_name = 'X'` hoặc đọc Drizzle schema. KHÔNG đoán dù đã làm với bảng đó.
-
-**RULE D10-7: SYNC INNGEST PRODUCTION CHỈ KHI VERCEL DEPLOYMENT READY.** Code mới push → Vercel build 30-60s → READY → mới sync Inngest. Sync sớm = Inngest gọi URL khi route chưa tồn tại → "Internal server error response from URL" (HTTP 500).
-
-**RULE D10-8: VERCEL ENV VARS CHỈ APPLY CHO DEPLOYMENTS MỚI SAU KHI SAVE.** Thêm env trước push code OK. Thêm sau push thì deployment hiện tại không có env, phải redeploy. Verify timeline "Added X ago" của env var vs `createdAt` deployment.
-
-**RULE D10-9: VERCEL PRODUCTION KHÔNG BUNDLE ES MODULES NHƯ LOCALHOST DEV. LAZY IMPORT MODULE CÓ ESM TRANSITIVE DEPS.** Localhost Turbopack dev bundle ESM/CJS mượt. Vercel production strict → top-level import jsdom crash ERR_REQUIRE_ESM với transitive dep html-encoding-sniffer → encoding-lite.js (ESM). Fix: dynamic `await import()` bên trong function. Trade-off: cold-start +50-100ms.
-
-**RULE D10-10: VERCEL HOBBY MAX_DURATION 60s ÁP DỤNG CHO MỖI INNGEST STEP RIÊNG.** Function 70s tổng OK nếu chia thành 4 step (mỗi step < 60s). Step Claude generate 60s, step save-content 1s. Inngest dashboard hiện duration tổng nhưng Vercel webhook tính từng step. Set `maxDuration: 60` trong vercel.json cho route `/api/inngest`.
+**RULE D11-4: VERCEL HOBBY CRON JOB LIMITATION = 1 LẦN/NGÀY.**
+Vercel docs chính thức (27/02/2026): Hobby plan cron-jobs chỉ chạy 1 lần/ngày, cron expression chạy hơn sẽ fail deployment. Đây là restriction về scheduler config, KHÔNG phải về API route execution. API route `/api/cron/run-workflows` chạy như HTTP endpoint bình thường - external service nào cũng gọi được.
+Workaround chuẩn: cron-job.org / Runhooks / GitHub Actions trigger endpoint từ ngoài Vercel. Free, mỗi phút trigger được. Endpoint tự match cron expression với current UTC time + dedup window.
+Pattern khi gặp limitation platform: Tách concerns - dùng platform cho compute, dùng external service cho scheduling.
 
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Day 10 DEPLOYED production**: 6 commits Day 10 + 5 commits Day 9 đã có trên local, sẽ push origin ở commit HANDOFF cuối. Production URL https://auto-content-factory.vercel.app LIVE với Inngest pipeline architect đúng.
-- **Production smoke test STATUS:** Trigger endpoint OK, Inngest function discovered, step fetch-workflow-and-brand PASS, **step fetch-news FAIL** với VnExpress (timeout/block). Day 11 priority 1.
-- Commit cuối local nên là `docs(handoff): close Day 10 - inngest deployed, fetch-news bug defer Day 11`
-- Day 11 nếu anh tiếp tục: ưu tiên debug fetch-news production trước → test RSS source khác hoặc User-Agent debug
-- Inngest Cloud production app `auto-content-factory` đã sync, SDK 4.4.0, function Workflow Runner trigger event `workflow/run.requested`
-- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) news_sources = `https://vnexpress.net/rss/suc-khoe.rss`, schedule 7h sáng - CHƯA có cron handler Day 11 sẽ làm
-- DB hiện có 2 contents (Day 9 04:52 + Day 10 M3 09:57), Day 10 M5 production fail nên không có content thứ 3
+- **Day 11 PUSHED 5 commits** (1a64bf8 → 6dcfa81) + 1 sắp có commit HANDOFF. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
+- **Production smoke test STATUS:** Day 11 M3 verified content saved DB thật (id e5dc4bce). Day 11 M4 verified cron-job.org TEST RUN 200 OK. Pipeline production READY 100%.
+- Commit cuối local nên là `docs(handoff): close Day 11 - production pipeline live with auto-trigger`
+- Day 12 nếu anh tiếp tục: P1 fix schedule preset timezone bug (label "7h sáng" map đúng VN time = 0h UTC, không phải 7h UTC = 14h VN)
+- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) cron `0 7 * * *` = 7h UTC = 14h VN time, sẽ auto-trigger 14h VN hằng ngày qua cron-job.org
+- DB hiện có 5 contents (Day 9: 1 + Day 10: 1 + Day 11 M3 manual: 2 + Day 11 M4 localhost test: 1)
+- cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
