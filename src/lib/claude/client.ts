@@ -1,0 +1,13 @@
+import Anthropic from '@anthropic-ai/sdk';
+
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY is not defined in environment variables');
+}
+
+export const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+export const CLAUDE_MODEL = 'claude-sonnet-4-6';
+
+export const DEFAULT_MAX_TOKENS = 4000;

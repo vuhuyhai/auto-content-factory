@@ -45,3 +45,6 @@ next-env.d.ts
 .claude.local/.env.local
 .vercel
 .env*.local
+
+# Test scripts (Day 9)
+scripts/
