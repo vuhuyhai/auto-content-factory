@@ -1,6 +1,11 @@
 import Parser from 'rss-parser';
 import type { NewsArticle, FetchError, FetchNewsResult } from './types';
 
+function log(stage: string, data: Record<string, unknown>): void {
+  // Use console.log so Vercel Runtime Logs capture it
+  console.log(`[news-fetcher] ${stage}`, JSON.stringify(data));
+}
+
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_ARTICLES_PER_SOURCE = 3;
 const HOURS_LOOKBACK = 24;
@@ -94,14 +99,55 @@ export async function fetchNewsFromSources(
   const articles: NewsArticle[] = [];
   const errors: FetchError[] = [];
 
+  log('start', { sourceCount: feedUrls.length, sources: feedUrls });
+
   for (const feedUrl of feedUrls) {
+    log('rss-fetch-start', { feedUrl, userAgent: 'Mozilla/5.0 (compatible; AutoContentFactory/1.0; +https://autocontent.online)' });
+
+    const rssStart = Date.now();
     let feed;
     try {
-      feed = await parser.parseURL(feedUrl);
+      const rssController = new AbortController();
+      const rssTimeoutId = setTimeout(() => rssController.abort(), FETCH_TIMEOUT_MS);
+
+      let rssResponse: Response;
+      try {
+        rssResponse = await fetch(feedUrl, {
+          signal: rssController.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; AutoContentFactory/1.0; +https://autocontent.online)',
+            'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+          },
+        });
+      } finally {
+        clearTimeout(rssTimeoutId);
+      }
+
+      const rssDurationMs = Date.now() - rssStart;
+      log('rss-fetch-response', {
+        feedUrl,
+        status: rssResponse.status,
+        statusText: rssResponse.statusText,
+        contentType: rssResponse.headers.get('content-type'),
+        contentLength: rssResponse.headers.get('content-length'),
+        durationMs: rssDurationMs,
+      });
+
+      if (!rssResponse.ok) {
+        throw new Error(`HTTP ${rssResponse.status} ${rssResponse.statusText}`);
+      }
+
+      const xmlText = await rssResponse.text();
+      log('rss-fetch-body', { feedUrl, bytes: xmlText.length, firstChars: xmlText.slice(0, 200) });
+
+      feed = await parser.parseString(xmlText);
+      log('rss-parse-ok', { feedUrl, totalItems: feed.items?.length ?? 0 });
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Unknown RSS error';
+      log('rss-fetch-error', { feedUrl, error: errMsg, durationMs: Date.now() - rssStart });
       errors.push({
         source_url: feedUrl,
-        error_message: err instanceof Error ? err.message : 'Unknown RSS parse error',
+        error_message: errMsg,
         stage: 'rss_parse',
       });
       continue;
@@ -112,13 +158,19 @@ export async function fetchNewsFromSources(
       .filter((item) => isRecent(item.pubDate ?? item.isoDate))
       .slice(0, MAX_ARTICLES_PER_SOURCE);
 
+    log('rss-items-filter', { feedUrl, totalItems: feed.items?.length ?? 0, recentItemsCount: recentItems.length, hoursLookback: HOURS_LOOKBACK });
+
     for (const item of recentItems) {
       if (!item.link || !item.title) {
         continue;
       }
 
+      log('article-fetch-start', { url: item.link, title: item.title });
+      const articleStart = Date.now();
+
       try {
         const content = await fetchArticleContent(item.link);
+        log('article-fetch-ok', { url: item.link, contentBytes: content.length, durationMs: Date.now() - articleStart });
         articles.push({
           title: item.title,
           content,
@@ -128,14 +180,23 @@ export async function fetchNewsFromSources(
           description: item.contentSnippet ?? item.content ?? '',
         });
       } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'Unknown article fetch error';
+        log('article-fetch-error', { url: item.link, error: errMsg, durationMs: Date.now() - articleStart });
         errors.push({
           source_url: item.link,
-          error_message: err instanceof Error ? err.message : 'Unknown article fetch error',
+          error_message: errMsg,
           stage: 'article_fetch',
         });
       }
     }
   }
+
+  log('done', {
+    totalSources: feedUrls.length,
+    totalArticles: articles.length,
+    totalErrors: errors.length,
+    errorSummary: errors.map(e => ({ url: e.source_url, stage: e.stage, msg: e.error_message })),
+  });
 
   return {
     articles,
