@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getContentById } from '@/lib/contents/queries';
+import { CONTENT_STATUS_LABELS } from '@/lib/contents/types';
 import { ContentVariantSelector } from '@/components/contents/content-variant-selector';
 
 export const dynamic = 'force-dynamic';
@@ -22,12 +23,7 @@ export default async function ContentDetailPage({
   const variants = content.variants ?? [];
   const selectedIndex = content.selected_variant_index ?? 0;
 
-  const statusLabel = {
-    draft: 'Bản nháp',
-    approved: 'Đã duyệt',
-    rejected: 'Đã từ chối',
-    sent: 'Đã gửi',
-  }[content.status] ?? content.status;
+  const statusLabel = CONTENT_STATUS_LABELS[content.status];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -77,6 +73,7 @@ export default async function ContentDetailPage({
           contentId={content.id}
           variants={variants}
           initialSelectedIndex={selectedIndex}
+          status={content.status}
         />
       )}
     </div>

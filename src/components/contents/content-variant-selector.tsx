@@ -4,21 +4,40 @@ import { useState, useTransition } from 'react';
 import { Check, Copy, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { ContentVariant } from '@/lib/content/types';
-import { normalizeHashtag } from '@/lib/contents/types';
-import { selectVariant } from '@/app/dashboard/contents/actions';
+import {
+  CONTENT_STATUS_LABELS,
+  normalizeHashtag,
+  type ContentStatus,
+} from '@/lib/contents/types';
+import { selectVariant, updateContentStatus } from '@/app/dashboard/contents/actions';
 
 interface Props {
   contentId: string;
   variants: ContentVariant[];
   initialSelectedIndex: number;
+  status: ContentStatus;
 }
 
-export function ContentVariantSelector({ contentId, variants, initialSelectedIndex }: Props) {
+const STATUS_BADGE_CLASS: Record<ContentStatus, string> = {
+  generating: 'bg-gray-200 text-gray-800 hover:bg-gray-200',
+  draft: 'bg-yellow-100 text-yellow-900 hover:bg-yellow-100',
+  approved: 'bg-green-600 text-white hover:bg-green-600',
+  rejected: 'bg-red-600 text-white hover:bg-red-600',
+};
+
+export function ContentVariantSelector({
+  contentId,
+  variants,
+  initialSelectedIndex,
+  status,
+}: Props) {
   const [activeTab, setActiveTab] = useState(initialSelectedIndex);
   const [selectedIndex, setSelectedIndex] = useState(initialSelectedIndex);
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [copiedTab, setCopiedTab] = useState<number | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<ContentStatus>(status);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   function handleSelect(index: number) {
     const prev = selectedIndex;
@@ -34,6 +53,22 @@ export function ContentVariantSelector({ contentId, variants, initialSelectedInd
       }
       setTimeout(() => setToast(null), 3000);
     });
+  }
+
+  async function handleUpdateStatus(newStatus: ContentStatus) {
+    const prev = currentStatus;
+    setCurrentStatus(newStatus);
+    setIsUpdatingStatus(true);
+    try {
+      await updateContentStatus({ contentId, status: newStatus });
+      setToast({ type: 'success', msg: `Đã chuyển trạng thái sang ${CONTENT_STATUS_LABELS[newStatus]}` });
+    } catch {
+      setCurrentStatus(prev);
+      setToast({ type: 'error', msg: 'Cập nhật trạng thái thất bại. Anh thử lại nhé.' });
+    } finally {
+      setIsUpdatingStatus(false);
+      setTimeout(() => setToast(null), 3000);
+    }
   }
 
   function handleCopy(index: number) {
@@ -58,6 +93,43 @@ export function ContentVariantSelector({ contentId, variants, initialSelectedInd
           {toast.msg}
         </div>
       )}
+
+      <div className="mb-4 pb-4 border-b border-gray-200 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
+        <Badge className={STATUS_BADGE_CLASS[currentStatus]}>
+          {CONTENT_STATUS_LABELS[currentStatus]}
+        </Badge>
+
+        {currentStatus === 'draft' && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleUpdateStatus('approved')}
+              disabled={isUpdatingStatus}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {isUpdatingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Duyệt
+            </button>
+            <button
+              onClick={() => handleUpdateStatus('rejected')}
+              disabled={isUpdatingStatus}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              Từ chối
+            </button>
+          </div>
+        )}
+
+        {(currentStatus === 'approved' || currentStatus === 'rejected') && (
+          <button
+            onClick={() => handleUpdateStatus('draft')}
+            disabled={isUpdatingStatus}
+            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#c73937] disabled:opacity-50 transition-colors self-start sm:self-auto"
+          >
+            {isUpdatingStatus && <Loader2 className="w-3 h-3 animate-spin" />}
+            Đặt lại chờ duyệt
+          </button>
+        )}
+      </div>
 
       <div className="flex gap-2 mb-4 border-b border-gray-200">
         {variants.map((_, i) => (

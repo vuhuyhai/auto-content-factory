@@ -2,9 +2,33 @@ import Link from 'next/link';
 import { FileText, Calendar, Workflow as WorkflowIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentUserContents } from '@/lib/contents/queries';
+import {
+  countContentsByStatusForCurrentUser,
+  getCurrentUserContents,
+} from '@/lib/contents/queries';
+import { CONTENT_STATUS_LABELS, type ContentStatus } from '@/lib/contents/types';
+import { ContentsFilterTabs } from '@/components/contents/contents-filter-tabs';
 
 export const dynamic = 'force-dynamic';
+
+type FilterKey = ContentStatus | 'all';
+
+const VALID_FILTERS: ReadonlySet<ContentStatus> = new Set(['draft', 'approved', 'rejected']);
+
+function parseStatus(raw: string | undefined): ContentStatus | undefined {
+  if (raw && VALID_FILTERS.has(raw as ContentStatus)) {
+    return raw as ContentStatus;
+  }
+  return undefined;
+}
+
+const EMPTY_MESSAGES: Record<FilterKey, string> = {
+  all: 'Chưa có nội dung nào. Workflow sẽ tự generate khi đến lịch.',
+  draft: 'Không có content nào chờ duyệt. 🎉',
+  approved: 'Chưa duyệt content nào.',
+  rejected: 'Chưa từ chối content nào.',
+  generating: 'Không có content nào đang tạo.',
+};
 
 function formatRelativeTime(iso: string): string {
   const now = Date.now();
@@ -19,80 +43,81 @@ function formatRelativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN');
 }
 
-export default async function ContentsPage() {
-  const contents = await getCurrentUserContents();
+interface PageProps {
+  searchParams: Promise<{ status?: string }>;
+}
 
-  if (contents.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <FileText className="w-16 h-16 text-gray-300 mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Chưa có nội dung nào</h2>
-        <p className="text-gray-500 max-w-md mb-6">
-          Khi workflow chạy, nội dung Claude tạo sẽ xuất hiện ở đây để bạn xem lại trước khi đăng.
-        </p>
-        <Link
-          href="/dashboard/workflows"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#c73937] text-white rounded-lg hover:bg-[#a82e2c] transition-colors"
-        >
-          <WorkflowIcon className="w-4 h-4" />
-          Xem workflows
-        </Link>
-      </div>
-    );
-  }
+export default async function ContentsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const parsedStatus = parseStatus(params.status);
+  const currentStatus: FilterKey = parsedStatus ?? 'all';
+
+  const [counts, contents] = await Promise.all([
+    countContentsByStatusForCurrentUser(),
+    getCurrentUserContents(parsedStatus),
+  ]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Nội dung đã tạo</h1>
-        <p className="text-gray-500">{contents.length} nội dung Claude đã generate</p>
+        <p className="text-gray-500">
+          {contents.length} nội dung
+          {currentStatus !== 'all' ? ` · ${CONTENT_STATUS_LABELS[currentStatus]}` : ''}
+        </p>
       </div>
 
-      <div className="grid gap-4">
-        {contents.map((content) => {
-          const variantCount = content.variants?.length ?? 0;
-          const statusLabel = {
-            draft: 'Bản nháp',
-            approved: 'Đã duyệt',
-            rejected: 'Đã từ chối',
-            sent: 'Đã gửi',
-          }[content.status] ?? content.status;
-
-          return (
-            <Link
-              key={content.id}
-              href={`/dashboard/contents/${content.id}`}
-              className="block"
-            >
-              <Card className="p-6 hover:shadow-md hover:border-[#c73937]/30 transition-all">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <h3 className="text-lg font-semibold leading-snug line-clamp-2 flex-1">
-                    {content.source_title ?? 'Không có tiêu đề'}
-                  </h3>
-                  <Badge variant="outline" className="shrink-0">
-                    {statusLabel}
-                  </Badge>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                  <span className="inline-flex items-center gap-1">
-                    <WorkflowIcon className="w-3.5 h-3.5" />
-                    {content.workflow_name ?? 'Workflow'}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {formatRelativeTime(content.generated_at)}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" />
-                    {variantCount} variant
-                  </span>
-                </div>
-              </Card>
-            </Link>
-          );
-        })}
+      <div className="mb-6">
+        <ContentsFilterTabs currentStatus={currentStatus} counts={counts} />
       </div>
+
+      {contents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+          <FileText className="w-12 h-12 text-gray-300 mb-4" />
+          <p className="text-gray-500 max-w-md">{EMPTY_MESSAGES[currentStatus]}</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {contents.map((content) => {
+            const variantCount = content.variants?.length ?? 0;
+            const statusLabel = CONTENT_STATUS_LABELS[content.status];
+
+            return (
+              <Link
+                key={content.id}
+                href={`/dashboard/contents/${content.id}`}
+                className="block"
+              >
+                <Card className="p-6 hover:shadow-md hover:border-[#c73937]/30 transition-all">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <h3 className="text-lg font-semibold leading-snug line-clamp-2 flex-1">
+                      {content.source_title ?? 'Không có tiêu đề'}
+                    </h3>
+                    <Badge variant="outline" className="shrink-0">
+                      {statusLabel}
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                    <span className="inline-flex items-center gap-1">
+                      <WorkflowIcon className="w-3.5 h-3.5" />
+                      {content.workflow_name ?? 'Workflow'}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatRelativeTime(content.generated_at)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5" />
+                      {variantCount} variant
+                    </span>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,15 @@
 import type { ContentVariant } from '@/lib/content/types';
 
-export type ContentStatus = 'draft' | 'approved' | 'rejected' | 'sent';
+export const CONTENT_STATUS_VALUES = ['generating', 'draft', 'approved', 'rejected'] as const;
+
+export type ContentStatus = (typeof CONTENT_STATUS_VALUES)[number];
+
+export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
+  generating: 'Đang tạo',
+  draft: 'Chờ duyệt',
+  approved: 'Đã duyệt',
+  rejected: 'Đã từ chối',
+};
 
 export interface Content {
   id: string;
