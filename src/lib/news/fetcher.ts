@@ -18,49 +18,6 @@ const parser = new Parser({
 });
 
 /**
- * Fetch full article content from URL using Readability
- */
-async function fetchArticleContent(url: string): Promise<string> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AutoContentFactory/1.0; +https://autocontent.online)',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const html = await response.text();
-
-    // Lazy dynamic import to avoid Vercel production bundling issue (ERR_REQUIRE_ESM)
-    const { JSDOM } = await import('jsdom');
-    const { Readability } = await import('@mozilla/readability');
-
-    const dom = new JSDOM(html, { url });
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
-
-    if (!article || !article.textContent) {
-      throw new Error('Readability extract returned empty content');
-    }
-
-    // Clean whitespace
-    return article.textContent
-      .replace(/\s+/g, ' ')
-      .replace(/\n+/g, '\n')
-      .trim();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
  * Extract source name from RSS feed URL
  * Example: "https://vnexpress.net/rss/suc-khoe.rss" -> "VnExpress"
  */
@@ -85,12 +42,40 @@ function isRecent(pubDate: string | undefined): boolean {
   return date.getTime() >= cutoff;
 }
 
+const MIN_DESCRIPTION_CHARS = 80;
+
+function extractDescription(item: { content?: string; contentSnippet?: string; description?: string }): string {
+  // Priority: contentSnippet (stripped HTML by rss-parser) > content (raw HTML, manual strip) > description
+  const candidates = [item.contentSnippet, item.content, item.description].filter(
+    (v): v is string => typeof v === 'string' && v.length > 0
+  );
+
+  for (const candidate of candidates) {
+    // Strip HTML tags + whitespace cleanup
+    const stripped = candidate
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (stripped.length >= MIN_DESCRIPTION_CHARS) {
+      return stripped;
+    }
+  }
+
+  return '';
+}
+
 /**
  * Fetch news articles from list of RSS feed URLs.
  * - Parses each RSS feed (timeout 8s)
  * - Filters articles within last 24h
  * - Takes max 3 articles per source
- * - For each article, fetches full content via Readability
+ * - Uses RSS description as article content (no full-page fetch)
  * - Errors per source are collected, not thrown (partial success OK)
  */
 export async function fetchNewsFromSources(
@@ -165,29 +150,27 @@ export async function fetchNewsFromSources(
         continue;
       }
 
-      log('article-fetch-start', { url: item.link, title: item.title });
-      const articleStart = Date.now();
+      const description = extractDescription(item);
 
-      try {
-        const content = await fetchArticleContent(item.link);
-        log('article-fetch-ok', { url: item.link, contentBytes: content.length, durationMs: Date.now() - articleStart });
-        articles.push({
-          title: item.title,
-          content,
-          link: item.link,
-          pub_date: item.pubDate ?? item.isoDate ?? new Date().toISOString(),
-          source_name: sourceName,
-          description: item.contentSnippet ?? item.content ?? '',
-        });
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Unknown article fetch error';
-        log('article-fetch-error', { url: item.link, error: errMsg, durationMs: Date.now() - articleStart });
+      if (!description) {
+        log('article-skip-short', { url: item.link, title: item.title, reason: 'description too short or missing' });
         errors.push({
           source_url: item.link,
-          error_message: errMsg,
-          stage: 'article_fetch',
+          error_message: `Description shorter than ${MIN_DESCRIPTION_CHARS} chars or missing`,
+          stage: 'content_extract',
         });
+        continue;
       }
+
+      articles.push({
+        title: item.title,
+        content: description,
+        link: item.link,
+        pub_date: item.pubDate ?? item.isoDate ?? new Date().toISOString(),
+        source_name: sourceName,
+        description,
+      });
+      log('article-extract-ok', { url: item.link, contentBytes: description.length });
     }
   }
 
