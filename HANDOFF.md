@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 7 - Dashboard layout + Brand Voice readonly DONE ✅, READY TO DEPLOY
+**Status:** Week 1 Day 8 - Workflow CRUD (List + Create + Toggle + Delete) DONE ✅, READY TO DEPLOY
 
 ## 2. Current State
 
@@ -47,7 +47,17 @@
 - ✅ BrandVoiceCard component nhận optional prop readonly?: boolean (backward compat Day 6)
 - ✅ src/lib/brands/queries.ts với getCurrentUserBrand() (Supabase client, RLS-aware, 12-field type Brand snake_case match DB)
 - ✅ src/lib/brands/converters.ts với guideToFormData() convert BrandVoiceGuide → OnboardingFormData
-- **Last verified:** 13/05/2026 - Day 7 close - Smoke test Phase 1-3 PASS, ready deploy
+- ✅ Workflow CRUD layer hoàn chỉnh: types + constants + zod schemas + Supabase queries (4 file src/lib/workflows/)
+- ✅ Workflow list page `/dashboard/workflows` với empty state + workflow card (Server Component fetch RLS-aware)
+- ✅ Workflow create form `/dashboard/workflows/new` (react-hook-form 7.75 + zod 4.4, 5 field, conditional news_sources)
+- ✅ 3 Server Actions: createWorkflow + toggleWorkflowEnabled + deleteWorkflow (auth check + RLS insert/update/delete + revalidatePath)
+- ✅ Workflow card với toggle switch (optimistic update + revert on fail) + delete confirm dialog (shadcn AlertDialog)
+- ✅ shadcn/ui AlertDialog component (manual paste, RULE D5-3 Node v24, @radix-ui/react-alert-dialog 1.1.6)
+- ✅ Workflow lưu DB: name + news_sources lưu trong config JSONB (không migration), brand_id link RLS-aware
+- ✅ 5 schedule preset cron + 3 content type (news_based / evergreen / promotional)
+- ✅ Field-level error display (pattern RULE D6-3): banner đỏ list lỗi với label tiếng Việt
+- ✅ Workflow "Tin sáng Ladysfit" verified DB qua Supabase MCP (id b01973cb-7c76-49ec-adf7-6f980d3b7480)
+- **Last verified:** 13/05/2026 - Day 8 close - Smoke test Phase 1-3+6-7 PASS, build 4.2s success, RLS 4 policies workflows verified
 
 ## 3. Done So Far
 
@@ -190,6 +200,54 @@
 - `06b110e` feat(week1-day7-m4): display brand voice card readonly on dashboard
 - `<sắp có>` docs(handoff): close Day 7 - dashboard + brand voice readonly deployed
 
+### Day 8 (13/05/2026)
+
+**M1: Workflows lib foundation**
+- Verify schema workflows trong DB qua Supabase MCP (8 cột, 5 NOT NULL, name lưu trong config JSONB không cần migration)
+- Create src/lib/workflows/types.ts: WorkflowFormData + ContentType + ScheduleCronValue + WorkflowConfig + WorkflowWithConfig + DEFAULT_WORKFLOW_FORM_DATA
+- Create src/lib/workflows/constants.ts: 3 CONTENT_TYPES + 5 SCHEDULE_PRESETS + helper getScheduleLabel/getContentTypeLabel
+- Create src/lib/workflows/schemas.ts: zod 4 syntax workflowFormSchema với superRefine (news_based requires news_sources) - fix RULE D8-1 zod 3 vs 4 API
+- Create src/lib/workflows/queries.ts: getCurrentUserWorkflows + getWorkflowById dùng Supabase client RLS-aware (pattern Day 7 RULE D7-6)
+
+**M2: List page + empty state**
+- Verify sidebar-nav.tsx đã link /dashboard/workflows từ Day 7 (không cần sửa)
+- Create src/components/workflows/workflow-empty-state.tsx (icon Workflow + button "Tạo workflow đầu tiên")
+- Create src/components/workflows/workflow-card.tsx readonly v1 (Server Component-compatible, icon theo type, badge enabled, format relative time tiếng Việt)
+- Create src/app/dashboard/workflows/page.tsx (Server Component fetch via getCurrentUserWorkflows, conditional render empty/list)
+- Smoke runtime: sidebar nav active state đúng, empty state hiện đẹp với button CTA hồng
+
+**M3: Create form + Server Action**
+- Create src/app/dashboard/workflows/actions.ts: Server Action createWorkflow với auth check + zod validate + fetch brand_id + insert + revalidatePath + redirect
+- Create src/app/dashboard/workflows/new/page.tsx Server Component check brand exists (redirect /onboarding nếu chưa có brand)
+- Create src/app/dashboard/workflows/new/workflow-form.tsx Client Component (react-hook-form 7.75 + zod resolver, fix RULE D8-2 useForm<Input, Context, Output> generic 3 slot cho zod 4 default)
+- 5 field: name (input), type (radio cards), scheduleCron (select preset), newsSources (URL list add/remove, conditional theo type), enabled (checkbox)
+- Field-level error display banner đỏ với label tiếng Việt (pattern Day 6 RULE D6-3)
+- Smoke runtime: validation client-side + server-side hoạt động, URL invalid bị reject, submit thành công redirect về list, workflow "Tin tức mớ về giảm cân" verified DB qua Supabase MCP
+
+**M4: Toggle enabled + Delete**
+- Install @radix-ui/react-alert-dialog 1.1.6
+- Manual paste shadcn/ui AlertDialog component vào src/components/ui/alert-dialog.tsx (RULE D5-3 Node v24, fix RULE D8-3 verify dep trước khi viết import, RULE D8-4 phân biệt Format C vs Format A)
+- Add 2 Server Action vào actions.ts: toggleWorkflowEnabled (update enabled) + deleteWorkflow (hard delete) - cả 2 auth check + RLS-aware
+- Rewrite workflow-card.tsx thành Client Component: useState cho optimistic update toggle, useTransition cho async action, custom Switch button + Trash2 icon
+- AlertDialog confirm xoá: title "Xoá workflow?" + description chứa tên workflow in đậm + button "Huỷ" outline / "Xoá" đỏ + loading state
+- Smoke runtime 4 case PASS: render UI mới, toggle optimistic working, dialog confirm clean, delete xoá khỏi DB
+- Workflow test "Tin tức mớ về giảm cân" delete thành công, workflow "Tin sáng Ladysfit" re-insert qua Supabase MCP (id b01973cb-7c76-49ec-adf7-6f980d3b7480)
+
+**M5: Smoke test 5 phases + HANDOFF update**
+- Phase 1 Pre-flight: working tree clean, ahead origin 4 commits, Node v24, npm v11.9.0 PASS
+- Phase 2 Static: npx tsc --noEmit zero error PASS
+- Phase 3 Build: npm run build 4.2s success, 10 routes + Proxy middleware, /dashboard/workflows và /new đều Dynamic ƒ PASS
+- Phase 6 DB: RLS enabled true, 4 policy CRUD workflows, workflow "Tin sáng Ladysfit" verified link đúng brand Ladysfit PASS
+- Phase 7 Security: .gitignore cover .env*.local, không leak Stripe/Supabase service token pattern PASS
+- Update HANDOFF.md với Day 8 closure
+
+**Commits Day 8 (4 commits + 1 sắp có):**
+- `798b312` feat(week1-day8-m1): create workflows lib (types, constants, schemas, queries)
+- `498f4e4` feat(week1-day8-m2): workflow list page with empty state + workflow card
+- `3a4c7b3` feat(week1-day8-m3): workflow create form + server action
+- `d094c77` feat(week1-day8-m4): workflow toggle enabled + delete with confirm dialog
+- `<sắp có>` docs(handoff): close Day 8 - workflow CRUD deployed
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -213,6 +271,9 @@
 | **Supabase client cho DB queries thay vì Drizzle** | Day 7 M4 thử Drizzle nhưng fail "password authentication failed for user ASUS" (DATABASE_URL chưa setup) + Drizzle bypass RLS. Rollback Supabase client (Day 2-6 pattern) - RLS-aware, không cần env config thêm |
 | **Type Brand inline snake_case (manual sync DB schema) thay vì Drizzle $inferSelect** | Drizzle dùng camelCase nhưng Supabase client trả snake_case → conflict. Inline type snake_case match exact 12 fields DB |
 | **BrandVoiceCard readonly prop optional thay vì refactor base/wrapper components** | Day 6 component đã verified pass, em chọn add prop để minimize risk regression. Week 2 refactor cùng Claude API integration |
+| **Workflow name lưu trong config JSONB thay vì migration thêm column** | Day 8 M1: tránh migration giữa milestone, JSONB đã nullable sẵn, đủ flexibility cho future fields (news_sources, content_tone_override). Trade-off: query lọc theo name phải dùng `config->>'name'` thay vì column index. Đủ MVP < 1000 user. |
+| **5 schedule cron preset thay vì cron string raw input** | Day 8 M1: SMB Việt Nam 30-50 tuổi không biết cron syntax. Preset 5 option (sáng 7h, tối 8h, 2 lần/ngày, thứ Hai 9h, T246 9h) đủ 80% use case. Cron raw defer Phase 2 nếu user request. |
+| **Optimistic UI update cho toggle thay vì block UI đợi server response** | Day 8 M4: UX mượt mobile, perceived latency 0. Trade-off: phải revert state nếu server fail (đã handle). Pattern phù hợp với action không critical (toggle on/off khác hẳn delete). |
 
 ## 5. Known Issues
 
@@ -240,6 +301,13 @@
 - **Sub-header "Xem lại và confirm. Bạn có thể edit từng phần nếu cần." trong BrandVoiceCard không hợp ngữ cảnh dashboard readonly** - Day 6 copy không update khi readonly. Defer Week 2 refactor cùng Claude API
 - **Drizzle client chưa setup DATABASE_URL env** - Khi cần Drizzle ORM cho features khác (vd workflow query) cần config DATABASE_URL trong .env.local + Vercel env
 
+### Issues Day 8 (mới phát sinh)
+- **Workflow card không có button "Sửa workflow":** Day 8 chỉ có toggle + delete, chưa có edit (đổi tên / đổi nguồn / đổi schedule). Defer Day 10 hoặc Week 2 cùng "Edit Brand Voice".
+- **`getCurrentUserBrand` query không match Type Brand 12 fields chuẩn:** Khi truy cập `brand.brand_voice_guide?.brand_basics?.name` trong new/page.tsx em assume field tồn tại. Hoạt động vì Day 7 query select đầy đủ. Nếu Day 9+ refactor query để optimize, có thể break. Cần thêm select() explicit hoặc dùng zod parse runtime.
+- **Vercel Cron handler chưa wire-up:** Workflow tạo ra với schedule cron, nhưng chưa có endpoint cron consume. Day 9 sẽ implement /api/cron/run-workflows. Hiện workflow chỉ là metadata, không có execution.
+- **Workflow type 'evergreen' và 'promotional' chưa có content config:** Day 8 chỉ news_based có news_sources. 2 type còn lại có thể cần fields khác (topic_focus, product_link...). Defer khi build Claude API content generation Day 9-10.
+- **Delete workflow không cascade contents:** Schema có FK `contents.workflow_id ON DELETE CASCADE` nhưng chưa test với data thật vì contents chưa có row. Verify Day 9 sau khi cron sinh content.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env (overwrite .env.local)
@@ -247,29 +315,33 @@
 
 ## 6. Next Steps
 
-### Ngay sau Day 7 close (HÔM NAY): DEPLOY production
+### Ngay sau Day 8 close (HÔM NAY): DEPLOY production
 - Pre-deploy checklist verify
-- `git push origin main` → Vercel auto-deploy
-- Smoke test production: dashboard + logout + onboarding flow trên Vercel URL
-- Verify brand "Ladysfit" còn hiện readonly đúng sau deploy
+- `git push origin main` → Vercel auto-deploy 5 commits Day 8
+- Smoke test production: dashboard + onboarding + workflow CRUD trên Vercel URL
+- Verify workflow "Tin sáng Ladysfit" hiện trong list, toggle + delete hoạt động trên prod
 
-### Day 8 / Week 2: Workflow creation + Claude API integration
-- Build form tạo Workflow gắn với brand (schedule cron, news source, content type)
-- Save workflow vào table `workflows`
-- Integrate Claude API Sonnet 4.6 cho content generation
-- Replace rule-based archetype mapping bằng Claude API synthesize brand voice (lift quality 80%)
-- "Edit Brand Voice" button trên dashboard → reuse onboarding flow với pre-fill data
-- Fix Day 6+7 known issues: getBrandPrefix, saveError persistent, npm run lint, signup generic error, BrandVoiceCard refactor base/wrapper
+### Day 9 / Week 2: Cron handler + Claude API content generation
+- Setup vercel.json với cron schedule (hit endpoint mỗi giờ hoặc 7h sáng UTC+7)
+- Build /api/cron/run-workflows endpoint với CRON_SECRET auth
+- Query workflows enabled = true + filter cron string match now()
+- Integrate Claude API Sonnet 4.6: fetch news từ news_sources → generate content với brand voice guide → insert vào contents
+- Update workflows.last_run_at sau mỗi run
+- Replace rule-based archetype mapping bằng Claude API (lift Brand Voice quality 80%)
+- Test cron trigger thực tế với workflow Ladysfit
 
-### Week 3: Content generation engine + Email delivery
+### Day 10 / Week 2-3: Workflow edit + Brand Voice edit + fix known issues
+- Build edit workflow form (reuse create form với mode=edit + pre-fill data)
+- "Edit Brand Voice" button trên dashboard → /onboarding?mode=edit pre-fill từ DB
+- Fix Day 6+7+8 known issues: getBrandPrefix, saveError persistent, npm run lint script, signup generic error, BrandVoiceCard refactor base/wrapper, workflow type config (evergreen/promotional)
 
-- Cron job đọc workflows, call Claude API, save vào `contents`
-- Resend integration: gửi content draft email cho user review
-- User approve/reject UI trên dashboard
+### Week 3: Content review + Email delivery
+- Build /dashboard/contents page list content generated
+- Approve/reject UI workflow
+- Resend integration gửi content draft email cho user review
 - Cloudflare R2 storage cho media assets
 
-### Week 4: Payment + Polish
-
+### Week 4: Payment + Polish + Launch
 - PayOS integration cho 3 tier (Free/Starter/Pro)
 - Stripe trial flow (14 ngày guarantee per landing)
 - Sentry monitoring
@@ -413,6 +485,31 @@ Bonus: pattern chứa `"` phải bọc bằng single quote bên ngoài (`'@/lib/
 **RULE D7-6: KHÔNG đổi DB access mechanism (Drizzle vs Supabase client) giữa milestone.**
 Em đã refactor sang Drizzle ORM ở M4 vì nghĩ "type cleaner". Bug: 1) Day 6 chưa setup DATABASE_URL nên Drizzle fail auth → fallback Windows username "ASUS". 2) Drizzle bypass RLS (security regression). 3) Cần config Vercel env mới.
 Default: dùng pattern feature trước đó đã pass. Day 2-6 dùng Supabase client → M4 cũng dùng Supabase client. Đổi tech stack giữa chừng = bug.
+
+### Bài học Day 8 (4 RULES mới)
+
+**RULE D8-1: VERIFY THƯ VIỆN VERSION TRƯỚC KHI VIẾT SYNTAX MỚI.**
+Zod 4 đổi API: gộp `required_error` + `invalid_type_error` thành `message` duy nhất. `z.enum(VALUES, { required_error: '...' })` zod 3 → `z.enum(VALUES, { message: '...' })` zod 4. Pattern đúng: `Get-Content package.json | Select-String -Pattern '"zod"'` để confirm major version TRƯỚC khi viết schema.
+*Bug Day 8 M1:* 3 lỗi tsc trong schemas.ts vì em viết zod 3 syntax trong khi project dùng zod 4. Fix: đổi sang `message` key. Bài học bổ sung: đáng lẽ đọc file `src/lib/onboarding/schemas.ts` Day 6 làm reference thay vì đoán.
+
+**RULE D8-2: ZOD 4 + react-hook-form CẦN useForm<Input, Context, Output> RÕ RÀNG.**
+Trong zod 4, `.default()` + `.optional()` tạo Input type ≠ Output type (input có optional field, output đã apply default). `useForm<Schema>` 1-slot default ngầm Schema=Output → khi user gõ form (input partial) mismatch. Pattern đúng:
+```ts
+type Input = z.input<typeof schema>;
+type Output = z.output<typeof schema>;
+useForm<Input, unknown, Output>({ resolver, defaultValues });
+function onSubmit(values: Output) { ... }
+```
+*Bug Day 8 M3:* 2 lỗi tsc trong workflow-form.tsx. Day 6 onboarding không gặp vì không dùng `.default()` ở optional field.
+
+**RULE D8-3: VERIFY SHADCN COMPONENT TỒN TẠI TRƯỚC KHI VIẾT IMPORT.**
+Day 8 M4 em đưa prompt rewrite workflow-card.tsx import AlertDialog TRƯỚC khi anh chạy prompt verify file alert-dialog.tsx có chưa. May Cursor flag được, nhưng nếu Cursor không flag thì build fail.
+Pattern đúng: với mỗi shadcn component import mới, chạy `Get-ChildItem src\components\ui\<name>.tsx` + `Get-Content package.json | Select-String "<radix-package>"` TRƯỚC khi viết code dùng.
+
+**RULE D8-4: PHÂN BIỆT RÕ FORMAT C `[PASTE VÀO FILE]` VS FORMAT A `[POWERSHELL]`.**
+Format C = tạo file mới trong Cursor (Right-click → New File → paste nội dung qua editor). KHÔNG paste vào terminal PowerShell vì PowerShell parse code TypeScript như command → 10+ syntax error.
+*Bug Day 8 M4:* Em đưa prompt format C nhưng anh paste vào PowerShell, terminal trả về 9 ParserError. Fix bằng Format B (PROMPT CURSOR) - Cursor tự tạo file + fill nội dung trong 1 thao tác, an toàn hơn vì không qua terminal.
+Pattern em sẽ dùng cho mọi shadcn paste sau này: **Format B chứ không phải Format C**.
 
 ### Lưu ý cho chat tiếp theo
 
