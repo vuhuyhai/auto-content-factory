@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { anthropic, CLAUDE_MODEL, DEFAULT_MAX_TOKENS } from '../claude/client';
-import { buildSystemPrompt, buildUserPrompt } from './prompts';
+import { buildPrompts, type PromptContext } from './prompts';
 import type { BrandVoiceGuide, GeneratedContent, ContentVariant } from './types';
-import type { NewsArticle } from '../news/types';
 
 /**
  * Zod schema for Claude response validation
+ * (giữ nguyên schema cũ - structure variants giống nhau cho cả 3 type)
  */
 const contentVariantSchema = z.object({
   hook: z.string().min(10, 'Hook quá ngắn').max(300, 'Hook quá dài'),
@@ -34,14 +34,12 @@ export class ContentGenerationError extends Error {
  * Claude may wrap JSON in markdown code blocks or add prose around it.
  */
 function extractJson(text: string): string {
-  // Try markdown code block first: ```json ... ```
   const codeBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   let jsonText: string;
 
   if (codeBlockMatch) {
     jsonText = codeBlockMatch[1].trim();
   } else {
-    // Fallback: find first { and matching last }
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -51,25 +49,61 @@ function extractJson(text: string): string {
     }
   }
 
-  // Try to fix common Claude JSON issues:
-  // 1. Unescaped newlines in strings (replace literal \n with space)
-  // 2. Smart quotes (replace with straight quotes)
+  // Fix smart quotes (Claude hay thay khi viết tiếng Việt)
   jsonText = jsonText
-    .replace(/[“”]/g, '"')  // smart double quotes
-    .replace(/[‘’]/g, "'"); // smart single quotes
+    .replace(/[“”]/g, '"')  // smart double quotes → straight
+    .replace(/[‘’]/g, "'"); // smart single quotes → straight
 
   return jsonText;
 }
 
 /**
- * Generate 3 content variants from brand voice + article
+ * Build source_article metadata cho GeneratedContent.source_article field.
+ * Mỗi type có cách trả khác nhau:
+ * - news_based: từ article object
+ * - evergreen: title = topic_focus, link/source_name = placeholder
+ * - promotional: title = offer (truncate), link = product_link
+ */
+function buildSourceMetadata(ctx: PromptContext): {
+  title: string;
+  link: string;
+  source_name: string;
+} {
+  switch (ctx.type) {
+    case 'news_based':
+      return {
+        title: ctx.article.title,
+        link: ctx.article.link,
+        source_name: ctx.article.source_name,
+      };
+    case 'evergreen':
+      return {
+        title: ctx.context.topicFocus.slice(0, 200),
+        link: '',
+        source_name: 'evergreen',
+      };
+    case 'promotional':
+      return {
+        title: ctx.context.offer.slice(0, 200),
+        link: ctx.context.productLink,
+        source_name: 'promotional',
+      };
+  }
+}
+
+/**
+ * Generate 3 content variants from brand voice + context (type-discriminated).
+ *
+ * Discriminated union ctx:
+ * - { type: 'news_based', article: NewsArticle }
+ * - { type: 'evergreen', context: { topicFocus, recentTitles? } }
+ * - { type: 'promotional', context: { productLink, offer } }
  */
 export async function generateContent(
   brand: BrandVoiceGuide,
-  article: NewsArticle
+  ctx: PromptContext
 ): Promise<GeneratedContent> {
-  const systemPrompt = buildSystemPrompt(brand);
-  const userPrompt = buildUserPrompt(article);
+  const { systemPrompt, userPrompt } = buildPrompts(brand, ctx);
 
   // Step 1: Call Claude API
   let responseText: string;
@@ -118,7 +152,6 @@ export async function generateContent(
     const jsonText = extractJson(responseText);
     parsed = JSON.parse(jsonText);
   } catch (err) {
-    // Log full response to stderr for debugging
     console.error('\n=== FULL CLAUDE RESPONSE (for debugging) ===');
     console.error(responseText);
     console.error('=== END RESPONSE ===\n');
@@ -144,16 +177,15 @@ export async function generateContent(
   }
 
   console.log(
-    `[generator] Generated 3 variants. Tokens: ${usage.input} in / ${usage.output} out`
+    `[generator] type=${ctx.type} | Generated 3 variants. Tokens: ${usage.input} in / ${usage.output} out`
   );
 
   return {
     variants: validation.data.variants as ContentVariant[],
-    source_article: {
-      title: article.title,
-      link: article.link,
-      source_name: article.source_name,
-    },
+    source_article: buildSourceMetadata(ctx),
     generated_at: new Date().toISOString(),
   };
 }
+
+// Re-export PromptContext cho consumer (workflow-runner)
+export type { PromptContext };

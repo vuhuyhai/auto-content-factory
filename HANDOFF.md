@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 12 P2 close - Content review status actions hoàn chỉnh. Server Action approve/reject với optimistic UI, sidebar badge count draft contents với revalidate layout, filter tabs 4 trạng thái với URL searchParams. tsc PASS, build 15 routes.
+**Status:** Week 1 Day 13 close - 3 workflow type evergreen + promotional + news_based đầy đủ. Strategy pattern prompt builders (folder `src/lib/content/prompts/`), generator refactor discriminated union PromptContext, workflow-runner dispatch 3 type (3 step thay 4), form UI conditional + Server Action save config JSONB per type. Backward compat workflow Ladysfit news_based 100%. tsc PASS, build 15 routes.
 
 ## 2. Current State
 
@@ -42,7 +42,9 @@
 - ✅ TypeScript zero error
 - ✅ Schedule preset timezone fix (Day 12 P1): cron lưu UTC + label VN time, 5 preset mới, DRY pattern schema-from-constants, migration Ladysfit OK
 - ✅ Content review status actions (Day 12 P2): approve/reject Server Action + optimistic UI, sidebar badge draft count, filter tabs 4 status với URL searchParams
-- **Last verified:** 13/05/2026 - Day 12 P2 close - 3 commits 8e3470f + 01a76cc + 2b7251e local, HANDOFF Day 12 P2 commit + push tất cả lên origin/main next. Production deploy auto sau push.
+- ✅ Workflow types evergreen + promotional (Day 13): strategy pattern prompt builders folder, generator discriminated union PromptContext, workflow-runner dispatch 3 type với 3 step (giảm 1 step so Day 10), form UI conditional + Server Action buildWorkflowConfig per type
+- ✅ Test scripts 3 type localhost qua tsx (Day 13 M5.1): test-generator (news_based) + test-generator-evergreen + test-generator-promotional + _mock-brand DRY
+- **Last verified:** 13/05/2026 - Day 13 close - 3 workflow type evergreen + promotional + news_based hoàn chỉnh. 6 file mới + 5 file refactor + 4 test scripts. M5.1 3 test scripts PASS (51-62s/test, content quality cao). M5.2 form browser test PASS với 1 workflow mỗi type trong DB. Backward compat verified. HANDOFF Day 13 commit + push sau.
 
 ### Day 11 additions (13/05/2026)
 
@@ -210,7 +212,7 @@
   - Mobile responsive tabs scroll ngang (chữ "Đã từ chối" hơi chật, defer Week 2 nếu cần fix)
 - Commit `2b7251e` feat(week1-day12-p2-m4)
 
-**Last verified:** 13/05/2026 - Day 12 P2 close - 3 commits 8e3470f + 01a76cc + 2b7251e local, HANDOFF Day 12 P2 commit + push tất cả lên origin/main next. Production deploy auto sau push.
+**Last verified:** 13/05/2026 - Day 13 close - 3 workflow type evergreen + promotional + news_based hoàn chỉnh. 6 file mới + 5 file refactor + 4 test scripts. M5.1 3 test scripts PASS (51-62s/test, content quality cao). M5.2 form browser test PASS với 1 workflow mỗi type trong DB. Backward compat verified. HANDOFF Day 13 commit + push sau.
 
 ## 3. Done So Far
 
@@ -241,6 +243,79 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - `01a76cc` feat(week1-day12-p2-m3): sidebar badge count draft contents với revalidate layout
 - `2b7251e` feat(week1-day12-p2-m4): filter tabs by status với URL searchparams
 - `<sắp có>` docs(handoff): close Day 12 P2 - content review status actions
+
+### Day 13 (13/05/2026)
+
+**M0: Audit + verify schema (~15 phút)**
+- Supabase MCP query workflows: 1 workflow Ladysfit type='news_based' với config `{name, news_sources}`
+- Cursor audit `src/inngest/functions/workflow-runner.ts` (path thật, KHÁC HANDOFF Day 12 P2 ghi `src/lib/inngest/...`) → throw "not yet supported" cho type !== news_based, 4 step.run (fetch-workflow-and-brand / fetch-news / generate-content / save-content)
+- `ContentType` literal đã có 3 type sẵn từ Day 8. `CONTENT_TYPE_VALUES` const array sẵn DRY pattern Day 12 P1 RULE D12-4
+- Form đã có radio chọn 3 type, conditional render newsSources khi news_based. Thiếu UI field cho evergreen/promotional
+- prompts Day 9 là 1 file đơn `src/lib/content/prompts.ts` (KHÔNG phải folder)
+- Encoding verify: 3 file workflows/* UTF-8 NO BOM (`69 6D 70 6F` = "impo")
+
+**M1: Types + Schemas + Constants (~25 phút)**
+- types.ts: extend `WorkflowConfig` thành discriminated union 3 type (WorkflowConfigBase + WorkflowConfigNewsBased + WorkflowConfigEvergreen + WorkflowConfigPromotional). `WorkflowConfigNewsBased.type` optional cho backward compat (workflow Ladysfit hiện tại config không có `type` field)
+- types.ts: extend `WorkflowFormData` thêm `topicFocus?` + `productLink?` + `offer?`. DEFAULT_WORKFLOW_FORM_DATA thêm 3 field empty string
+- schemas.ts: extend Zod base schema + superRefine validate per type
+  - evergreen: topic_focus 20-500 chars
+  - promotional: product_link URL hợp lệ + offer 30-500 chars
+- constants.ts: KHÔNG đụng (CONTENT_TYPES đã có 3 option đầy đủ từ Day 8)
+- tsc PASS, types.ts 89 LOC, schemas.ts 110 LOC (cả 2 < 200 LOC limit)
+
+**M2: Prompt builders folder + Generator refactor (~50 phút)**
+- M2.1: Tạo folder `src/lib/content/prompts/` với 5 file:
+  - `_base.ts`: ARCHETYPE_DESCRIPTIONS, TONE_GUIDE, getToneBucket, buildBrandContext (chia sẻ chung 3 type), OUTPUT_SPEC_COMMON
+  - `news-based.ts`: buildSystemPromptNewsBased + buildUserPromptNewsBased (giữ logic Day 9)
+  - `evergreen.ts`: buildSystemPromptEvergreen + buildUserPromptEvergreen + EvergreenContext interface (topicFocus + recentTitles? optional)
+  - `promotional.ts`: buildSystemPromptPromotional + buildUserPromptPromotional + PromotionalContext interface (productLink + offer)
+  - `index.ts`: buildPrompts(brand, ctx: PromptContext) dispatcher với discriminated union exhaustive check
+- M2.2: Refactor generator.ts signature `generateContent(brand, ctx: PromptContext)` thay vì `generateContent(brand, article: NewsArticle)`. Helper `buildSourceMetadata(ctx)` build source_article field theo type
+- M2.3: Xoá file cũ `src/lib/content/prompts.ts` (single file), conflict với folder mới
+- M2.4: Tạo 4 test scripts:
+  - `scripts/_mock-brand.ts`: hardcode brand Ladysfit (DRY cho 3 test)
+  - `scripts/test-generator.ts`: overwrite Day 9, dùng PromptContext mới (`{type:'news_based', article}`)
+  - `scripts/test-generator-evergreen.ts`: test với topic_focus + recentTitles fixture
+  - `scripts/test-generator-promotional.ts`: test với productLink + offer fixture, có check `HAS PRODUCT LINK IN BODY`
+- Build PASS, generator 191 LOC, _base 132 LOC (< 200)
+- Bug encounter: scripts/test-generator.ts cũ (Day 9) còn signature old `generateContent(brand, article)` → next build fail. Fix bằng overwrite ở M2.4
+
+**M3: Workflow-runner dispatch (~35 phút)**
+- M3.1: queries.ts extend `WorkflowConfigForRunner` thành loose superset (tất cả field optional cho 3 type). Thêm `fetchRecentContentTitlesAdmin(workflowId, limit=5)` cho evergreen, silent fail return `[]` nếu DB query fail
+- M3.2: workflow-runner.ts refactor:
+  - Thêm `SUPPORTED_CONTENT_TYPES` const array + `isSupportedContentType` type guard (pattern DRY)
+  - Step 1 validate type-specific config sớm (fail fast trước tốn Claude API call)
+  - Gộp step 2 (build-context) + step 3 (generate) → 1 step "build-and-generate" (giảm từ 4 step Day 10 xuống 3 step Day 13)
+  - 2 helper extract: `buildPromptContextByType` + `buildSourceFields`
+  - source_url cho evergreen = NULL (schema nullable OK), promotional = productLink (dedup key)
+- M3.3: Bug TS widening `contentType: 'news_based' | ... → string` sau step.run boundary. Fix bằng re-narrow + isSupportedContentType type guard
+- workflow-runner 235 LOC, tsc + build PASS
+
+**M4: Form UI 3 type + Server Action (~45 phút)**
+- workflow-form.tsx: thêm 2 watchers `watchedTopicFocus` + `watchedOffer` cho counter realtime. 2 boolean flag `needsTopicFocus` + `needsPromotional`. 3 conditional block render field theo type chọn
+- Field evergreen: Textarea 4 rows với counter `{length}/500 ký tự` + placeholder cụ thể Việt
+- Field promotional: Input type=url cho productLink + Textarea 4 rows cho offer + counter
+- Pattern UX: radio type ở đầu → field thay đổi smooth (giữ pattern Day 8)
+- getFieldLabel mở rộng 3 label tiếng Việt mới
+- actions.ts: helper `buildWorkflowConfig(data)` build config JSONB theo type (DRY). createWorkflow step 4 dùng helper thay vì inline
+- workflow-form 376 LOC, actions 245 LOC, build PASS
+
+**M5.1: Localhost smoke test 3 type qua tsx (~15 phút)**
+- 3 test scripts PASS với Claude API thật:
+  - news_based: 51s, content "hút mỡ ngộ độc thuốc tê", 3 variant hook differentiation tốt (câu hỏi / kể chuyện / insight số), voice Ladysfit perfect
+  - evergreen: 62s, content "tập gym sau sinh giữ sữa", 3 angle khác nhau (lý thuyết steps / chị Lan storytelling / cortisol scientific), KHÔNG lặp recentTitles
+  - promotional: 46s, content "khoá học giảm cân 90 ngày", 3 variant đều có product link trong body (verify `HAS PRODUCT LINK IN BODY: YES OK` x 3), CTA mạnh, nhắc đúng giá `2.490.000 VNĐ` + ưu đãi `30%` + deadline `20/05`
+- Bug encounter: Node v24 + `--experimental-strip-types` không resolve relative imports không có `.ts` extension. Fix dùng `npx tsx --env-file=.env.local scripts/...` (tsx có sẵn deps `^4.21.0`)
+
+**M5.2: Browser test form 2 type mới + DB verify (~10 phút)**
+- Test EVERGREEN qua form: type radio chọn → newsSources biến mất + topicFocus textarea xuất hiện + counter realtime + validation 20 chars min → submit redirect OK → DB workflow id `5926eb93-4387-4cdc-82ad-d62adc79eaab` config `{name, topic_focus}` đúng
+- Test PROMOTIONAL: form conditional 2 field (productLink + offer) xuất hiện + URL validation + counter → submit redirect OK → DB workflow id `d4fbdbd7-bdf8-4961-a782-2cce7ad138ee` config `{name, product_link, offer}` đúng
+- Workflow Ladysfit cũ `b01973cb-7c76-49ec-adf7-6f980d3b7480` config nguyên vẹn (backward compat verified 100%)
+- DB count by type: 1 news_based + 1 evergreen + 1 promotional = 3 workflow
+
+**Commits Day 13 (1 commit theo strategy anh chọn):**
+- `<sắp có>` feat(week1-day13): workflow types evergreen + promotional với strategy pattern prompt builders + 3 step dispatch + form UI conditional
+- `<sắp có>` docs(handoff): close Day 13 - 3 workflow types complete
 
 ## 4. Architecture Decisions
 
@@ -285,6 +360,10 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **Content status varchar không CHECK constraint, enforce ở app layer (Day 12 P2 M1)** | Supabase MCP verify schema phát hiện status là varchar default 'generating'. KHÔNG migration ALTER TABLE giữa milestone (tránh schema drift risk). App layer enforce qua const CONTENT_STATUS_VALUES + ContentStatus literal union + Zod z.enum tuple cast. Pattern DRY single source of truth (RULE D12-4). Defer migration ADD CHECK constraint Week 2 nếu cần cứng schema |
 | **revalidatePath('/dashboard', 'layout') sau update status (Day 12 P2 M3.2)** | Sidebar badge render từ dashboard-shell.tsx ở /dashboard/layout.tsx, KHÔNG phải /dashboard/contents page. revalidatePath path-only invalidate page level, KHÔNG re-render layout level. Pattern Next.js 15+: revalidatePath(path, 'layout') để invalidate cả layout cấp dashboard. Fix preemptive trước khi test (badge stale nếu thiếu) |
 | **Filter tabs URL searchParams thay vì client-side state (Day 12 P2 M4)** | URL searchParams = bookmarkable + shareable + back/forward navigation work + SEO-friendly. Pattern Next.js 16: searchParams là Promise async, await trước khi đọc. Validate qua CONTENT_STATUS_VALUES.includes(), invalid status fallback "Tất cả" UX không crash. Aggregate counts client-side bằng reduce (Supabase JS chưa hỗ trợ GROUP BY native) |
+| **Strategy pattern cho prompt builders (Day 13 M2)** | 3 type có input khác nhau (NewsArticle vs EvergreenContext vs PromotionalContext) và hook pattern khác. Tách file riêng `prompts/news-based.ts` + `prompts/evergreen.ts` + `prompts/promotional.ts` + `_base.ts` shared context + `index.ts` dispatcher với discriminated union. Mỗi file < 100 LOC, test isolation tốt, mở rộng thêm type Phase 2 dễ |
+| **Discriminated union PromptContext (Day 13 M2)** | generator.ts signature mới `generateContent(brand, ctx: PromptContext)` với ctx union 3 nhánh. TypeScript exhaustive check trong dispatcher buildPrompts switch. Replace signature cũ `generateContent(brand, article: NewsArticle)` hardcode 1 input type |
+| **Workflow-runner gộp 4 step → 3 step (Day 13 M3)** | Step 2 "fetch-news" + Step 3 "generate-content" gộp thành 1 step "build-and-generate". Lý do: tránh widening literal union qua step.run boundary (Inngest JsonifyObject), giảm 1 webhook Vercel call, vẫn dưới 60s limit. Trade-off: nếu fail giữa "build context" và "generate", Inngest retry cả 2 phase (acceptable vì Claude generate idempotent) |
+| **Type-specific config validation 2 layer (Day 13 M3+M4)** | Layer 1 (form): Zod superRefine validate ở client (counter realtime) + Server Action safeParse (defense in depth). Layer 2 (workflow-runner): re-validate config sớm ở Step 1 (fail fast trước tốn Claude API). Pattern: trust nothing crossing trust boundaries |
 
 ## 5. Known Issues
 
@@ -340,6 +419,15 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - **No bulk approve/reject:** User phải click từng content. Khi DB có >50 contents Week 4 sẽ cần bulk action. Defer Week 3
 - **No content edit inline:** User chỉ approve/reject nguyên text, KHÔNG sửa được body variant. Defer Week 2-3 cùng "Edit Brand Voice" UI
 
+### Issues Day 13 (mới phát sinh)
+
+- **scripts/ folder KHÔNG track git** (.gitignore cover): Test scripts là dev tooling local. Không block production deploy. Documentation chỉ trong HANDOFF.
+- **Node v24 + `--experimental-strip-types` KHÔNG resolve imports không có `.ts` extension:** Phải dùng `npx tsx scripts/...` (tsx đã có sẵn deps `^4.21.0`). RULE D13-1 ghi pattern.
+- **2 workflow test Day 13 (evergreen `5926eb93-...` + promotional `d4fbdbd7-...`) vẫn enabled:** Sau test M5.2, 2 workflow này enabled với schedule. Anh có thể disable/delete trong dashboard nếu không muốn auto-run.
+- **Evergreen recentTitles fetch top 5 cố định:** Hard-code limit 5. Nếu workflow chạy > 5 lần, prompt chỉ tránh lặp 5 title gần nhất. Defer Week 2: cho user config "tránh lặp N title cuối" hoặc "vĩnh viễn không lặp".
+- **Promotional KHÔNG có image asset:** Hiện chỉ generate text. Image generation defer Week 3-4 cùng Cloudflare R2.
+- **source_url evergreen lưu NULL → dedup theo source_url không work cho evergreen:** workflow evergreen có thể tạo content trùng topic_focus nếu chạy nhiều lần cùng ngày. Defer Week 2 cùng "unique constraint workflow_id + content_hash" hoặc enforce schedule không quá 1 lần/ngày.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -347,23 +435,22 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ## 6. Next Steps
 
-### Day 13 / Week 2: High Priority
+### Day 14 / Week 2: High Priority
 
-**P1 - Workflow types evergreen + promotional:**
-- Day 9 logic chỉ work news_based. Extend Claude prompt template per type
-- Evergreen: topic_focus field thay vì news_sources
-- Promotional: product_link + offer field
+**P1 (Day 13 SHIPPED):** ✅ Workflow types evergreen + promotional - hoàn thành
 
-**P2 - Multi-source batch generation:**
-- Workflow `news_based` có thể có 3 nguồn RSS × 3 articles = 9 candidates
-- Loop generate multiple content per workflow run
-- Skip article đã có content (dedup theo source_url)
+**P2 - Multi-source batch generation (~2-3h):**
+- Workflow news_based có 3 nguồn RSS × 3 articles = 9 candidates per run
+- Loop generate multiple content, skip article đã có (dedup theo source_url)
 - Test với 2-3 RSS sources VN (TuoiTre, Dantri, CafeBiz)
 
-**P3 - Content edit inline + bulk actions:**
-- Sửa body variant inline (textarea + save) thay vì readonly
-- Bulk approve/reject checkbox + action bar khi DB > 50 contents
+**P3 - Content edit inline + bulk actions (~3-4h):**
+- Edit body variant inline (textarea + save)
+- Bulk approve/reject checkbox + action bar
 - Pagination /dashboard/contents song song với filter tabs hiện có
+
+**P4 - Workflow edit form (reuse create form mode=edit):**
+- User sửa được name/sources/schedule/type-specific config sau khi tạo
 
 ### Week 2-3: Content Review UI + Email delivery
 - Approve/reject UI với edit inline body
@@ -617,6 +704,35 @@ const tupleValues = STATUS_VALUES as [Status, ...Status[]];
 export const updateStatusSchema = z.object({ status: z.enum(tupleValues) });
 ```
 Lần sau thêm/sửa status chỉ đụng const array source. Build production sẽ catch nếu mismatch.
+
+### Bài học Day 13 (4 RULES mới)
+
+**RULE D13-1: Node v24 + `--experimental-strip-types` KHÔNG resolve relative imports thiếu `.ts` extension.**
+Day 13 M5.1 chạy `node --env-file=.env.local --experimental-strip-types scripts/test-generator.ts` fail ERR_MODULE_NOT_FOUND vì Node ES Module strict resolution. Fix dùng `npx tsx --env-file=.env.local scripts/...` (`tsx` đã có sẵn deps `^4.21.0`). Pattern: scripts/ folder dev tooling LUÔN dùng tsx, KHÔNG dùng raw node với experimental flag.
+
+**RULE D13-2: STRATEGY PATTERN CHO PROMPT BUILDERS - TÁCH FILE THEO TYPE, KHÔNG DÙNG IF-ELSE TRONG 1 FILE.**
+Day 13 M2 phân vân giữa 2 approach: (1) Strategy pattern 4 file `_base.ts + news-based.ts + evergreen.ts + promotional.ts + index.ts dispatcher` vs (2) 1 file prompts.ts với if-else conditional. Em chọn (1) vì:
+- Input mỗi type khác (NewsArticle vs EvergreenContext vs PromotionalContext)
+- Hook pattern khác (news pivot vs evergreen tips vs promo CTA)
+- Test isolation tốt (test riêng từng builder không phải mock toàn bộ)
+- Mỗi file < 100 LOC dễ maintain
+- Mở rộng Phase 2 (vd retrospective, listicle) chỉ thêm 1 file + 1 case trong dispatcher
+Pattern: Khi prompt có >2 variation đáng kể, LUÔN strategy pattern. KHÔNG nhồi conditional vào 1 file.
+
+**RULE D13-3: INNGEST STEP.RUN BOUNDARY WIDEN LITERAL UNION → STRING. RE-NARROW QUA TYPE GUARD.**
+Day 13 M3.2 fail TS2345 ở line `buildPromptContextByType(contentType, workflow)`. Root cause: `step.run` return value serialize qua JSON (JsonifyObject<T>) → literal union `'news_based' | 'evergreen' | 'promotional'` widen thành `string`. TypeScript không narrow lại được sau boundary.
+Fix 2 cách:
+- Cách 1: Re-narrow qua type guard `isSupportedContentType(value: string): value is SupportedContentType` sau step.run, gán lại biến `const contentType: SupportedContentType = contentTypeRaw`. (em chọn cách này)
+- Cách 2: Gộp 2 step thành 1 step để KHÔNG pass contentType qua boundary. (em làm thêm để bonus performance)
+Pattern: Mọi step.run return có literal union → re-narrow ngay sau boundary HOẶC tránh pass qua boundary.
+
+**RULE D13-4: DISCRIMINATED UNION + EXHAUSTIVE CHECK > OVERLOADED SIGNATURE.**
+Day 13 M2 cân nhắc 2 approach cho generator.ts: (1) function overload `generateContent(brand, article)` + `generateContent(brand, topic)` + `generateContent(brand, promo)` vs (2) single signature với discriminated union `generateContent(brand, ctx: PromptContext)`. Em chọn (2) vì:
+- Caller (workflow-runner) tự build context theo type, generator KHÔNG cần biết business logic
+- TypeScript exhaustive check trong switch (compile error nếu thêm type mới mà quên handle)
+- Test mock dễ (mock 1 object thay vì 3 signature)
+- Mở rộng Phase 2 chỉ extend PromptContext union, KHÔNG đụng signature
+Pattern: Khi function nhận input đa dạng (>2 shape), discriminated union >> overload. Pattern này cũng áp dụng được cho Server Actions, validate schemas, event payloads.
 
 ### Lưu ý cho chat tiếp theo
 

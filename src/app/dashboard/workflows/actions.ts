@@ -13,11 +13,42 @@ export interface CreateWorkflowResult {
 }
 
 /**
+ * Build config JSONB theo workflow type.
+ * - news_based: { name, news_sources }
+ * - evergreen: { name, topic_focus }
+ * - promotional: { name, product_link, offer }
+ */
+function buildWorkflowConfig(data: WorkflowFormSchema): Record<string, unknown> {
+  const base = { name: data.name };
+
+  if (data.type === 'news_based') {
+    return {
+      ...base,
+      news_sources: data.newsSources ?? [],
+    };
+  }
+
+  if (data.type === 'evergreen') {
+    return {
+      ...base,
+      topic_focus: (data.topicFocus ?? '').trim(),
+    };
+  }
+
+  // promotional
+  return {
+    ...base,
+    product_link: (data.productLink ?? '').trim(),
+    offer: (data.offer ?? '').trim(),
+  };
+}
+
+/**
  * Server Action tạo workflow mới.
  * - Auth check qua Supabase
- * - Validate với zod
+ * - Validate với zod (type-specific field check qua superRefine)
  * - Fetch brand_id của user (RLS-aware)
- * - Insert workflow với config = { name, news_sources }
+ * - Insert workflow với config JSONB theo type
  * - Revalidate /dashboard/workflows
  * - Redirect về list
  */
@@ -79,13 +110,8 @@ export async function createWorkflow(
     };
   }
 
-  // 4. Insert workflow
-  const config = {
-    name: data.name,
-    ...(data.type === 'news_based' && data.newsSources && data.newsSources.length > 0
-      ? { news_sources: data.newsSources }
-      : {}),
-  };
+  // 4. Insert workflow với config theo type
+  const config = buildWorkflowConfig(data);
 
   const { error: insertError } = await supabase.from('workflows').insert({
     brand_id: brand.id,

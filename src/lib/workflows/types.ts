@@ -3,13 +3,22 @@ import type { Workflow } from '@/lib/db/schema';
 /**
  * Form data shape cho workflow create/edit form.
  * Field `name` lưu vào config JSONB (không có column trong DB).
+ *
+ * Các field optional theo type:
+ * - news_based: newsSources required
+ * - evergreen: topicFocus required
+ * - promotional: productLink + offer required
  */
 export interface WorkflowFormData {
   name: string;
   type: ContentType;
   scheduleCron: ScheduleCronValue;
-  newsSources?: string[];
   enabled: boolean;
+  // Type-specific fields (conditional)
+  newsSources?: string[];
+  topicFocus?: string;
+  productLink?: string;
+  offer?: string;
 }
 
 export type ContentType = 'news_based' | 'evergreen' | 'promotional';
@@ -17,7 +26,7 @@ export type ContentType = 'news_based' | 'evergreen' | 'promotional';
 /**
  * Cron expressions LƯU UTC (industry standard).
  * Display layer convert sang VN time qua getScheduleLabel().
- * 
+ *
  * VN = UTC + 7h, nên:
  *   - 7h sáng VN = 0h UTC = '0 0 * * *'
  *   - 8h tối VN  = 13h UTC = '0 13 * * *'
@@ -32,10 +41,33 @@ export type ScheduleCronValue =
 
 /**
  * Structure của workflow.config JSONB column.
+ *
+ * Discriminated union: type field xác định nhánh nào.
+ * Backward compatible: news_based config cũ vẫn parse được (chỉ có name + news_sources).
  */
-export interface WorkflowConfig {
+export type WorkflowConfig =
+  | WorkflowConfigNewsBased
+  | WorkflowConfigEvergreen
+  | WorkflowConfigPromotional;
+
+export interface WorkflowConfigBase {
   name: string;
-  news_sources?: string[];
+}
+
+export interface WorkflowConfigNewsBased extends WorkflowConfigBase {
+  type?: 'news_based'; // optional cho backward compat (config cũ không có type field)
+  news_sources: string[];
+}
+
+export interface WorkflowConfigEvergreen extends WorkflowConfigBase {
+  type: 'evergreen';
+  topic_focus: string;
+}
+
+export interface WorkflowConfigPromotional extends WorkflowConfigBase {
+  type: 'promotional';
+  product_link: string;
+  offer: string;
 }
 
 /**
@@ -49,6 +81,9 @@ export const DEFAULT_WORKFLOW_FORM_DATA: WorkflowFormData = {
   name: '',
   type: 'news_based',
   scheduleCron: '0 0 * * *',  // Default "Mỗi sáng 7h VN"
-  newsSources: [],
   enabled: true,
+  newsSources: [],
+  topicFocus: '',
+  productLink: '',
+  offer: '',
 };

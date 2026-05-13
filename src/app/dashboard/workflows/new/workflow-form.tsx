@@ -8,6 +8,7 @@ import { Loader2, Plus, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -40,7 +41,11 @@ export function WorkflowForm() {
 
   const watchedType = form.watch('type');
   const watchedSources = form.watch('newsSources') ?? [];
+  const watchedTopicFocus = form.watch('topicFocus') ?? '';
+  const watchedOffer = form.watch('offer') ?? '';
   const needsNewsSource = watchedType === 'news_based';
+  const needsTopicFocus = watchedType === 'evergreen';
+  const needsPromotional = watchedType === 'promotional';
 
   function addNewsSource() {
     const trimmed = newSourceInput.trim();
@@ -177,7 +182,7 @@ export function WorkflowForm() {
         )}
       </div>
 
-      {/* Field 4: News sources (conditional) */}
+      {/* Field 4a: News sources (conditional - news_based) */}
       {needsNewsSource && (
         <div className="space-y-2">
           <Label>
@@ -234,6 +239,80 @@ export function WorkflowForm() {
         </div>
       )}
 
+      {/* Field 4b: Topic focus (conditional - evergreen) */}
+      {needsTopicFocus && (
+        <div className="space-y-2">
+          <Label htmlFor="topicFocus">
+            Chủ đề cố định <span className="text-red-500">*</span>
+          </Label>
+          <p className="text-xs text-zinc-600">
+            Mô tả chủ đề rõ ràng để AI viết nhiều bài quanh chủ đề này. Tối thiểu 20 ký tự.
+          </p>
+          <Textarea
+            id="topicFocus"
+            rows={4}
+            placeholder="VD: Tập gym sau sinh - làm sao vừa giảm mỡ bụng vừa giữ sữa cho con bú, không bị mất cân bằng hormone"
+            {...form.register('topicFocus')}
+          />
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-zinc-500">{watchedTopicFocus.length} / 500 ký tự</span>
+            {form.formState.errors.topicFocus && (
+              <span className="text-red-600">
+                {form.formState.errors.topicFocus.message}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Field 4c: Product link + offer (conditional - promotional) */}
+      {needsPromotional && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="productLink">
+              Link sản phẩm <span className="text-red-500">*</span>
+            </Label>
+            <p className="text-xs text-zinc-600">
+              URL trang sản phẩm hoặc khoá học. AI sẽ đưa link này vào CTA.
+            </p>
+            <Input
+              id="productLink"
+              type="url"
+              placeholder="https://ladysfit.vn/khoa-hoc-giam-can-90-ngay"
+              {...form.register('productLink')}
+            />
+            {form.formState.errors.productLink && (
+              <p className="text-xs text-red-600">
+                {form.formState.errors.productLink.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="offer">
+              Mô tả ưu đãi <span className="text-red-500">*</span>
+            </Label>
+            <p className="text-xs text-zinc-600">
+              Mô tả sản phẩm + ưu đãi cụ thể (giá, deadline, quà tặng). Tối thiểu 30 ký tự.
+            </p>
+            <Textarea
+              id="offer"
+              rows={4}
+              placeholder="VD: Khoá học giảm cân sau sinh 90 ngày. 24 buổi tập với HLV nữ + thực đơn 4 tuần. Ưu đãi tháng 5: giảm 30% còn 2.490.000 VNĐ. Đăng ký trước 20/05 tặng 4 buổi yoga."
+              {...form.register('offer')}
+            />
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500">{watchedOffer.length} / 500 ký tự</span>
+              {form.formState.errors.offer && (
+                <span className="text-red-600">
+                  {form.formState.errors.offer.message}
+                </span>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Field 5: Enabled toggle */}
       <div className="flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
         <Checkbox
@@ -288,6 +367,9 @@ function getFieldLabel(field: string): string {
     type: 'Loại content',
     scheduleCron: 'Lịch chạy',
     newsSources: 'Nguồn tin',
+    topicFocus: 'Chủ đề cố định',
+    productLink: 'Link sản phẩm',
+    offer: 'Mô tả ưu đãi',
     enabled: 'Trạng thái',
   };
   return labels[field] ?? field;

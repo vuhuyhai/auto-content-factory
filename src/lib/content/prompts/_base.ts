@@ -1,7 +1,11 @@
-import type { BrandVoiceGuide } from './types';
-import type { NewsArticle } from '../news/types';
+import type { BrandVoiceGuide } from '../types';
 
-const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
+/**
+ * Shared helpers cho 3 prompt builder (news-based, evergreen, promotional).
+ * Phần brand context giống nhau, chỉ phần output spec + user prompt khác theo type.
+ */
+
+export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
   everyman: 'người bạn bình thường, thân mật, không khoa trương, nói chuyện ngang hàng',
   hero: 'người hùng truyền cảm hứng, dám đối mặt thử thách, kêu gọi hành động',
   caregiver: 'người chăm sóc tận tâm, ấm áp, ưu tiên cảm xúc và an toàn của người khác',
@@ -10,7 +14,7 @@ const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
   rebel: 'người phá vỡ quy tắc, thách thức convention, dám nói thật',
 };
 
-const TONE_GUIDE = {
+export const TONE_GUIDE = {
   formality: {
     low: 'Cực kỳ casual, dùng tiếng lóng nếu hợp, viết như chat',
     mid: 'Lịch sự nhẹ nhàng, dùng "mình", "bạn", không cứng nhắc',
@@ -26,18 +30,20 @@ const TONE_GUIDE = {
     mid: 'Cân bằng giữa fact và cảm xúc',
     high: 'Đậm cảm xúc, thấu hiểu, empathy mạnh, dùng câu hỏi tu từ',
   },
-};
+} as const;
 
-function getToneBucket(value: number): 'low' | 'mid' | 'high' {
+export function getToneBucket(value: number): 'low' | 'mid' | 'high' {
   if (value <= 3) return 'low';
   if (value <= 6) return 'mid';
   return 'high';
 }
 
 /**
- * Build system prompt with brand voice context
+ * Build phần brand context cho system prompt (chung cho 3 type).
+ * Trả về string từ "Bạn là copywriter..." đến hết "TOPICS BRAND QUAN TÂM".
+ * KHÔNG bao gồm phần "YÊU CẦU OUTPUT" và "JSON FORMAT" - phần đó khác theo type.
  */
-export function buildSystemPrompt(brand: BrandVoiceGuide): string {
+export function buildBrandContext(brand: BrandVoiceGuide): string {
   const archetypeDesc = ARCHETYPE_DESCRIPTIONS[brand.voice.archetype] ?? 'người bạn thân thiện';
 
   const formalityBucket = getToneBucket(brand.voice.tone.formality);
@@ -92,20 +98,15 @@ ${brand.example_hooks.map((h) => `- "${h}"`).join('\n')}
 
 # TOPICS BRAND QUAN TÂM
 
-${brand.messaging.topics.join(', ')}
+${brand.messaging.topics.join(', ')}`;
+}
 
-# YÊU CẦU OUTPUT
+/**
+ * Output spec chung cho 3 type (3 variants JSON format, rules cấm).
+ */
+export const OUTPUT_SPEC_COMMON = `# QUAN TRỌNG
 
-Bạn sẽ nhận 1 bài báo tham khảo. Nhiệm vụ:
-1. Tìm góc nhìn liên kết bài báo với brand (nếu có thể)
-2. Viết 3 phiên bản content KHÁC NHAU về cùng chủ đề
-3. Mỗi phiên bản có hook + title + body (300-400 từ) + 3-5 hashtags
-4. CTA (call-to-action) cuối body: tự quyết theo brand voice, có thể là câu hỏi mời comment, link tham khảo, hoặc lời mời nhẹ nhàng. KHÔNG hard sell.
-
-# QUAN TRỌNG
-
-- Bài báo có thể có phần header/breadcrumb (vd "Sức khoẻTin tức Thứ tư..."), BỎ QUA những phần này
-- KHÔNG copy nguyên văn từ bài báo, phải reword hoàn toàn theo voice brand
+- KHÔNG copy nguyên văn từ input, phải reword hoàn toàn theo voice brand
 - KHÔNG dùng từ trong danh sách "TỪ TRÁNH DÙNG"
 - Hashtags theo style brand (nếu brand có prefix như #LT_, dùng pattern đó)
 - 3 variants phải có 3 hook khác biệt rõ rệt: vd variant 1 dùng câu hỏi, variant 2 kể chuyện, variant 3 đưa số liệu
@@ -129,28 +130,3 @@ Bạn sẽ nhận 1 bài báo tham khảo. Nhiệm vụ:
   ]
 }
 \`\`\``;
-}
-
-/**
- * Build user prompt with article content
- */
-export function buildUserPrompt(article: NewsArticle): string {
-  return `# BÀI BÁO THAM KHẢO
-
-**Title:** ${article.title}
-**Source:** ${article.source_name}
-**Link:** ${article.link}
-**Published:** ${article.pub_date}
-
-## Description
-
-${article.description}
-
-## Full Content
-
-${article.content.slice(0, 4000)}
-
----
-
-Hãy viết 3 phiên bản content theo yêu cầu ở system prompt. TRẢ VỀ JSON duy nhất, không thêm text giải thích.`;
-}
