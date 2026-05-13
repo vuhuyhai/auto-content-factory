@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 6 - Onboarding flow 8 câu hỏi DONE ✅, READY TO DEPLOY
+**Status:** Week 1 Day 7 - Dashboard layout + Brand Voice readonly DONE ✅, READY TO DEPLOY
 
 ## 2. Current State
 
@@ -36,8 +36,18 @@
   - First brand "Ladysfit" saved successfully (8/8 JSON keys verified)
 - ✅ `npm run build` PASS - 8 routes (Static `/`, Dynamic `/onboarding` `/dashboard`)
 - ✅ TypeScript zero error
-- ⏳ Migrate middleware.ts → proxy.ts modern (Day 7+)
-- **Last verified:** 12/05/2026 - Day 6 close - Smoke test 6/6 phases PASS
+- ✅ Migrate middleware.ts → proxy.ts (Next.js 16 idiom, no deprecation warning)
+- ✅ Dashboard layout với sidebar collapsible (desktop) + mobile drawer (shadcn Sheet)
+- ✅ 4 dashboard components: dashboard-shell, sidebar, mobile-drawer, sidebar-nav
+- ✅ 3 sidebar nav items: Brand Voice (active /dashboard), Workflows, Settings
+- ✅ shadcn/ui Avatar + DropdownMenu components (manual paste, RULE D5-3)
+- ✅ User avatar dropdown với email + Logout button (Server + Client composition for Radix Portal)
+- ✅ signOut Server Action tại src/app/(auth)/logout/actions.ts
+- ✅ Brand Voice Card readonly display trên /dashboard
+- ✅ BrandVoiceCard component nhận optional prop readonly?: boolean (backward compat Day 6)
+- ✅ src/lib/brands/queries.ts với getCurrentUserBrand() (Supabase client, RLS-aware, 12-field type Brand snake_case match DB)
+- ✅ src/lib/brands/converters.ts với guideToFormData() convert BrandVoiceGuide → OnboardingFormData
+- **Last verified:** 13/05/2026 - Day 7 close - Smoke test Phase 1-3 PASS, ready deploy
 
 ## 3. Done So Far
 
@@ -134,6 +144,52 @@
 - `c21251e` feat(week1-day6-m4): brand voice card preview + server action save
 - `<sắp có>` docs(handoff): close Day 6 - onboarding flow deployed
 
+### Day 7 (13/05/2026)
+
+**M1: Migrate middleware → proxy (Next.js 16)**
+- Rename src/middleware.ts → src/proxy.ts
+- Rename function `middleware` → `proxy` (Next.js 16 export contract)
+- Verified: dev server log `proxy.ts: XXXms`, curl 307 redirect /login, no deprecation warning
+- Time: ~30 min (vì em hoảng vụ Incognito cookie leak, không phải bug)
+
+**M2: Dashboard layout với sidebar + mobile drawer**
+- Install @radix-ui/react-dialog@1.1.6
+- Manual paste shadcn/ui Sheet component (RULE D5-3 Node v24)
+- Build 4 components: sidebar-nav.tsx (client), sidebar.tsx (server), mobile-drawer.tsx (client, Sheet wrapper), dashboard-shell.tsx (server root)
+- Wire DashboardShell vào src/app/dashboard/layout.tsx
+- Tested: desktop sidebar 240px fixed, mobile drawer slide animation + auto-close, active nav state
+
+**M3: Avatar dropdown + Logout**
+- Install @radix-ui/react-avatar@1.1.3 + @radix-ui/react-dropdown-menu@2.1.6
+- Manual paste shadcn/ui Avatar + DropdownMenu (manual paste, RULE D5-3)
+- Create signOut Server Action at src/app/(auth)/logout/actions.ts
+- Build Server + Client composition: user-menu.tsx (server fetch user) + user-menu-client.tsx (client UI + onSelect handler)
+- First implementation dùng <form action={signOut}> FAIL (hydration mismatch + form submission canceled - root cause: Radix Portal tách button khỏi form parent)
+- Fix bằng onSelect + void signOut() pattern (chuẩn shadcn docs)
+- Tested: click avatar → dropdown → Đăng xuất → redirect /login + clear cookie
+
+**M4: Brand Voice Card readonly display**
+- Create src/lib/brands/queries.ts với getCurrentUserBrand() - 4 sai schema schema → final dùng Supabase client (RLS-aware) + 12-field snake_case type Brand đúng chính xác DB
+- Create src/lib/brands/converters.ts với guideToFormData() (nested camelCase JSON → flat snake_case form shape)
+- Modify BrandVoiceCard: add optional `readonly?: boolean` prop (default false, backward compat Day 6 onboarding)
+- Conditional render: 7 Pencil edit buttons + Confirm/Reset action buttons ẩn khi readonly=true
+- Rewrite src/app/dashboard/page.tsx: remove Day 2 placeholder, fetch brand via Server Component, render BrandVoiceCard readonly
+- Empty state defensive (proxy đã handle redirect /onboarding nếu chưa có brand)
+- Tested: brand "Ladysfit" hiện đủ 7 sections readonly, KHÔNG có Pencil/Confirm buttons
+
+**M5: Smoke test + HANDOFF update + Deploy**
+- Smoke test Phase 1-3 PASS (Pre-flight git clean + tsc zero error + npm run build 4.8s success)
+- Build route table: `/dashboard` Dynamic (M4 đúng), `/_not-found` Static, `ƒ Proxy (Middleware)` đúng (M1 đúng), 9/9 static pages
+- Update HANDOFF.md (in progress)
+- Deploy: push origin main → Vercel auto-deploy
+
+**Commits Day 7 (5 commits + HANDOFF + deploy):**
+- `e42c382` chore(week1-day7-m1): migrate middleware.ts to proxy.ts (Next.js 16)
+- `b0e3bfd` feat(week1-day7-m2): build dashboard layout with sidebar + mobile drawer
+- `57031ef` feat(week1-day7-m3): add user avatar dropdown with logout
+- `06b110e` feat(week1-day7-m4): display brand voice card readonly on dashboard
+- `<sắp có>` docs(handoff): close Day 7 - dashboard + brand voice readonly deployed
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -153,6 +209,10 @@
 | **1 brand per user trong MVP** | Đơn giản hoá validation + UX, multi-brand defer Week 4 |
 | **Force redirect onboarding nếu chưa có brand** | Core flow của ACF, không có voice = không generate content |
 | **Vietnamese typography: whiteSpace nowrap cho từ ghép** | Tránh cắt "đều đặn", "giọng brand", "tự viết" |
+| **Server + Client composition cho Radix Portal + Server Action** | Day 7 M3 phát hiện: <form action> trong DropdownMenu Portal gây hydration mismatch + form canceled. Pattern fix: Server Component fetch data → Client Component nhận props + onSelect handler |
+| **Supabase client cho DB queries thay vì Drizzle** | Day 7 M4 thử Drizzle nhưng fail "password authentication failed for user ASUS" (DATABASE_URL chưa setup) + Drizzle bypass RLS. Rollback Supabase client (Day 2-6 pattern) - RLS-aware, không cần env config thêm |
+| **Type Brand inline snake_case (manual sync DB schema) thay vì Drizzle $inferSelect** | Drizzle dùng camelCase nhưng Supabase client trả snake_case → conflict. Inline type snake_case match exact 12 fields DB |
+| **BrandVoiceCard readonly prop optional thay vì refactor base/wrapper components** | Day 6 component đã verified pass, em chọn add prop để minimize risk regression. Week 2 refactor cùng Claude API integration |
 
 ## 5. Known Issues
 
@@ -174,6 +234,12 @@
 - **`npm run lint` script missing trong package.json:** TypeScript đã clean, build chứa lint ngầm. Add script Week 2.
 - **Claude API chưa integrate cho synthesize brand voice:** Day 6 dùng rule-based mapping (theo plan). Week 2 sẽ thay bằng Claude API để JSON quality cao hơn.
 
+### Issues Day 7 (mới phát sinh)
+- **Signup error message quá generic ("Khong the tao tai khoan. Vui long thu lai.")** - Day 2 swallow Supabase API error trong try/catch. User không biết lý do (email exists / password short / etc). Cần fix Week 2: bubble error chi tiết
+- **Onboarding flow Day 6 không test live sau M4 modification** - Backward compat verified qua tsc + build PASS, BrandVoiceCard add OPTIONAL prop. Defer test full signup flow Week 2 (sau khi fix signup error message)
+- **Sub-header "Xem lại và confirm. Bạn có thể edit từng phần nếu cần." trong BrandVoiceCard không hợp ngữ cảnh dashboard readonly** - Day 6 copy không update khi readonly. Defer Week 2 refactor cùng Claude API
+- **Drizzle client chưa setup DATABASE_URL env** - Khi cần Drizzle ORM cho features khác (vd workflow query) cần config DATABASE_URL trong .env.local + Vercel env
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env (overwrite .env.local)
@@ -181,27 +247,19 @@
 
 ## 6. Next Steps
 
-### Ngay sau Day 6 close (HÔM NAY): DEPLOY production
-
+### Ngay sau Day 7 close (HÔM NAY): DEPLOY production
 - Pre-deploy checklist verify
 - `git push origin main` → Vercel auto-deploy
-- Smoke test production: test full onboarding flow trên Vercel URL
-- Verify brand "Ladysfit" còn trên DB sau deploy
+- Smoke test production: dashboard + logout + onboarding flow trên Vercel URL
+- Verify brand "Ladysfit" còn hiện readonly đúng sau deploy
 
-### Day 7: Dashboard build thật + Brand Voice display
-
-- Build dashboard layout với sidebar (Workflows + Settings)
-- Display Brand Voice Card readonly view (đọc từ DB)
-- "Edit Brand Voice" button → reuse onboarding flow với pre-fill data
-- Migrate middleware.ts → proxy.ts modern (Next.js 16 native)
-
-### Week 2: Workflow creation + Claude API integration
-
+### Day 8 / Week 2: Workflow creation + Claude API integration
 - Build form tạo Workflow gắn với brand (schedule cron, news source, content type)
 - Save workflow vào table `workflows`
 - Integrate Claude API Sonnet 4.6 cho content generation
 - Replace rule-based archetype mapping bằng Claude API synthesize brand voice (lift quality 80%)
-- Fix Day 6 known issues: getBrandPrefix, saveError persistent, npm run lint
+- "Edit Brand Voice" button trên dashboard → reuse onboarding flow với pre-fill data
+- Fix Day 6+7 known issues: getBrandPrefix, saveError persistent, npm run lint, signup generic error, BrandVoiceCard refactor base/wrapper
 
 ### Week 3: Content generation engine + Email delivery
 
@@ -329,9 +387,37 @@ src/
 **RULE D6-4: SCHEMA VALIDATION THRESHOLD PHẢI TEST VỚI REAL VIETNAMESE DATA.** Min 50 ký tự ổn với English, nhưng tiếng Việt cô đọng - 30 ký tự có thể đủ ý.
 *Bug Day 6:* USP "Môi trường thân thiện và phương pháp đơn giản" (45 chars) bị reject. Lower threshold 50→30.
 
+### Bài học Day 7 (4 RULES mới)
+
+**RULE D7-1: `git add <file>` KHÔNG TỰ STAGE DELETION.**
+Khi rename file thủ công bằng `Move-Item`, phải dùng `git add -A` hoặc `git add <old-file>` để git biết file cũ đã xoá. Nếu không, commit sẽ chỉ có file mới, gây duplicate trong working tree.
+
+**RULE D7-2: INCOGNITO CHROME KHÔNG TỰ XOÁ COOKIE GIỮA CÁC TAB CÙNG SESSION.**
+Test logout/auth flow phải XOÁ cookie ở DevTools hoặc ĐÓNG HẾT cửa sổ Incognito trước. Mở 2 tab Incognito = cùng cookie session. Em đã hoảng tưởng có security bug khi /dashboard trong Incognito hiện User ID - thực ra Incognito còn cookie từ session cũ.
+
+**RULE D7-3: KHÔNG dùng `<form action={serverAction}>` với button bên trong Radix Portal.**
+Radix DropdownMenu, Dialog, Popover render content qua React Portal - DOM node bị tách khỏi form parent. Browser tìm form chứa submit button không thấy → "Form submission canceled because the form is not connected". Đồng thời asChild + Portal gây hydration mismatch.
+Fix pattern (chuẩn shadcn docs):
+- Tách Server Component (fetch data) + Client Component (UI + handlers)
+- Server pass data qua props
+- Client dùng onSelect của DropdownMenuItem: { onSelect={(e) => { e.preventDefault(); void serverAction() }} }
+
+**RULE D7-4: KHÔNG ĐOÁN SCHEMA DB. VERIFY SCHEMA.TS + ACTIONS.TS TRƯỚC KHI VIẾT TYPE.**
+Em đã sai 4 lần trong M4: thêm `industry_custom`, `brand_prefix`, `updated_at` vào type Brand (không có trong DB), và đoán BrandVoiceCard là default export (thực ra named export).
+Pattern đúng: Đọc src/lib/db/schema.ts (Drizzle table definition) + src/app/<feature>/actions.ts (xem code insert/update field gì) TRƯỚC khi viết type. KHÔNG thêm field "có vẻ logic". KHÔNG tin trí nhớ về 30 dòng đầu file - dùng Select-String verify thật.
+
+**RULE D7-5: PowerShell `Select-String` mặc định match per line.**
+Pattern multi-line bị xuống dòng (Cursor format Drizzle chain `db\n    .select()`) sẽ KHÔNG match. Workaround: pattern ngắn match từng phần (`.select`, `.from`, `.where`) thay vì `db.select`.
+Bonus: pattern chứa `"` phải bọc bằng single quote bên ngoài (`'@/lib/db"'`), không dùng escape `\"`.
+
+**RULE D7-6: KHÔNG đổi DB access mechanism (Drizzle vs Supabase client) giữa milestone.**
+Em đã refactor sang Drizzle ORM ở M4 vì nghĩ "type cleaner". Bug: 1) Day 6 chưa setup DATABASE_URL nên Drizzle fail auth → fallback Windows username "ASUS". 2) Drizzle bypass RLS (security regression). 3) Cần config Vercel env mới.
+Default: dùng pattern feature trước đó đã pass. Day 2-6 dùng Supabase client → M4 cũng dùng Supabase client. Đổi tech stack giữa chừng = bug.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local, commit cuối nên là `docs(handoff): close Day 6 - onboarding flow deployed`
 - Day 7 nếu anh tiếp tục: ưu tiên migrate middleware → proxy.ts modern + dashboard build thật + display Brand Voice Card readonly
 - Day 6 verified production-ready, brand "Ladysfit" đã saved DB với JSON đúng 8/8 keys
+- Day 8 nếu anh tiếp tục: ưu tiên build workflow creation form + integrate Claude API + fix Day 6+7 known issues
