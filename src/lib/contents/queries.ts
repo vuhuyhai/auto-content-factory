@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { CONTENTS_PAGE_SIZE } from './types';
 import type { Content, ContentStatus, ContentWithWorkflow } from './types';
 
 export type ContentStatusCounts = Record<ContentStatus | 'all', number>;
@@ -37,9 +38,13 @@ function rowToContent(row: ContentRow): ContentWithWorkflow {
 }
 
 export async function getCurrentUserContents(
-  statusFilter?: ContentStatus
+  statusFilter?: ContentStatus,
+  page = 1
 ): Promise<ContentWithWorkflow[]> {
   const supabase = await createClient();
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * CONTENTS_PAGE_SIZE;
+  const to = safePage * CONTENTS_PAGE_SIZE - 1;
 
   let query = supabase
     .from('contents')
@@ -49,7 +54,7 @@ export async function getCurrentUserContents(
       workflows!inner(config)
     `)
     .order('generated_at', { ascending: false })
-    .limit(50);
+    .range(from, to);
 
   if (statusFilter) {
     query = query.eq('status', statusFilter);
@@ -60,6 +65,33 @@ export async function getCurrentUserContents(
   if (error || !data) return [];
 
   return (data as unknown as ContentRow[]).map(rowToContent);
+}
+
+export async function getContentsTotalCount(
+  statusFilter?: ContentStatus
+): Promise<number> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return 0;
+
+  let query = supabase
+    .from('contents')
+    .select('id, brands!inner(user_id)', { count: 'exact', head: true })
+    .eq('brands.user_id', user.id);
+
+  if (statusFilter) {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { count, error } = await query;
+
+  if (error || count === null) return 0;
+
+  return count;
 }
 
 export async function countContentsByStatusForCurrentUser(): Promise<ContentStatusCounts> {

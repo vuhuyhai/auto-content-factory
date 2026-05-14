@@ -33,3 +33,5 @@ export function normalizeHashtag(tag: string): string {
   const trimmed = tag.trim().replace(/^#+/, '');
   return trimmed ? `#${trimmed}` : '';
 }
+
+export const CONTENTS_PAGE_SIZE = 20;
