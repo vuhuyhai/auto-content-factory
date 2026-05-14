@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 14 close - Pagination + Bulk approve/reject cho /dashboard/contents. URL searchParams pattern `?status=X&page=N`, sticky bottom bar action với 3 button (Chọn tất cả/Từ chối/Duyệt), defense-in-depth ownership verify 2 round-trip (RLS + app filter). Production cron Ladysfit chạy ĐÊM ĐẦU TIÊN tự động lúc 07:04:11 VN ngày 14/05 (workflow_id b01973cb), content "ngủ ngược" generated. tsc PASS, build 15 routes.
+**Status:** Week 1 Day 15 close - Edit inline 4 field variant (hook/title/body/hashtags) qua VariantEditor 158 LOC + fetch-merge-update JSONB pattern + defense-in-depth ownership. Production deploy ce87564 READY 44s 0 error. Plan Week 2-3 chốt Profile A soft validation (3-5 paid + 10 trial, launch 09/06/2026). Day 16 START email infra Resend.
 
 ## 2. Current State
 
@@ -44,7 +44,8 @@
 - ✅ Content review status actions (Day 12 P2): approve/reject Server Action + optimistic UI, sidebar badge draft count, filter tabs 4 status với URL searchParams
 - ✅ Workflow types evergreen + promotional (Day 13): strategy pattern prompt builders folder, generator discriminated union PromptContext, workflow-runner dispatch 3 type với 3 step (giảm 1 step so Day 10), form UI conditional + Server Action buildWorkflowConfig per type
 - ✅ Test scripts 3 type localhost qua tsx (Day 13 M5.1): test-generator (news_based) + test-generator-evergreen + test-generator-promotional + _mock-brand DRY
-- **Last verified:** 14/05/2026 - Day 14 close - Pagination 20/page + bulk approve/reject sticky bar PASS. Production cron Ladysfit tự chạy ĐÊM ĐẦU TIÊN (07:04 VN 14/05) thành công. 2 workflow test Day 13 đã disable (5926eb93 + d4fbdbd7). HANDOFF Day 14 commit + push sau.
+- ✅ Edit inline 4 field variant (hook/title/body/hashtags) với jsonb partial update fetch-merge pattern, defense-in-depth ownership (Day 15 M3)
+- **Last verified:** 14/05/2026 - Day 15 close - Edit inline body variant + plan Week 2-3 chốt Profile A soft validation. Production deploy ce87564 READY 0 error.
 
 ### Day 11 additions (13/05/2026)
 
@@ -233,7 +234,7 @@
   - DB verify qua Supabase MCP: count by status sau bulk approve = 4 approved + 1 draft + 2 rejected = 7 total. Khớp 100%.
   - Build PASS 15 routes. Commit `2b1a626` feat(week1-day14-m2).
 
-**Last verified:** 14/05/2026 - Day 14 close - Pagination 20/page + bulk approve/reject sticky bar PASS. Production cron Ladysfit tự chạy ĐÊM ĐẦU TIÊN (07:04 VN 14/05) thành công. 2 workflow test Day 13 đã disable (5926eb93 + d4fbdbd7). HANDOFF Day 14 commit + push sau.
+**Last verified:** 14/05/2026 - Day 15 close - Edit inline body variant M3 PASS (commit ce87564, Vercel deploy READY 44s 0 error). Plan Week 2-3 chốt Profile A soft validation 14 ngày 22-30h.
 
 ## 3. Done So Far
 
@@ -343,7 +344,32 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 **2 commits Day 14 + sắp có HANDOFF commit:**
 - `a1863e9` feat(week1-day14-m1): pagination cho contents review voi url searchparams (4 files, 194 ins, 47 del)
 - `2b1a626` feat(week1-day14-m2): bulk approve reject cho contents review voi sticky bottom bar (6 files, 301 ins, 58 del)
-- `<sắp có>` docs(handoff): close Day 14 - pagination + bulk actions + cron production night 1
+- `6cc0e19` docs(handoff): close Day 14 - pagination + bulk actions + cron production night 1
+
+### Day 15 (14/05/2026)
+
+**M3: Edit inline body variant (carry-over Day 14 P3) (~75 phút)**
+
+- **M3.1: Types + Schema + Server Action (~25 phút):** Tạo `VariantFields` interface (hook + title + body + hashtags) + `UpdateVariantInput` trong `src/lib/contents/types.ts`. Tạo `updateVariantContentSchema` Zod trong `src/lib/contents/schemas.ts` với 4 field validation ranges (hook 20-500, title 10-200, body 100-2000, hashtags 1-10) + Unicode regex `/^#?[\p{L}\p{N}_]+$/u` hỗ trợ tiếng Việt có dấu. `updateVariantContent()` Server Action 80 LOC trong `src/app/dashboard/contents/actions.ts`: validate input → auth check → defense-in-depth ownership qua `brands!inner.user_id` (Cách 2 fallback Day 14 RULE D14-1) → fetch-merge-update pattern (Supabase JS không expose `jsonb_set` helper) → revalidatePath. tsc PASS.
+
+- **M3.2: UI VariantEditor + parent integration (~35 phút):** NEW file `src/components/contents/variant-editor.tsx` 158 LOC Client Component: 4 input/textarea cho 4 field + counter realtime đổi màu đỏ (font-semibold) khi vượt range + `useTransition` pending state + error inline. Hashtag input string 1 dòng "tag1 tag2" thay vì 10 input riêng (UX Facebook style), parse split `/[\s,]+/` + normalize add `#` prefix. Parent `content-variant-selector.tsx` 184→215 LOC: thêm state `editingVariantIndex: number | null` + `localVariants: ContentVariant[]` (optimistic sync), button "Sửa nội dung" với icon Pencil cạnh "Copy nội dung", disable button khi `editingVariantIndex !== null` (chỉ edit 1 variant cùng lúc), handler `handleVariantSaved` cập nhật localVariants + toast 3000ms.
+
+- **M3.3: Smoke test browser 6 step PASS qua 4 screenshot:** edit mode hiển thị 4 field, counter realtime đổi màu khi vượt limit, validation < 100 chars body báo lỗi đúng, save success + toast "Đã lưu thay đổi", reload persist content mới. DB verify không cần vì UI re-render sau revalidatePath confirm.
+
+- **Build PASS, tsc clean, commit `ce87564`, push GitHub, Vercel deploy READY 44s 0 error/warning/fatal.**
+
+**Discuss Week 2-3 plan goal-first chốt Profile A:**
+
+- **Profile A soft validation:** 3-5 paid, 10 trial, 3 content/user/tuần, 50% retention, launch 09/06/2026
+- **Scope 22-30h chia Phase 1 (Week 2) build infrastructure + Phase 2 (Week 3) monetization**
+- **Critical path:** Email infra (Day 16-17) + Pricing PayOS (Day 23-24)
+- **6 mitigation:** test 3 email trước user thật, log email_failures, end-to-end PayOS test với chính anh, INTERNAL_PAYMENT_FLOW.md, benchmark pricing SaaS VN, phỏng vấn 5 SMB Day 28
+- **Stop signal:** Day 22 Phase 1 close + Day 28 soft launch + Day 35 day-before-launch
+- **Context mới:** anh có 5-10 khách sẵn, trial 14 ngày → giữ plan cũ email Day 16 (retention critical)
+
+**Commits Day 15:**
+- `ce87564` feat(week1-day15-m3): edit inline body variant với VariantEditor + jsonb fetch-merge-update
+- `<sắp có>` docs(handoff): close Day 15 - edit inline variant + plan Week 2-3 chốt Profile A
 
 ## 4. Architecture Decisions
 
@@ -396,6 +422,9 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **Pagination redirect-on-overflow thay vì empty state (Day 14 M1)** | Khi `?page=999` overflow + totalCount > 0 → server-side redirect về `/dashboard/contents[?status=...]` thay vì render empty state confusing. Defensive UX, user không thấy trang trắng |
 | **Defense-in-depth ownership 2 round-trip cho bulk action (Day 14 M2)** | Supabase JS KHÔNG support filter join trong UPDATE statement. Fallback Cách 2: select brands!inner(user_id) derive owned subset → update only validIds. 2 round-trip nhưng đảm bảo user KHÔNG update được content của user khác dù RLS bypass. Defense in depth trên top RLS |
 | **Reset selection khi đổi statusFilter (Day 14 M2)** | useEffect listen prop change, clear Set<string>. Tránh confusion: user tick contents tab "Chờ duyệt", switch sang "Đã duyệt", các ID chọn ở tab cũ KHÔNG còn trong list hiện tại nhưng vẫn đang trong state → bulk action sẽ apply lên ghost IDs. Reset cleaner UX |
+| **Fetch-merge-update pattern cho jsonb partial update (Day 15 M3.1)** | Supabase JS KHÔNG expose jsonb_set helper. RPC function migration phức tạp. Fetch current variants → merge JS object → update full array là an toàn hơn (validate variantIndex tồn tại trước update) + 1 atomic UPDATE (PG MVCC). Trade-off 2 round-trip nhưng acceptable cho admin edit không phải hot path |
+| **VariantEditor tách component riêng < 200 LOC (Day 15 M3.2)** | Parent content-variant-selector.tsx sắp vượt 200 LOC limit. Tách VariantEditor 158 LOC reusable nếu sau này có "Edit Brand Voice" UI dùng pattern tương tự, test isolation tốt, single responsibility |
+| **Hashtag input string "tag1 tag2" thay vì 10 input riêng (Day 15 M3.2)** | UX SMB Việt Nam dễ dùng pattern Facebook hashtag input hơn. Parse split by space/comma flexible. Unicode regex `/^#?[\p{L}\p{N}_]+$/u` hỗ trợ tiếng Việt có dấu (#TậpSauSinh #SứcKhỏe) |
 
 ## 5. Known Issues
 
@@ -469,6 +498,12 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - **content-list-item.tsx checkbox click area nhỏ:** Mobile tap target < 44x44px. Defer accessibility audit Week 3
 - **No keyboard shortcut bulk action:** Ctrl+A select all, Esc clear selection, Cmd+Enter approve - chưa có. Defer Week 4 khi có power users
 
+### Issues Day 15 (mới phát sinh)
+
+- **VariantEditor parse hashtags split by space/comma KHÔNG handle hashtag chứa khoảng trắng:** Hashtag `#Tap Sau Sinh` sẽ bị split thành 3 hashtag `#Tap` + `Sau` + `Sinh`. Defer Week 3 nếu user complain. Hiện tại pattern Facebook là 1 hashtag = 1 word, KHÔNG có space → OK MVP
+- **Optimistic UI KHÔNG có retry khi network fail:** Nếu Server Action throw network error, toast hiển thị "Lưu thất bại, vui lòng thử lại" và state localVariants không revert. User phải Click "Sửa nội dung" lại từ đầu. Defer Week 3 thêm retry button + auto-revert
+- **KHÔNG có "Discard changes" warning khi user click "Huỷ" sau khi edit nhiều:** User edit 10 phút, click Huỷ nhầm → mất hết. Defer Week 2 thêm AlertDialog confirm
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -476,16 +511,21 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ## 6. Next Steps
 
-### Day 15: High Priority
+### Day 16: Email infra setup (Welcome email) - Phase 1 Week 2 START
 
-**M3 - Edit inline body variant (~75 phút) [carry-over Day 14]:**
-- Detail page /dashboard/contents/[id]: button "Sửa nội dung" trên mỗi variant tab
-- Click → 4 textarea/input replace hook + title + body + hashtags
-- Save + cancel buttons với optimistic UI
-- Server Action updateVariantContent(contentId, variantIndex, fields)
-- JSONB partial update qua jsonb_set hoặc fetch-merge-update pattern
-- Schema validation: title 10-200, hook 20-500, body 100-2000, hashtags 1-10 items
-- Risk cao nhất Day 14: JSONB partial update Supabase JS chưa thử
+**M1-M5 (~2h):**
+- **M1:** Setup Resend account + API key Production (15 phút)
+- **M2:** Install SDK + env vars `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (10 phút)
+- **M3:** Welcome email template React Email (30 phút)
+- **M4:** Trigger email sau signup verify hook `/auth/callback` (40 phút)
+- **M5:** Smoke test 3 email Gmail + Yahoo + Outlook (25 phút)
+
+**Output:** User mới đăng ký → verify email Supabase → nhận welcome email từ ACF
+
+**Plan Week 2-3 đã chốt Profile A:**
+- Phase 1 Week 2: Email infra (Day 16-17) + Bug fix + duplicate constraint (Day 18) + Workflow edit form (Day 19-20) + Polish Day 21-22
+- Phase 2 Week 3: Pricing PayOS (Day 23-24) + Trial countdown (Day 25) + Bug fix round 2 (Day 26) + Landing polish (Day 27) + Soft launch (Day 28-29)
+- Context: anh có 5-10 khách sẵn trial 14 ngày
 
 ### Day 14 / Week 2: High Priority
 
@@ -837,16 +877,30 @@ useEffect(() => {
 ```
 Áp dụng cho mọi list component với filter/pagination + selection state. KHÔNG limited to bulk actions - cũng cần cho multi-select dropdown, drag-drop reorder, etc.
 
+### Bài học Day 15 (3 RULES mới)
+
+**RULE D15-1: SUPABASE JS KHÔNG EXPOSE jsonb_set HELPER → FETCH-MERGE-UPDATE PATTERN AN TOÀN HƠN RPC.**
+Cách 1 raw SQL qua `supabase.rpc('jsonb_set_helper')`: cần migration tạo function, phức tạp.
+Cách 2 fetch-merge-update: SELECT current → merge JS → UPDATE full array. An toàn (validate index tồn tại trước), 1 atomic UPDATE qua PG MVCC, không cần migration.
+Pattern: khi cần partial update JSONB, ưu tiên fetch-merge-update. Chỉ dùng RPC khi hot path cần performance hoặc race condition cao.
+
+**RULE D15-2: COUNTER REALTIME ĐỔI MÀU LÀ UX PATTERN MẠNH CHO SMB VIỆT NAM.**
+Form validation lỗi sau khi submit = friction. Counter realtime đổi `font-semibold + text-red-600` khi vượt range = user tự correct trước submit. Pattern: `counterClass(current, min, max)` helper. Áp dụng cho mọi form > 2 field có character/word limit.
+
+**RULE D15-3: HASHTAG INPUT STRING + SPLIT REGEX > 10 INPUT RIÊNG CHO UX.**
+User SMB Việt copy hashtag từ Facebook (đã có `#`) hoặc gõ tay (không có `#`). Pattern: 1 input text + split `/[\s,]+/` + normalize add `#` prefix nếu thiếu. Unicode regex `/^#?[\p{L}\p{N}_]+$/u` hỗ trợ tiếng Việt có dấu. KHÔNG dùng 10 input riêng (mobile UX kém + không paste batch).
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Week 1 Day 1-14 sắp PUSH 37 commits** (35 trước + 2 Day 14 + 1 HANDOFF Day 14). Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
-- **Production smoke test STATUS:** Day 14 M2 chỉ test localhost. Production deploy sau khi commit HANDOFF + push.
-- Commit cuối local nên là `docs(handoff): close Day 14 - pagination + bulk actions + cron production night 1`
-- Day 14 DONE. Day 15 nếu tiếp tục: M3 Edit inline body variant (carry-over). Sau M3 mới qua P4 (multi-source) hoặc P5 (workflow edit form)
-- Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05
-- DB hiện có 7 contents: 4 approved + 1 draft + 2 rejected
+- **Week 1 Day 1-15 đã commit + push:** Day 15 M3 commit `ce87564` đã push, Vercel deploy READY 44s 0 error. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
+- **Production smoke test STATUS:** Day 15 M3 đã verify localhost browser PASS. Production deploy `ce87564` READY 0 error/warning.
+- Commit cuối local nên là `docs(handoff): close Day 15 - edit inline variant + plan Week 2-3 chốt Profile A`
+- Day 15 DONE. Day 16 tiếp tục: Email infra Resend setup (M1-M5 ~2h). Sau Day 17 → Day 18 bug fix + duplicate constraint → Day 19-20 workflow edit form.
+- Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05 (đêm 14→15) và mỗi ngày sau
+- DB hiện có 7 contents tại thời điểm Day 14 close (4 approved + 1 draft + 2 rejected). Day 15 chỉ edit nội dung existing, KHÔNG generate mới. Recheck Supabase MCP đầu Day 16 nếu cần count thực tế.
 - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min
+- **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16 → PayOS Day 23**
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
