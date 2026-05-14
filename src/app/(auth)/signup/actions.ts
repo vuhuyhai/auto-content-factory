@@ -1,5 +1,6 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -26,10 +27,17 @@ export async function signup(
     return { error: 'Mat khau toi thieu 8 ky tu.' }
   }
 
+  const headersList = await headers()
+  const origin =
+    headersList.get('origin') || 'https://auto-content-factory.vercel.app'
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
+    },
   })
 
   if (error) {
