@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 15 close - Edit inline 4 field variant (hook/title/body/hashtags) qua VariantEditor 158 LOC + fetch-merge-update JSONB pattern + defense-in-depth ownership. Production deploy ce87564 READY 44s 0 error. Plan Week 2-3 chốt Profile A soft validation (3-5 paid + 10 trial, launch 09/06/2026). Day 16 START email infra Resend.
+**Status:** Week 1 Day 17 close - Daily digest email Resend infra DEPLOYED production + cron-job.org schedule 1 AM UTC (8h sáng VN). Endpoint /api/cron/daily-digest M1-M4 PASS clean (tsc + build + Vercel deploy READY + smoke test 4 step + email Opened Inbox). Day 18 START bug fix outstanding + content duplicate constraint.
 
 ## 2. Current State
 
@@ -46,7 +46,9 @@
 - ✅ Test scripts 3 type localhost qua tsx (Day 13 M5.1): test-generator (news_based) + test-generator-evergreen + test-generator-promotional + _mock-brand DRY
 - ✅ Edit inline 4 field variant (hook/title/body/hashtags) với jsonb partial update fetch-merge pattern, defense-in-depth ownership (Day 15 M3)
 - ✅ Email infra Resend SDK v6.12.3 + React Email v1.0.12 ready, welcome template + send helper + hook /auth/callback fire-and-forget
-- **Last verified:** 14/05/2026 - Day 16 close - Welcome email Resend infra DEPLOYED production. M1-M4 PASS clean (tsc + build + Vercel deploy READY 43s, 0 error). M5 end-to-end verify DEFER Day 17 do test environment issues (PKCE cross-browser fail localhost + production verify khi user thật signup).
+- ✅ Daily digest email endpoint /api/cron/daily-digest production scheduled 1 AM UTC qua cron-job.org
+- ✅ Migration add_last_digest_sent_at_to_profiles + partial index
+- **Last verified:** 14/05/2026 - Day 17 close - Daily digest email infra DEPLOYED production. M1-M4 PASS clean (tsc + build + Vercel deploy READY + smoke test 4 step localhost + email Opened Gmail Inbox + cron-job.org schedule 1 AM UTC active).
 
 ### Day 11 additions (13/05/2026)
 
@@ -395,6 +397,39 @@ Email infra Phase 1 Week 2 - Welcome email (~5h total nhưng M5 verify chưa ho�
 
 **Production deploy:** dpl_Crz7NegFsZ2VZS8MkoySXERGtPne READY 43s, 0 error/warning logs
 
+### Day 17 (14/05/2026)
+
+Daily digest email Phase 1 Week 2 (~2h30, M5 verify Day 16 skip defer Week 2):
+
+**M0 Audit schema + verify deps (~5p):** profiles schema verify KHÔNG có last_digest_sent_at → cần migration. 1 user fitnessviet 1 draft trong 24h test data. Path src/emails/welcome.tsx + _styles.ts xác nhận Day 16.
+
+**M1.1 Migration add_last_digest_sent_at_to_profiles (~5p):** ALTER TABLE add column TIMESTAMPTZ NULL + partial index WHERE NOT NULL (tiết kiệm space, tăng tốc dedup query) + COMMENT. Apply Supabase MCP success.
+
+**M1.2 digest-queries.ts admin client (142 LOC):** fetchUsersForDigest() JOIN profiles + brands + contents, filter status=draft + generated_at > 24h + cooldown 20h JS-side (OR-NULL khó express PostgREST). markDigestSent(userIds) bulk UPDATE silent fail. Pattern Day 11 fetchEnabledWorkflows. tsc PASS.
+
+**M2.1 digest.tsx template (190 LOC):** React Email reuse 14 tokens từ _styles.ts + 5 inline tokens (draftCard border-left brand red, line-clamp-2). formatRelativeTime helper inline phút/giờ/ngày VN. Loop max 5 drafts + "...và X bài khác". PreviewProps 3 sample drafts.
+
+**M2.2 send-digest.ts helper (113 LOC):** Discriminated return type carry userId both branches. Validation guards fast-fail. buildPlainText() Gmail Promotions tab safety. X-Entity-Ref-ID header userId + timestamp traceable Resend dashboard.
+
+**M3.1 Endpoint /api/cron/daily-digest (115 LOC):** POST Bearer auth + GET healthcheck + maxDuration 60s. Promise.allSettled batch (1 fail không block hết). Mark dedup ONLY success user (failed retry next). Pattern Day 11 run-workflows.
+
+**M3.2 Smoke test localhost 4 step PASS:**
+- Test 1 GET healthcheck → 200 status:ok
+- Test 2 POST no auth → 401 Unauthorized
+- Test 3 POST đúng secret → 200 checked:1 sent:1 failed:0 durationMs:1207
+- Test 4 POST retry → 200 checked:0 reason:no-eligible-users (dedup 48s elapsed work)
+
+**M3.3 Verify dedup mark + email landed:**
+- Supabase verify: profile eb2f895e last_digest_sent_at = 14:54:03 UTC (48s trước)
+- Resend dashboard status: Opened (anh mở email rồi → tracking pixel work)
+- Gmail Inbox tab (KHÔNG Promotions): brand red header + greeting "Chào Vũ Hải" + draft card border đỏ trái + title "Tập sau sinh mà vẫn đủ sữa cho con" + time "Tạo 14 giờ trước" + CTA "Xem tất cả 1 bài"
+
+**M4.1 Commit + push GitHub:** feat(week1-day17) commit Day 17 M1-M3 push.
+
+**M4.2 Production deploy verify:** Vercel auto-deploy READY + smoke test cross-environment dedup work (production POST → checked:0 do localhost mark trước trong DB chung).
+
+**M4.3 cron-job.org schedule:** Job "ACF Daily Digest" URL /api/cron/daily-digest schedule 0 1 * * * UTC (8h sáng VN) POST Bearer auth. Execute now test PASS.
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -453,6 +488,10 @@ Email infra Phase 1 Week 2 - Welcome email (~5h total nhưng M5 verify chưa ho�
 | React Email v3 ecosystem migration (Day 16 M3.1) | @react-email/components v1.0.12 có 19 sub-package deprecated warning. Maintainer migrate sang monorepo unified react-email. Deprecated ≠ broken, render OK. Defer fix Week 3 nếu bug runtime |
 | Tách _styles.ts design tokens cho email (Day 16 M3.2) | 5+ email kế tiếp (welcome, daily digest, trial countdown, payment confirm) sẽ reuse design tokens. Tách = đổi brand color 1 chỗ apply tất cả. Pattern Day 13 _base.ts strategy |
 | Dedup welcome email qua email_confirmed_at + 60s delta (Day 16 M4) | Option B fast ship thay vì migration DB welcome_email_sent_at. 99% accuracy cho MVP, 1% edge case (slow email > 60s) acceptable. Defer migration nếu Week 3 có > 2 user complain |
+| 20h cooldown window thay vì 24h cứng (Day 17 M1.2) | Cron-job.org có thể spike trigger sớm 5 phút. Cooldown 20h tránh user trùng nhận 2 email cùng ngày khi cron schedule 1 AM UTC daily. Trade-off: nếu cron miss 1 ngày, ngày sau vẫn gửi (acceptable vì draft content quan trọng) |
+| Filter cooldown JS-side thay vì PostgREST OR-NULL (Day 17 M1.2) | Supabase JS filter `.or('last_digest_sent_at.is.null,last_digest_sent_at.lt.timestamp')` cú pháp phức tạp + dễ sai. JS filter sau khi fetch sạch hơn 50 user max (defense limit) → memory acceptable |
+| Promise.allSettled batch thay vì Promise.all (Day 17 M3.1) | 1 user Resend fail KHÔNG block 49 user còn lại. Day 16 send-welcome fire-and-forget pattern không scale cho batch. allSettled return tất cả results, caller aggregate success/fail metrics |
+| Mark dedup ONLY user success (Day 17 M3.1) | Defense in depth: failed user retry next run (Resend transient error, network blip). User success skip 20h. Tách 2 trạng thái tránh user fail mãi không nhận lại email |
 
 ## 5. Known Issues
 
@@ -539,6 +578,13 @@ Email infra Phase 1 Week 2 - Welcome email (~5h total nhưng M5 verify chưa ho�
 - **Supabase Auth Redirect URLs thiếu wildcard preview:** hiện có 2 URL allowlist (http://localhost:3000/** + https://auto-content-factory.vercel.app/**), THIẾU https://*-vuhuyhais-projects.vercel.app/auth/callback cho Vercel preview deployments. Defer Week 3 bug fix outstanding nếu cần test preview environments.
 - **Resend dashboard chỉ có 1 account fitnessviet:** anh đăng nhập Resend bằng Gmail fitnessviet (cùng account Course Platform). API key acf-production gắn vào account này. Tất cả email Day 16 đi qua account này. KHÔNG cần fix.
 - **deprecation warnings @react-email/* sub-packages 19 entries:** ecosystem migration sang react-email monorepo unified. Deprecated ≠ broken. Defer Week 3.
+
+### Issues Day 17 (mới phát sinh)
+
+- **Test data chỉ 1 user 1 draft:** Production cron 8h sáng VN ngày 15/05 chỉ gửi 1 email anh nếu có draft mới. Cần seed test data Day 18 hoặc đợi cron đêm chạy tạo content thật.
+- **Cooldown 20h fix cứng KHÔNG configurable per user:** SMB Việt Nam có thể muốn nhận digest 2 lần/ngày (sáng + tối). Defer Phase 2 settings page.
+- **KHÔNG có unsubscribe link thật:** Footer "Quản lý thông báo" placeholder href="#" defer Week 4.
+- **Resend free tier 100 email/day:** Profile A 10 trial user × 1 email/ngày = 10 email/day OK. Nếu Week 3 lên 20+ user cần upgrade Resend $20/tháng.
 
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
@@ -955,18 +1001,27 @@ Lý do: maintainer consolidate vào monorepo unified react-email. Render email v
 Pattern: deprecated ≠ broken. Defer fix Week 3 nếu phát hiện bug runtime.
 Import render: phải từ '@react-email/components' (KHÔNG phải '@react-email/render' standalone package).
 
+### Bài học Day 17 (2 RULES mới)
+
+**RULE D17-1: PROMISE.ALLSETTLED > PROMISE.ALL CHO BATCH EMAIL SEND.**
+Promise.all reject 1 promise → reject toàn bộ + lose results của promise đã fulfilled. Email batch send với Resend free tier có rate limit + transient network blip → 1 user fail không nên block 49 user còn lại. Pattern Promise.allSettled return array {status:'fulfilled'|'rejected', value|reason}. TS narrow cần if-else KHÔNG combine: tách rejected branch + continue trước khi access r.value.success.
+
+**RULE D17-2: PARTIAL INDEX WHERE NOT NULL TIẾT KIỆM SPACE + TĂNG TỐC QUERY DEDUP.**
+Pattern: CREATE INDEX idx ON table(col) WHERE col IS NOT NULL. Khi 99% rows có col NULL (vd last_digest_sent_at chưa từng gửi), partial index chỉ chứa 1% rows có timestamp. Query dedup `WHERE col < timestamp` dùng index nhanh hơn full index. Áp dụng cho mọi nullable timestamp dedup pattern (last_email_sent_at, last_notification_at, last_login_at).
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
 - **Week 1 Day 1-15 đã commit + push:** Day 15 M3 commit `ce87564` đã push, Vercel deploy READY 44s 0 error. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
 - **Production smoke test STATUS:** Day 15 M3 đã verify localhost browser PASS. Production deploy `ce87564` READY 0 error/warning.
-- Commit cuối local nên là `docs(handoff): close Day 16 - email infra deploy M5 defer`
-- Day 16 close (M1-M4 deploy production, M5 defer Day 17). Day 17 tiếp tục: Email infra Resend setup (M1-M5 ~2h). Sau Day 17 → Day 18 bug fix + duplicate constraint → Day 19-20 workflow edit form.
+- Commit cuối local nên là `docs(handoff): close Day 17 - daily digest email infra deploy + cron-job.org schedule`
+- Day 17 close commit + push GitHub
+- Production deploy commit Day 17 LIVE
+- cron-job.org "ACF Daily Digest" ACTIVE schedule 1 AM UTC (8h sáng VN ngày 15/05)
+- DB hiện 1 user fitnessviet với last_digest_sent_at = 14/05 21:54 VN
 - Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05 (đêm 14→15) và mỗi ngày sau
-- DB hiện có 7 contents tại thời điểm Day 14 close (4 approved + 1 draft + 2 rejected). Day 15 chỉ edit nội dung existing, KHÔNG generate mới. Recheck Supabase MCP đầu Day 16 nếu cần count thực tế.
 - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
-- cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min
-- **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16 → PayOS Day 23**
-- cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
-- **Day 17 START: M5 verify carry-over Day 16 trước (~10 phút), sau đó vào Daily digest email**
+- cron-job.org production jobs ACTIVE: "ACF Workflow Runner" */5 * * * * UTC + "ACF Daily Digest" 0 1 * * * UTC
+- **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16-17 ✅ → PayOS Day 23**
+- **Day 18 START: Bug fix outstanding + content duplicate constraint (workflow_id + source_url) + workflow edit form prep Day 19-20.**
