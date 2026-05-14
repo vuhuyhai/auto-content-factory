@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 17 close - Daily digest email Resend infra DEPLOYED production + cron-job.org schedule 1 AM UTC (8h sáng VN). Endpoint /api/cron/daily-digest M1-M4 PASS clean (tsc + build + Vercel deploy READY + smoke test 4 step + email Opened Inbox). Day 18 START bug fix outstanding + content duplicate constraint.
+**Status:** Week 1 Day 18 close - Bug fix outstanding round 1: content duplicate constraint (UNIQUE INDEX partial + workflow-runner handle 23505 graceful + last_run_at update both branches), getBrandPrefix CamelCase fix, npm typecheck/lint scripts, saveError banner clear navigation, signup error 7 codes tiếng Việt. Build + typecheck PASS, Vercel deploy READY. Day 19 START workflow edit form reuse create form mode=edit + manual test M3 saveError + M2 brand prefix.
 
 ## 2. Current State
 
@@ -48,7 +48,13 @@
 - ✅ Email infra Resend SDK v6.12.3 + React Email v1.0.12 ready, welcome template + send helper + hook /auth/callback fire-and-forget
 - ✅ Daily digest email endpoint /api/cron/daily-digest production scheduled 1 AM UTC qua cron-job.org
 - ✅ Migration add_last_digest_sent_at_to_profiles + partial index
-- **Last verified:** 14/05/2026 - Day 17 close - Daily digest email infra DEPLOYED production. M1-M4 PASS clean (tsc + build + Vercel deploy READY + smoke test 4 step localhost + email Opened Gmail Inbox + cron-job.org schedule 1 AM UTC active).
+- ✅ UNIQUE INDEX contents (workflow_id, source_url) partial WHERE source_url IS NOT NULL - prevent duplicate news_based + promotional, excludes evergreen (Day 18 M1.3)
+- ✅ workflow-runner handle 23505 unique_violation graceful + last_run_at update both branches (insert success + duplicate skip) (Day 18 M1.4-M1.5)
+- ✅ getBrandPrefix CamelCase detection + lowercase 2-char fallback (Ladysfit → LA, không còn LT) - 7/7 test PASS (Day 18 M2)
+- ✅ npm run typecheck + npm run lint scripts (alias tsc --noEmit) - ESLint flat config defer Phase 2 (Day 18 M2)
+- ✅ saveError banner clear navigation handlers (onEdit + goBack + goNext + handleConfirm helper clearSaveError) (Day 18 M3)
+- ✅ Signup error translateSignupError helper map 7 Supabase codes tiếng Việt có dấu + login fix diacritics (Day 18 M4)
+- **Last verified:** 14/05/2026 - Day 18 close - Bug fix round 1 + duplicate constraint M1-M4 PASS clean (tsc + build + Vercel deploy READY). Manual test M2 brand prefix + M3 saveError defer Day 19 cùng workflow edit form.
 
 ### Day 11 additions (13/05/2026)
 
@@ -430,6 +436,53 @@ Daily digest email Phase 1 Week 2 (~2h30, M5 verify Day 16 skip defer Week 2):
 
 **M4.3 cron-job.org schedule:** Job "ACF Daily Digest" URL /api/cron/daily-digest schedule 0 1 * * * UTC (8h sáng VN) POST Bearer auth. Execute now test PASS.
 
+### Day 18 (14/05/2026)
+
+Bug fix outstanding round 1 + content duplicate constraint (~3h):
+
+**M1 Content duplicate constraint (45p):**
+
+- M1.1 Audit: 1 duplicate group 3 rows VnExpress "gói khám miễn phí" workflow Ladysfit. Tổng 7 contents (6 source_url + 1 evergreen NULL).
+- M1.2 Cleanup: DELETE 2 row cũ, giữ row mới nhất `d8725b70`.
+- M1.3 Migration `add_unique_workflow_source_url_to_contents`: CREATE UNIQUE INDEX `contents_workflow_source_url_unique` ON contents (workflow_id, source_url) WHERE source_url IS NOT NULL. Partial index excludes evergreen (source_url NULL).
+- M1.4 workflow-runner.ts handle 23505 unique_violation: log skip + return success object (KHÔNG throw → Inngest không retry). Pattern Day 11 RULE D11-2 (graceful không loop retry).
+- M1.5 Fix `last_run_at` update CẢ khi duplicate: extract update ra ngoài if-else. Tránh cron-job.org retry 5 phút sau loop spam (5-minute dedup window Day 11 M4).
+
+**M2 getBrandPrefix + npm scripts (30p):**
+
+- Bug: "Ladysfit" → "LT" (first + last char) → fix CamelCase detection + lowercase 2-char fallback. 7/7 test PASS.
+- Algorithm:
+  - Word ≤ 4 chars: toàn bộ uppercase
+  - CamelCase boundary (LinkedIn → LI, TikTok → TT)
+  - Lowercase dài: 2 chars đầu (Ladysfit → LA, Microsoft → MI)
+  - Multi-word: chữ đầu 3 từ đầu (Vietnam Society of Excellence → VSO)
+- Empty: `BR` fallback
+- Add `typecheck` + `lint` scripts (alias `tsc --noEmit`). ESLint flat config defer Phase 2 (Week 4+).
+
+**M3 saveError banner clear (45p):**
+
+- Bug: Banner persistent cross-step sau navigation. Audit: KHÔNG clear ở onEdit + goBack + goNext.
+- Helper `clearSaveError()` refactor 4 touchpoint trong `onboarding-shell.tsx`.
+- KHÔNG đụng JSX banner position (giữ ngoài AnimatePresence - design intent).
+- Manual test defer Day 19 cùng workflow edit form (anh đã có brand, onboarding flow không dễ test lại).
+
+**M4 Signup error messages tiếng Việt (30p):**
+
+- Audit: signup chỉ map 1 case "already" + 5 strings ASCII không dấu. Login generic single message (đúng vì security anti-enumeration).
+- File mới `src/lib/auth/error-messages.ts` (49 LOC): `translateSignupError()` switch error.code 7 cases + fallback message-based 4 cases + default generic.
+- 7 Supabase AuthApiError codes mapped: `user_already_exists`, `email_address_invalid`, `weak_password`, `over_email_send_rate_limit`, `signup_disabled`, `email_provider_disabled`, `unexpected_failure`.
+- Fix diacritics 14 strings signup + login actions.ts. Login GIỮ generic logic.
+
+**M5 Commit + deploy + verify:**
+
+- Single commit Day 18: `feat(week1-day18)` bug fix outstanding
+- Vercel auto-deploy READY (~45s expected)
+- Production smoke test: deploy LIVE, partial index verify còn, runtime logs clean
+
+**Commits Day 18:**
+- `<sắp có>` feat(week1-day18): bug fix outstanding round 1 + content duplicate constraint
+- `<sắp có>` docs(handoff): close Day 18
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -492,6 +545,12 @@ Daily digest email Phase 1 Week 2 (~2h30, M5 verify Day 16 skip defer Week 2):
 | Filter cooldown JS-side thay vì PostgREST OR-NULL (Day 17 M1.2) | Supabase JS filter `.or('last_digest_sent_at.is.null,last_digest_sent_at.lt.timestamp')` cú pháp phức tạp + dễ sai. JS filter sau khi fetch sạch hơn 50 user max (defense limit) → memory acceptable |
 | Promise.allSettled batch thay vì Promise.all (Day 17 M3.1) | 1 user Resend fail KHÔNG block 49 user còn lại. Day 16 send-welcome fire-and-forget pattern không scale cho batch. allSettled return tất cả results, caller aggregate success/fail metrics |
 | Mark dedup ONLY user success (Day 17 M3.1) | Defense in depth: failed user retry next run (Resend transient error, network blip). User success skip 20h. Tách 2 trạng thái tránh user fail mãi không nhận lại email |
+| UNIQUE INDEX partial WHERE source_url IS NOT NULL (Day 18 M1.3) | Evergreen workflows source_url=NULL nên KHÔNG enforce uniqueness (1 workflow có thể tạo nhiều content evergreen cùng topic). Partial index chỉ enforce với rows có source_url thật. Postgres pattern an toàn cho mix nullable column |
+| Handle 23505 graceful KHÔNG throw (Day 18 M1.4) | Inngest retry default 3 lần khi throw. Duplicate là "expected failure mode" không phải bug → return success object với skipped=true tránh retry tốn Claude API call. Inngest mark step complete, không re-invoke generate |
+| last_run_at update both insert + duplicate branch (Day 18 M1.5) | 5-minute dedup window Day 11 M4 dùng last_run_at. Nếu duplicate KHÔNG update, cron-job.org retry 5 phút sau sẽ bypass dedup → loop spam. Skip = "workflow đã chạy", không phải fail |
+| CamelCase detection thay vì first+last char (Day 18 M2) | "Ladysfit" → "LT" (Day 6 logic) không predictable. CamelCase boundary detection (LinkedIn → LI) + lowercase 2-char fallback (Ladysfit → LA) deterministic + dễ đoán. Trade-off: KHÔNG ra "LF" cho Ladysfit, accept defer brand prefix custom field Week 4+ |
+| npm script lint = alias typecheck cho MVP (Day 18 M2) | Next.js 16 deprecated `next lint`. ESLint flat config setup tốn 30-45p + có thể conflict Next.js internal lint. Quick win: lint chạy `tsc --noEmit` (catch type error + JSX indirect). Full ESLint setup defer Phase 2 |
+| Signup map code-based + Login giữ generic (Day 18 M4) | Signup UX: user cần actionable error ("email đã đăng ký" → đăng nhập). Login UX: KHÔNG được leak email exists vs password wrong (security enumeration attack). Pattern khác nhau theo use case |
 
 ## 5. Known Issues
 
@@ -505,11 +564,11 @@ Daily digest email Phase 1 Week 2 (~2h30, M5 verify Day 16 skip defer Week 2):
 - Cloudflare R2 bucket acf-assets chưa tạo (Week 2-3)
 - contents.brand_id denormalized có nguy cơ drift - cần CHECK constraint
 - CTA "Xem cách hoạt động" trong Hero link tới /#how-it-works - chưa có section đó
-- getBrandPrefix logic sai "Ladysfit" → `LT_` thay vì `LF_`. Fix Week 2.
-- saveError banner persistent trong onboarding sau khi user edit thành công
-- `npm run lint` script missing trong package.json
+- ~~getBrandPrefix logic sai "Ladysfit" → `LT_` thay vì `LF_`. Fix Week 2.~~ ✅ Fixed Day 18 M2 (CamelCase detection, "Ladysfit" → "LA" - trade-off accept)
+- ~~saveError banner persistent trong onboarding sau khi user edit thành công~~ ✅ Fixed Day 18 M3 (clearSaveError helper 4 touchpoint - manual visual test defer Day 19)
+- ~~`npm run lint` script missing trong package.json~~ ✅ Fixed Day 18 M2 (alias `tsc --noEmit`, ESLint flat config defer Phase 2)
 - Claude API chưa integrate cho synthesize brand voice trong onboarding (Day 6 dùng rule-based)
-- Signup error message quá generic
+- ~~Signup error message quá generic~~ ✅ Fixed Day 18 M4 (translateSignupError 7 codes tiếng Việt)
 - Sub-header BrandVoiceCard "Xem lại và confirm" không hợp dashboard readonly
 - Drizzle client chưa setup DATABASE_URL env
 - Workflow card không có button "Sửa workflow" (edit name/sources/schedule)
@@ -585,6 +644,13 @@ Daily digest email Phase 1 Week 2 (~2h30, M5 verify Day 16 skip defer Week 2):
 - **Cooldown 20h fix cứng KHÔNG configurable per user:** SMB Việt Nam có thể muốn nhận digest 2 lần/ngày (sáng + tối). Defer Phase 2 settings page.
 - **KHÔNG có unsubscribe link thật:** Footer "Quản lý thông báo" placeholder href="#" defer Week 4.
 - **Resend free tier 100 email/day:** Profile A 10 trial user × 1 email/ngày = 10 email/day OK. Nếu Week 3 lên 20+ user cần upgrade Resend $20/tháng.
+
+### Issues Day 18 (mới phát sinh)
+
+- **getBrandPrefix "Ladysfit" → "LA" KHÔNG "LF":** Trade-off chấp nhận. Defer Week 4+ thêm field "Brand prefix custom" trong onboarding nếu user complain.
+- **M3 saveError manual test defer Day 19:** Tin tưởng code review + tsc/build PASS. Verify visual khi test workflow edit form Day 19.
+- **ESLint flat config chưa setup:** `npm run lint` hiện alias `tsc --noEmit`. JSX-specific rules (`react/no-unescaped-entities`, `react-hooks/exhaustive-deps`) defer Phase 2 setup riêng.
+- **Signup error mapping chỉ 7 code Supabase:** Có code khác hiếm gặp (vd CAPTCHA fail, hCaptcha disabled) chưa map. Default fallback "Không thể tạo tài khoản lúc này" catch-all OK MVP.
 
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
@@ -1009,19 +1075,38 @@ Promise.all reject 1 promise → reject toàn bộ + lose results của promise 
 **RULE D17-2: PARTIAL INDEX WHERE NOT NULL TIẾT KIỆM SPACE + TĂNG TỐC QUERY DEDUP.**
 Pattern: CREATE INDEX idx ON table(col) WHERE col IS NOT NULL. Khi 99% rows có col NULL (vd last_digest_sent_at chưa từng gửi), partial index chỉ chứa 1% rows có timestamp. Query dedup `WHERE col < timestamp` dùng index nhanh hơn full index. Áp dụng cho mọi nullable timestamp dedup pattern (last_email_sent_at, last_notification_at, last_login_at).
 
+### Bài học Day 18 (3 RULES mới)
+
+**RULE D18-1: POSTGRES UNIQUE INDEX PARTIAL CHO MIXED NULLABLE COLUMN.**
+Pattern `CREATE UNIQUE INDEX idx ON table (col_a, col_b) WHERE col_b IS NOT NULL` áp dụng khi col_b nullable + business rule "uniqueness CHỈ enforce khi có value". Evergreen workflows source_url NULL cần multiple rows; news_based + promotional source_url NOT NULL cần dedup. Partial index xử lý 2 case trong 1 constraint, KHÔNG cần app layer logic switch. Đối lập với CHECK constraint chỉ validate row-level, không enforce uniqueness cross-rows.
+
+**RULE D18-2: INNGEST STEP DUPLICATE = SUCCESS NOT FAILURE - LAST_RUN_AT UPDATE BOTH BRANCHES.**
+Khi step.run gặp expected failure mode (duplicate, no new data, no eligible users), return success object với flag `skipped=true` thay vì throw. Throw triggers Inngest retry 3 lần default + last_run_at KHÔNG update → external cron service retry 5p sau bypass dedup window → loop spam tốn API quota. Pattern: extract side effects (update last_run_at, log, metrics) ra ngoài if-else branch để chạy cả 2 case.
+
+**RULE D18-3: AUTH ERROR MESSAGE SIGNUP VS LOGIN KHÁC PATTERN.**
+Signup: map code-based actionable ("email đã đăng ký" → user know action: "đăng nhập"). Login: GIỮ generic single message ("Email hoặc mật khẩu không đúng") để chống enumeration attack (kẻ tấn công không phân biệt email exists vs password wrong). Khác biệt UX vs security trade-off. Helper translate map theo `error.code` (chính xác stable) + fallback `message.includes()` (legacy) + default generic catch-all.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
 - **Week 1 Day 1-15 đã commit + push:** Day 15 M3 commit `ce87564` đã push, Vercel deploy READY 44s 0 error. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
 - **Production smoke test STATUS:** Day 15 M3 đã verify localhost browser PASS. Production deploy `ce87564` READY 0 error/warning.
-- Commit cuối local nên là `docs(handoff): close Day 17 - daily digest email infra deploy + cron-job.org schedule`
-- Day 17 close commit + push GitHub
-- Production deploy commit Day 17 LIVE
-- cron-job.org "ACF Daily Digest" ACTIVE schedule 1 AM UTC (8h sáng VN ngày 15/05)
+- Commit cuối local nên là `docs(handoff): close Day 18 - bug fix outstanding round 1 + content duplicate constraint`
+- Day 18 close commit + push GitHub
+- Production deploy commit Day 18 LIVE
+- DB schema thêm UNIQUE INDEX `contents_workflow_source_url_unique` (partial WHERE source_url IS NOT NULL)
+- `workflow-runner.ts` handle 23505 graceful + last_run_at update both branches
+- File mới `src/lib/auth/error-messages.ts` (translateSignupError 49 LOC, 7 Supabase code mapped)
+- `npm run typecheck` + `npm run lint` available (cả 2 alias `tsc --noEmit`)
+- cron-job.org "ACF Daily Digest" ACTIVE schedule 1 AM UTC (8h sáng VN)
 - DB hiện 1 user fitnessviet với last_digest_sent_at = 14/05 21:54 VN
 - Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05 (đêm 14→15) và mỗi ngày sau
 - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
-- cron-job.org production jobs ACTIVE: "ACF Workflow Runner" */5 * * * * UTC + "ACF Daily Digest" 0 1 * * * UTC
+- cron-job.org production jobs ACTIVE: "ACF Workflow Runner" `*/5 * * * *` UTC + "ACF Daily Digest" `0 1 * * *` UTC
 - **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16-17 ✅ → PayOS Day 23**
-- **Day 18 START: Bug fix outstanding + content duplicate constraint (workflow_id + source_url) + workflow edit form prep Day 19-20.**
+- **Day 19 START: Workflow edit form (reuse create form mode=edit) + manual test M3 saveError banner clear + M2 brand prefix.**
+- **Verify đầu Day 19:**
+  - Cron đêm 15/05 (7h sáng VN ngày 15) fire Ladysfit workflow với UNIQUE constraint active. Query Supabase `contents WHERE workflow_id='b01973cb-...' AND generated_at > NOW() - INTERVAL '12 hours'` xác nhận content mới insert OK (không trùng article cũ trong DB).
+  - Daily digest 8h sáng VN ngày 15 cũng fire (cron-job.org "ACF Daily Digest"). Verify Resend dashboard + Gmail inbox tab Inbox (KHÔNG Promotions).
+  - Vercel runtime logs filter `[workflow-runner]` xem có log "skip duplicate" nào không (nếu cron đêm gặp article đã có).
