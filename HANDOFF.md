@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 13 close - 3 workflow type evergreen + promotional + news_based đầy đủ. Strategy pattern prompt builders (folder `src/lib/content/prompts/`), generator refactor discriminated union PromptContext, workflow-runner dispatch 3 type (3 step thay 4), form UI conditional + Server Action save config JSONB per type. Backward compat workflow Ladysfit news_based 100%. tsc PASS, build 15 routes.
+**Status:** Week 1 Day 14 close - Pagination + Bulk approve/reject cho /dashboard/contents. URL searchParams pattern `?status=X&page=N`, sticky bottom bar action với 3 button (Chọn tất cả/Từ chối/Duyệt), defense-in-depth ownership verify 2 round-trip (RLS + app filter). Production cron Ladysfit chạy ĐÊM ĐẦU TIÊN tự động lúc 07:04:11 VN ngày 14/05 (workflow_id b01973cb), content "ngủ ngược" generated. tsc PASS, build 15 routes.
 
 ## 2. Current State
 
@@ -23,7 +23,7 @@
 - ✅ RLS verified dual-client SQL + UI smoke test
 - ✅ shadcn/ui base 14 components (Button, Card, Badge, Separator, Input, Textarea, Label, Slider, Form, Checkbox, RadioGroup, Select, AlertDialog, Avatar, DropdownMenu, Sheet - tất cả manual paste do Node v24)
 - ✅ Landing page 7 sections (Bento Grid + BRIDGE Framework)
-- ✅ Production: ✅ LIVE - https://auto-content-factory.vercel.app
+- ✅ Production: ✅ LIVE - https://auto-content-factory.vercel.app. Cron production ĐÊM ĐẦU TIÊN PASS - workflow Ladysfit 07:04 VN ngày 14/05/2026 auto-trigger qua cron-job.org → Vercel → Inngest → Claude → DB, content saved status=draft
 - ✅ Onboarding flow 8 câu hỏi hoàn chỉnh
 - ✅ Dashboard layout với sidebar (4 nav items: Brand Voice + Workflows + Nội dung + Settings) + mobile drawer
 - ✅ User avatar dropdown với Logout
@@ -36,7 +36,7 @@
 - ✅ Production Inngest pipeline LIVE: end-to-end run ~60-90s, content saved DB tự động (Day 11 M3 verified)
 - ✅ Cron-job.org auto-trigger /api/cron/run-workflows mỗi 5 phút (Day 11 M4)
 - ✅ Endpoint /api/cron/run-workflows với Authorization Bearer secret + cron-parser window match + 5-minute dedup
-- ✅ Contents review dashboard `/dashboard/contents` list + `/dashboard/contents/[id]` detail (Day 11 M5)
+- ✅ Contents review dashboard `/dashboard/contents` list (paginated 20/page) + filter tabs 4 status + bulk approve/reject sticky bar + detail page variant selector
 - ✅ Variant selector UI với 3 tab + select variant + copy clipboard
 - ✅ `npm run build` PASS - 14 routes (Static `/`, Dynamic `/dashboard/contents` `/dashboard/contents/[id]` `/api/cron/run-workflows`)
 - ✅ TypeScript zero error
@@ -44,7 +44,7 @@
 - ✅ Content review status actions (Day 12 P2): approve/reject Server Action + optimistic UI, sidebar badge draft count, filter tabs 4 status với URL searchParams
 - ✅ Workflow types evergreen + promotional (Day 13): strategy pattern prompt builders folder, generator discriminated union PromptContext, workflow-runner dispatch 3 type với 3 step (giảm 1 step so Day 10), form UI conditional + Server Action buildWorkflowConfig per type
 - ✅ Test scripts 3 type localhost qua tsx (Day 13 M5.1): test-generator (news_based) + test-generator-evergreen + test-generator-promotional + _mock-brand DRY
-- **Last verified:** 13/05/2026 - Day 13 close - 3 workflow type evergreen + promotional + news_based hoàn chỉnh. 6 file mới + 5 file refactor + 4 test scripts. M5.1 3 test scripts PASS (51-62s/test, content quality cao). M5.2 form browser test PASS với 1 workflow mỗi type trong DB. Backward compat verified. HANDOFF Day 13 commit + push sau.
+- **Last verified:** 14/05/2026 - Day 14 close - Pagination 20/page + bulk approve/reject sticky bar PASS. Production cron Ladysfit tự chạy ĐÊM ĐẦU TIÊN (07:04 VN 14/05) thành công. 2 workflow test Day 13 đã disable (5926eb93 + d4fbdbd7). HANDOFF Day 14 commit + push sau.
 
 ### Day 11 additions (13/05/2026)
 
@@ -212,7 +212,28 @@
   - Mobile responsive tabs scroll ngang (chữ "Đã từ chối" hơi chật, defer Week 2 nếu cần fix)
 - Commit `2b7251e` feat(week1-day12-p2-m4)
 
-**Last verified:** 13/05/2026 - Day 13 close - 3 workflow type evergreen + promotional + news_based hoàn chỉnh. 6 file mới + 5 file refactor + 4 test scripts. M5.1 3 test scripts PASS (51-62s/test, content quality cao). M5.2 form browser test PASS với 1 workflow mỗi type trong DB. Backward compat verified. HANDOFF Day 13 commit + push sau.
+### Day 14 additions (14/05/2026)
+
+- **Pre-flight: Disable 2 workflow test Day 13 (~5 phút):** Anh disable 2 workflow test Day 13 (`5926eb93-...` evergreen + `d4fbdbd7-...` promotional) trước khi vào dev. Workflow Ladysfit (b01973cb) giữ enabled=true. UPDATE workflows SET enabled = false WHERE id IN (...) qua Supabase MCP. Verify 2 dòng enabled=false trả về OK.
+- **Production cron đêm đầu tiên PASS (verify đầu phiên):** Cron-job.org → Vercel endpoint mỗi 5 phút đều như metronome (12+ entries/h, tất cả 200 OK, 0 error/warning/fatal trong 24h). Lúc 07:04:11 VN 14/05, workflow Ladysfit fire đúng cron `0 0 * * *` UTC + match window 5 phút. Content "Chuyên gia mách mẹo 'ngủ ngược' giúp nhanh vào giấc" generated, voice Ladysfit perfect ("Bạn vừa sinh xong, nhìn bụng mà thở dài..." pattern Everyman archetype). Content saved status=draft trong DB. Đây là LẦN ĐẦU pipeline tự chạy không có anh can thiệp kể từ setup Day 11 M4.
+- **M1: Pagination /dashboard/contents (~45 phút):**
+  - File mới `src/components/contents/contents-pagination.tsx` 68 LOC Server Component, props (currentPage, totalPages, totalCount, statusFilter?), render NULL nếu totalPages <= 1, hiển thị "X-Y / Z nội dung" + 2 link Prev/Next preserve searchParams
+  - Refactor `src/lib/contents/queries.ts` 160 LOC: getCurrentUserContents nhận thêm param page (default 1), apply `.range((page-1)*20, page*20-1)` trên Supabase query. Thêm function mới getContentsTotalCount(statusFilter?) dùng `.select('id', { count: 'exact', head: true })` với filter brands!inner cho ownership
+  - Refactor `src/app/dashboard/contents/page.tsx` 168 LOC: parse pageParam từ searchParams.page (validate >=1, coerce invalid → 1), redirect-on-overflow (page > totalPages khi totalCount > 0 → redirect path-only), 3 query Promise.all (contents paginated + count by status + total count)
+  - Thêm const `CONTENTS_PAGE_SIZE = 20` vào types.ts (pattern DRY single source of truth - RULE D12-4)
+  - Build PASS 15 routes, TypeScript clean. Commit `a1863e9` feat(week1-day14-m1).
+- **M2: Bulk approve/reject với sticky bottom bar (~75 phút):**
+  - File mới `src/components/contents/content-list-item.tsx` 93 LOC Client Component, wrap card với checkbox bên trái, isSelected=true → border-red-500 + bg-red-50/30 visual feedback, e.stopPropagation cho checkbox tránh navigate detail page
+  - File mới `src/components/contents/contents-bulk-actions.tsx` 144 LOC Client Component, state `selectedIds: Set<string>`, master checkbox "Chọn tất cả N nội dung trong trang", sticky bottom bar position fixed bottom-0 left-0 right-0 z-50 hiện khi selectedIds.size > 0, 3 button (Bỏ chọn / Từ chối đỏ / Duyệt xanh), reset selectedIds khi statusFilter prop đổi (useEffect)
+  - Extend `src/lib/contents/types.ts` thêm interface BulkUpdateInput (ids + status)
+  - Extend `src/lib/contents/schemas.ts` thêm bulkUpdateStatusSchema z.object({ ids: z.array(z.string().uuid()).min(1).max(100), status: z.enum(...) })
+  - Extend `src/app/dashboard/contents/actions.ts` 113 LOC thêm Server Action bulkUpdateStatus với defense-in-depth 2 round-trip (Cách 2 fallback vì Supabase JS không support join trong UPDATE): query 1 select brands!inner(user_id).eq('brands.user_id', user.id).in('id', ids) derive owned subset, query 2 update only validIds. Return { success, updated_count }
+  - Refactor `src/app/dashboard/contents/page.tsx` 115 LOC (từ 168 LOC sau M1): thay block .map() render inline → wrap toàn bộ list bằng ContentsBulkActions
+  - Smoke test 4 PASS qua 3 screenshot: single checkbox + master "Chọn tất cả 7" + bulk approve 2 contents (toast xanh + tab count Chờ duyệt 3→1 + Đã duyệt 2→4) + reset selection khi đổi filter
+  - DB verify qua Supabase MCP: count by status sau bulk approve = 4 approved + 1 draft + 2 rejected = 7 total. Khớp 100%.
+  - Build PASS 15 routes. Commit `2b1a626` feat(week1-day14-m2).
+
+**Last verified:** 14/05/2026 - Day 14 close - Pagination 20/page + bulk approve/reject sticky bar PASS. Production cron Ladysfit tự chạy ĐÊM ĐẦU TIÊN (07:04 VN 14/05) thành công. 2 workflow test Day 13 đã disable (5926eb93 + d4fbdbd7). HANDOFF Day 14 commit + push sau.
 
 ## 3. Done So Far
 
@@ -317,6 +338,13 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - `<sắp có>` feat(week1-day13): workflow types evergreen + promotional với strategy pattern prompt builders + 3 step dispatch + form UI conditional
 - `<sắp có>` docs(handoff): close Day 13 - 3 workflow types complete
 
+### Day 14 (14/05/2026)
+
+**2 commits Day 14 + sắp có HANDOFF commit:**
+- `a1863e9` feat(week1-day14-m1): pagination cho contents review voi url searchparams (4 files, 194 ins, 47 del)
+- `2b1a626` feat(week1-day14-m2): bulk approve reject cho contents review voi sticky bottom bar (6 files, 301 ins, 58 del)
+- `<sắp có>` docs(handoff): close Day 14 - pagination + bulk actions + cron production night 1
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -364,6 +392,10 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **Discriminated union PromptContext (Day 13 M2)** | generator.ts signature mới `generateContent(brand, ctx: PromptContext)` với ctx union 3 nhánh. TypeScript exhaustive check trong dispatcher buildPrompts switch. Replace signature cũ `generateContent(brand, article: NewsArticle)` hardcode 1 input type |
 | **Workflow-runner gộp 4 step → 3 step (Day 13 M3)** | Step 2 "fetch-news" + Step 3 "generate-content" gộp thành 1 step "build-and-generate". Lý do: tránh widening literal union qua step.run boundary (Inngest JsonifyObject), giảm 1 webhook Vercel call, vẫn dưới 60s limit. Trade-off: nếu fail giữa "build context" và "generate", Inngest retry cả 2 phase (acceptable vì Claude generate idempotent) |
 | **Type-specific config validation 2 layer (Day 13 M3+M4)** | Layer 1 (form): Zod superRefine validate ở client (counter realtime) + Server Action safeParse (defense in depth). Layer 2 (workflow-runner): re-validate config sớm ở Step 1 (fail fast trước tốn Claude API). Pattern: trust nothing crossing trust boundaries |
+| **CONTENTS_PAGE_SIZE = 20 const trong types.ts thay vì hardcode rải rác (Day 14 M1)** | Pattern DRY RULE D12-4: single source of truth. Lần sau đổi page size chỉ đụng 1 chỗ, schema + UI tự reflect. SaaS chuẩn 20/page balance giữa scroll mobile và load time |
+| **Pagination redirect-on-overflow thay vì empty state (Day 14 M1)** | Khi `?page=999` overflow + totalCount > 0 → server-side redirect về `/dashboard/contents[?status=...]` thay vì render empty state confusing. Defensive UX, user không thấy trang trắng |
+| **Defense-in-depth ownership 2 round-trip cho bulk action (Day 14 M2)** | Supabase JS KHÔNG support filter join trong UPDATE statement. Fallback Cách 2: select brands!inner(user_id) derive owned subset → update only validIds. 2 round-trip nhưng đảm bảo user KHÔNG update được content của user khác dù RLS bypass. Defense in depth trên top RLS |
+| **Reset selection khi đổi statusFilter (Day 14 M2)** | useEffect listen prop change, clear Set<string>. Tránh confusion: user tick contents tab "Chờ duyệt", switch sang "Đã duyệt", các ID chọn ở tab cũ KHÔNG còn trong list hiện tại nhưng vẫn đang trong state → bulk action sẽ apply lên ghost IDs. Reset cleaner UX |
 
 ## 5. Known Issues
 
@@ -428,6 +460,15 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - **Promotional KHÔNG có image asset:** Hiện chỉ generate text. Image generation defer Week 3-4 cùng Cloudflare R2.
 - **source_url evergreen lưu NULL → dedup theo source_url không work cho evergreen:** workflow evergreen có thể tạo content trùng topic_focus nếu chạy nhiều lần cùng ngày. Defer Week 2 cùng "unique constraint workflow_id + content_hash" hoặc enforce schedule không quá 1 lần/ngày.
 
+### Issues Day 14 (mới phát sinh)
+
+- **Bulk action không có "Chọn tất cả TẤT CẢ trang" (chỉ chọn trang hiện tại):** Hiện checkbox master chỉ tick contents trong page 20 hiện tại. Khi user có > 20 contents và muốn approve all draft, phải click qua từng page. Defer Week 2 khi có data nhiều: thêm option "Chọn tất cả 100 contents trong filter này" với background job
+- **Sticky bottom bar che content cuối list trên mobile:** Position fixed bottom-0, content cuối có thể bị bar 60px che. Defer Week 2: thêm padding-bottom dynamic cho list khi selectedIds.size > 0
+- **Bulk reject KHÔNG có confirmation dialog:** User click "Từ chối" 7 contents là apply ngay, không có "Bạn có chắc?". OK cho draft (vì có thể revert) nhưng risky khi user có > 50 contents. Defer Week 2 khi có data nhiều: thêm AlertDialog cho bulk reject > 5 items
+- **Pagination KHÔNG có jump-to-page input:** Chỉ Prev/Next, không có "Trang [_] / 10" để nhảy nhanh. OK Day 14 (DB chỉ có 7 content), defer Week 3 khi có > 100 contents
+- **content-list-item.tsx checkbox click area nhỏ:** Mobile tap target < 44x44px. Defer accessibility audit Week 3
+- **No keyboard shortcut bulk action:** Ctrl+A select all, Esc clear selection, Cmd+Enter approve - chưa có. Defer Week 4 khi có power users
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -435,19 +476,30 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ## 6. Next Steps
 
+### Day 15: High Priority
+
+**M3 - Edit inline body variant (~75 phút) [carry-over Day 14]:**
+- Detail page /dashboard/contents/[id]: button "Sửa nội dung" trên mỗi variant tab
+- Click → 4 textarea/input replace hook + title + body + hashtags
+- Save + cancel buttons với optimistic UI
+- Server Action updateVariantContent(contentId, variantIndex, fields)
+- JSONB partial update qua jsonb_set hoặc fetch-merge-update pattern
+- Schema validation: title 10-200, hook 20-500, body 100-2000, hashtags 1-10 items
+- Risk cao nhất Day 14: JSONB partial update Supabase JS chưa thử
+
 ### Day 14 / Week 2: High Priority
 
-**P1 (Day 13 SHIPPED):** ✅ Workflow types evergreen + promotional - hoàn thành
+**✅ Day 13:** Workflow types evergreen + promotional
 
 **P2 - Multi-source batch generation (~2-3h):**
 - Workflow news_based có 3 nguồn RSS × 3 articles = 9 candidates per run
 - Loop generate multiple content, skip article đã có (dedup theo source_url)
 - Test với 2-3 RSS sources VN (TuoiTre, Dantri, CafeBiz)
 
-**P3 - Content edit inline + bulk actions (~3-4h):**
-- Edit body variant inline (textarea + save)
-- Bulk approve/reject checkbox + action bar
-- Pagination /dashboard/contents song song với filter tabs hiện có
+**P3 PARTIAL (Day 14 M2): Bulk actions DONE. Edit inline 4 field defer Day 15.**
+- ✅ Bulk approve/reject checkbox + action bar (Day 14 M2)
+- ✅ Pagination /dashboard/contents song song với filter tabs (Day 14 M1)
+- Edit body variant inline (textarea + save) → carry-over Day 15 M3
 
 **P4 - Workflow edit form (reuse create form mode=edit):**
 - User sửa được name/sources/schedule/type-specific config sau khi tạo
@@ -508,26 +560,29 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - Node version: v24.14.0 (shadcn CLI fail)
 - npm package manager
 
-### Day 11-12 P2 file structure additions
+### Day 11-14 file structure additions
 src/
 ├── app/dashboard/contents/
-│   ├── page.tsx (list — UPDATED M2.2 + M4.1: CONTENT_STATUS_LABELS + searchParams Promise + 4 empty state)
-│   ├── actions.ts (selectVariant + UPDATED M2.2 + M3.2: updateContentStatus + revalidatePath layout)
+│   ├── page.tsx (UPDATED Day 14: parse pageParam + 3 Promise.all queries + redirect-on-overflow + wrap list bằng ContentsBulkActions)
+│   ├── actions.ts (UPDATED Day 14: + bulkUpdateStatus Server Action defense-in-depth)
 │   └── [id]/page.tsx (detail — UPDATED M2.2: CONTENT_STATUS_LABELS)
 ├── app/api/cron/run-workflows/
 │   └── route.ts (POST + GET healthcheck)
 ├── components/contents/
 │   ├── content-variant-selector.tsx (Client Component 3 tabs — UPDATED M2.3 + M2.4a: status bar UI + toast unified)
-│   └── contents-filter-tabs.tsx (NEW M4.1: Server Component 4 tabs + count badges)
+│   ├── contents-filter-tabs.tsx (NEW M4.1: Server Component 4 tabs + count badges)
+│   ├── contents-pagination.tsx (NEW Day 14 M1: Server Component 68 LOC)
+│   ├── content-list-item.tsx (NEW Day 14 M2: Client Component 93 LOC checkbox wrapper)
+│   └── contents-bulk-actions.tsx (NEW Day 14 M2: Client Component 144 LOC sticky bar)
 ├── components/dashboard/
 │   ├── dashboard-shell.tsx (UPDATED M3.1: async fetch draftCount + pass props)
 │   ├── sidebar.tsx (UPDATED M3.1: nhận draftCount prop)
 │   ├── mobile-drawer.tsx (UPDATED M3.1: nhận draftCount prop)
 │   └── sidebar-nav.tsx (UPDATED M3.1: render badge inline khi draftCount > 0)
 ├── lib/contents/
-│   ├── types.ts (Content + ContentWithWorkflow + normalizeHashtag — UPDATED M2.1: CONTENT_STATUS_VALUES + ContentStatus + CONTENT_STATUS_LABELS)
-│   ├── schemas.ts (NEW M2.1: updateStatusSchema z.enum tuple)
-│   └── queries.ts (RLS-aware getCurrentUserContents + getContentById — UPDATED M3 + M4: countDraftContentsForCurrentUser + countContentsByStatusForCurrentUser + getCurrentUserContents statusFilter param)
+│   ├── types.ts (UPDATED Day 14: + BulkUpdateInput + CONTENTS_PAGE_SIZE = 20 const)
+│   ├── schemas.ts (UPDATED Day 14: + bulkUpdateStatusSchema)
+│   └── queries.ts (UPDATED Day 14: getCurrentUserContents nhận page param + .range() + getContentsTotalCount() function mới)
 ├── lib/cron/
 │   ├── should-trigger.ts (isCronInWindow + isOutsideDedupWindow)
 │   └── queries.ts (admin client fetchEnabledWorkflows + markWorkflowTriggered)
@@ -734,14 +789,64 @@ Day 13 M2 cân nhắc 2 approach cho generator.ts: (1) function overload `genera
 - Mở rộng Phase 2 chỉ extend PromptContext union, KHÔNG đụng signature
 Pattern: Khi function nhận input đa dạng (>2 shape), discriminated union >> overload. Pattern này cũng áp dụng được cho Server Actions, validate schemas, event payloads.
 
+### Bài học Day 14 (3 RULES mới)
+
+**RULE D14-1: SUPABASE JS KHÔNG SUPPORT FILTER JOIN TRONG UPDATE → DÙNG 2-ROUND-TRIP PATTERN.**
+Day 14 M2 bulk update content theo ids[] cần verify ownership qua brands.user_id. Supabase JS .update().eq().in() KHÔNG cho phép subquery join trong cùng query (PostgREST limitation). Cách 1 single UPDATE thất bại.
+Pattern đúng (2 round-trip):
+```ts
+// Step 1: derive owned subset
+const { data: owned } = await supabase
+  .from('contents')
+  .select('id, brands!inner(user_id)')
+  .eq('brands.user_id', user.id)
+  .in('id', inputIds);
+const validIds = owned?.map(r => r.id) ?? [];
+
+// Step 2: update only validIds
+const { error } = await supabase
+  .from('contents')
+  .update({ status })
+  .in('id', validIds);
+```
+2 query nhưng đảm bảo defense-in-depth trên top RLS. RLS đã filter, app layer filter lại = 2 lớp. Risk: race condition giữa 2 query gần như zero cho use case approve/reject (user không thể remove brand ownership trong < 100ms).
+
+**RULE D14-2: NEXT.JS SEARCHPARAMS PROMISE PHẢI VALIDATE STRICT TRƯỚC KHI DÙNG.**
+Day 14 M1 pageParam từ `?page=999` hoặc `?page=abc` có thể crash hoặc render trang trắng. Pattern an toàn:
+```ts
+const sp = await searchParams;
+const rawPage = sp.page;
+const parsed = typeof rawPage === 'string' ? parseInt(rawPage, 10) : NaN;
+const currentPage = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+
+// Overflow detection
+const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+if (currentPage > totalPages && totalCount > 0) {
+  redirect(`/dashboard/contents${statusFilter ? `?status=${statusFilter}` : ''}`);
+}
+```
+KHÔNG dùng zod schema cho searchParams vì redirect chỉ có ở Server Component, async flow đơn giản. Tự coerce + validate inline đủ.
+
+**RULE D14-3: useEffect RESET STATE KHI PROP CHANGE - TRÁNH GHOST STATE.**
+Day 14 M2 ContentsBulkActions nhận prop statusFilter. User tick contents ở tab "Chờ duyệt", switch sang tab "Đã duyệt", các ID chọn KHÔNG còn trong list hiện tại NHƯNG vẫn ở trong selectedIds Set. Bulk action sẽ apply lên ghost IDs.
+Pattern:
+```tsx
+useEffect(() => {
+  setSelectedIds(new Set());
+}, [statusFilter]);
+```
+Áp dụng cho mọi list component với filter/pagination + selection state. KHÔNG limited to bulk actions - cũng cần cho multi-select dropdown, drag-drop reorder, etc.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Week 1 Day 1-12 P2 PUSHED 35 commits** (32 trước + 3 Day 12 P2 + 1 HANDOFF Day 12 P2). Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB.
-- **Production smoke test STATUS:** Day 11 M3 verified content saved DB thật (id e5dc4bce). Day 11 M4 verified cron-job.org TEST RUN 200 OK. Pipeline production READY 100%. Day 12 P2 chỉ test localhost - chưa deploy lên Vercel để verify production. Anh quyết: deploy ngay sau push hay defer milestone tiếp.
-- Commit cuối local nên là `docs(handoff): close Day 12 P2 - content review status actions`
-- Day 12 P2 DONE. Day 13 nếu tiếp tục: Workflow types evergreen + promotional (P1 mới) hoặc multi-source batch generation (P2 mới)
-- Workflow Ladysfit (id b01973cb-7c76-49ec-adf7-6f980d3b7480) cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN hằng ngày qua cron-job.org
-- DB hiện có 5 contents: 1 draft + 2 approved + 2 rejected (sau test Day 12 P2 M3.2 + M4.2 anh đã reject thêm)
+- **Week 1 Day 1-14 sắp PUSH 37 commits** (35 trước + 2 Day 14 + 1 HANDOFF Day 14). Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
+- **Production smoke test STATUS:** Day 14 M2 chỉ test localhost. Production deploy sau khi commit HANDOFF + push.
+- Commit cuối local nên là `docs(handoff): close Day 14 - pagination + bulk actions + cron production night 1`
+- Day 14 DONE. Day 15 nếu tiếp tục: M3 Edit inline body variant (carry-over). Sau M3 mới qua P4 (multi-source) hoặc P5 (workflow edit form)
+- Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05
+- DB hiện có 7 contents: 4 approved + 1 draft + 2 rejected
+- 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
+- cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
