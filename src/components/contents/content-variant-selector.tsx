@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Check, Copy, Loader2 } from 'lucide-react';
+import { Check, Copy, Loader2, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { ContentVariant } from '@/lib/content/types';
 import {
   CONTENT_STATUS_LABELS,
   normalizeHashtag,
   type ContentStatus,
+  type VariantFields,
 } from '@/lib/contents/types';
 import { selectVariant, updateContentStatus } from '@/app/dashboard/contents/actions';
+import { VariantEditor } from './variant-editor';
 
 interface Props {
   contentId: string;
@@ -38,6 +40,19 @@ export function ContentVariantSelector({
   const [copiedTab, setCopiedTab] = useState<number | null>(null);
   const [currentStatus, setCurrentStatus] = useState<ContentStatus>(status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [localVariants, setLocalVariants] = useState<ContentVariant[]>(variants);
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
+
+  function handleVariantSaved(index: number, newFields: VariantFields) {
+    setLocalVariants((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...newFields };
+      return next;
+    });
+    setEditingVariantIndex(null);
+    setToast({ type: 'success', msg: 'Đã lưu thay đổi' });
+    setTimeout(() => setToast(null), 3000);
+  }
 
   function handleSelect(index: number) {
     const prev = selectedIndex;
@@ -132,7 +147,7 @@ export function ContentVariantSelector({
       </div>
 
       <div className="flex gap-2 mb-4 border-b border-gray-200">
-        {variants.map((_, i) => (
+        {localVariants.map((_, i) => (
           <button
             key={i}
             onClick={() => setActiveTab(i)}
@@ -150,52 +165,78 @@ export function ContentVariantSelector({
         ))}
       </div>
 
-      {variants.map((v, i) => (
+      {localVariants.map((v, i) => (
         <div key={i} className={activeTab === i ? 'block' : 'hidden'}>
-          <h2 className="text-xl font-semibold mb-3">{v.title}</h2>
+          {editingVariantIndex === i ? (
+            <VariantEditor
+              contentId={contentId}
+              variantIndex={i}
+              initialFields={{
+                hook: v.hook,
+                title: v.title,
+                body: v.body,
+                hashtags: v.hashtags,
+              }}
+              onSaved={(newFields) => handleVariantSaved(i, newFields)}
+              onCancel={() => setEditingVariantIndex(null)}
+            />
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold mb-3">{v.title}</h2>
 
-          <div className="mb-4 p-4 bg-gray-50 border-l-4 border-[#c73937] rounded">
-            <p className="italic text-gray-700">{v.hook}</p>
-          </div>
+              <div className="mb-4 p-4 bg-gray-50 border-l-4 border-[#c73937] rounded">
+                <p className="italic text-gray-700">{v.hook}</p>
+              </div>
 
-          <div className="prose prose-sm max-w-none mb-6 whitespace-pre-wrap">
-            {v.body}
-          </div>
+              <div className="prose prose-sm max-w-none mb-6 whitespace-pre-wrap">
+                {v.body}
+              </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {v.hashtags.map((tag, idx) => (
-              <Badge key={idx} variant="secondary">
-                {normalizeHashtag(tag)}
-              </Badge>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {v.hashtags.map((tag, idx) => (
+                  <Badge key={idx} variant="secondary">
+                    {normalizeHashtag(tag)}
+                  </Badge>
+                ))}
+              </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleSelect(i)}
-              disabled={isPending || selectedIndex === i}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedIndex === i
-                  ? 'bg-green-100 text-green-800 cursor-default'
-                  : 'bg-[#c73937] text-white hover:bg-[#a82e2c] disabled:opacity-50'
-              }`}
-            >
-              {isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : selectedIndex === i ? (
-                <Check className="w-4 h-4" />
-              ) : null}
-              {selectedIndex === i ? 'Đã chọn variant này' : 'Chọn variant này'}
-            </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleSelect(i)}
+                  disabled={isPending || selectedIndex === i}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedIndex === i
+                      ? 'bg-green-100 text-green-800 cursor-default'
+                      : 'bg-[#c73937] text-white hover:bg-[#a82e2c] disabled:opacity-50'
+                  }`}
+                >
+                  {isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : selectedIndex === i ? (
+                    <Check className="w-4 h-4" />
+                  ) : null}
+                  {selectedIndex === i ? 'Đã chọn variant này' : 'Chọn variant này'}
+                </button>
 
-            <button
-              onClick={() => handleCopy(i)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              {copiedTab === i ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-              {copiedTab === i ? 'Đã copy' : 'Copy nội dung'}
-            </button>
-          </div>
+                <button
+                  onClick={() => handleCopy(i)}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  {copiedTab === i ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  {copiedTab === i ? 'Đã copy' : 'Copy nội dung'}
+                </button>
+
+                <button
+                  onClick={() => setEditingVariantIndex(i)}
+                  disabled={editingVariantIndex !== null}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Sửa nội dung
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>

@@ -40,3 +40,18 @@ export function normalizeHashtag(tag: string): string {
 }
 
 export const CONTENTS_PAGE_SIZE = 20;
+
+// Variant field structure (match DB schema verified Day 15)
+export interface VariantFields {
+  hook: string;
+  title: string;
+  body: string;
+  hashtags: string[];
+}
+
+// Input cho updateVariantContent Server Action
+export interface UpdateVariantInput {
+  contentId: string;
+  variantIndex: number;
+  fields: VariantFields;
+}

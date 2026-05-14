@@ -2,9 +2,17 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { bulkUpdateStatusSchema, updateStatusSchema } from '@/lib/contents/schemas';
+import {
+  bulkUpdateStatusSchema,
+  updateStatusSchema,
+  updateVariantContentSchema,
+} from '@/lib/contents/schemas';
 import type { ContentStatus } from '@/lib/contents/types';
-import type { BulkUpdateStatusInput, UpdateStatusInput } from '@/lib/contents/schemas';
+import type {
+  BulkUpdateStatusInput,
+  UpdateStatusInput,
+  UpdateVariantContentInput,
+} from '@/lib/contents/schemas';
 
 export async function selectVariant(
   contentId: string,
@@ -110,4 +118,90 @@ export async function bulkUpdateStatus(
   revalidatePath('/dashboard', 'layout');
   revalidatePath('/dashboard/contents');
   return { success: true, updated_count: validIds.length };
+}
+
+/**
+ * M3.1: Update inline 4 field của 1 variant.
+ * Defense-in-depth: RLS + app-layer ownership check qua brands.user_id (RULE D14-1).
+ * Pattern fetch-merge-update an toàn (validate variantIndex tồn tại trước).
+ */
+export async function updateVariantContent(
+  input: UpdateVariantContentInput
+): Promise<{ success: boolean; error?: string }> {
+  const parsed = updateVariantContentSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0];
+    return {
+      success: false,
+      error: firstError?.message ?? 'Dữ liệu không hợp lệ',
+    };
+  }
+
+  const { contentId, variantIndex, fields } = parsed.data;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { success: false, error: 'Phiên đăng nhập hết hạn' };
+  }
+
+  // Defense-in-depth: verify ownership qua brands.user_id (RULE D14-1)
+  const { data: owned, error: ownErr } = await supabase
+    .from('contents')
+    .select('id, brands!inner(user_id)')
+    .eq('id', contentId)
+    .eq('brands.user_id', user.id)
+    .maybeSingle();
+
+  if (ownErr || !owned) {
+    return { success: false, error: 'Không tìm thấy nội dung hoặc không có quyền' };
+  }
+
+  // Normalize hashtags: ensure # prefix (DRY pattern Day 11)
+  const normalizedHashtags = fields.hashtags.map((tag) =>
+    tag.startsWith('#') ? tag : `#${tag}`
+  );
+
+  const { data: current, error: fetchErr } = await supabase
+    .from('contents')
+    .select('variants')
+    .eq('id', contentId)
+    .single();
+
+  if (fetchErr || !current) {
+    return { success: false, error: 'Không đọc được nội dung hiện tại' };
+  }
+
+  const variants = (current as { variants: Array<Record<string, unknown>> | null }).variants;
+  if (!Array.isArray(variants) || variantIndex >= variants.length) {
+    return { success: false, error: `Variant index ${variantIndex} không tồn tại` };
+  }
+
+  const updatedVariants = [...variants];
+  updatedVariants[variantIndex] = {
+    ...variants[variantIndex],
+    hook: fields.hook,
+    title: fields.title,
+    body: fields.body,
+    hashtags: normalizedHashtags,
+  };
+
+  const { error: updateErr } = await (supabase
+    .from('contents')
+    .update({ variants: updatedVariants } as never)
+    .eq('id', contentId));
+
+  if (updateErr) {
+    console.error('[updateVariantContent] DB error:', updateErr);
+    return { success: false, error: 'Lưu thất bại, vui lòng thử lại' };
+  }
+
+  revalidatePath(`/dashboard/contents/${contentId}`);
+  revalidatePath('/dashboard/contents');
+
+  return { success: true };
 }
