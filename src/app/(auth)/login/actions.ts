@@ -16,11 +16,11 @@ export async function login(
   const password = formData.get('password')
 
   if (typeof email !== 'string' || typeof password !== 'string') {
-    return { error: 'Email va mat khau khong hop le.' }
+    return { error: 'Email và mật khẩu không hợp lệ.' }
   }
 
   if (!email || !password) {
-    return { error: 'Vui long nhap day du email va mat khau.' }
+    return { error: 'Vui lòng nhập đầy đủ email và mật khẩu.' }
   }
 
   const supabase = await createClient()
@@ -30,7 +30,7 @@ export async function login(
   })
 
   if (error) {
-    return { error: 'Email hoac mat khau khong dung.' }
+    return { error: 'Email hoặc mật khẩu không đúng.' }
   }
 
   revalidatePath('/', 'layout')

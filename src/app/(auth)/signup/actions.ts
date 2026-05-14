@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { translateSignupError } from '@/lib/auth/error-messages'
 
 export interface SignupState {
   error?: string
@@ -16,15 +17,15 @@ export async function signup(
   const password = formData.get('password')
 
   if (typeof email !== 'string' || typeof password !== 'string') {
-    return { error: 'Email va mat khau khong hop le.' }
+    return { error: 'Email và mật khẩu không hợp lệ.' }
   }
 
   if (!email || !password) {
-    return { error: 'Vui long nhap day du email va mat khau.' }
+    return { error: 'Vui lòng nhập đầy đủ email và mật khẩu.' }
   }
 
   if (password.length < 8) {
-    return { error: 'Mat khau toi thieu 8 ky tu.' }
+    return { error: 'Mật khẩu tối thiểu 8 ký tự.' }
   }
 
   const headersList = await headers()
@@ -41,10 +42,7 @@ export async function signup(
   })
 
   if (error) {
-    if (error.message.toLowerCase().includes('already')) {
-      return { error: 'Email nay da duoc dang ky. Vui long dang nhap.' }
-    }
-    return { error: 'Khong the tao tai khoan. Vui long thu lai.' }
+    return { error: translateSignupError(error) }
   }
 
   redirect(`/auth/confirm-email?email=${encodeURIComponent(email)}`)

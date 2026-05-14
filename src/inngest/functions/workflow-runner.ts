@@ -114,8 +114,11 @@ export const workflowRunner = inngest.createFunction(
 
     // ============================================================
     // Step 3: Save to DB + update workflow last_run_at
+    // Duplicate (Postgres 23505 unique_violation) → skip gracefully,
+    // KHÔNG throw để Inngest không retry. UNIQUE INDEX Day 18 M1.3:
+    //   contents (workflow_id, source_url) WHERE source_url IS NOT NULL
     // ============================================================
-    const contentId = await step.run('save-content', async () => {
+    const saveResult = await step.run('save-content', async () => {
       const supabase = createAdminClient();
 
       const insertResult = await supabase
@@ -134,10 +137,27 @@ export const workflowRunner = inngest.createFunction(
         .select('id')
         .single();
 
-      if (insertResult.error)
-        throw new Error(`Insert content failed: ${insertResult.error.message}`);
-      const inserted = insertResult.data as { id: string };
+      let contentId: string | null = null;
+      let skipped = false;
+      let skipReason: string | null = null;
 
+      if (insertResult.error) {
+        if (insertResult.error.code === '23505') {
+          console.log(
+            `[workflow-runner] skip duplicate content workflow=${workflowId} source_url=${generated.source_url ?? 'null'}`,
+          );
+          skipped = true;
+          skipReason = 'duplicate';
+        } else {
+          throw new Error(`Insert content failed: ${insertResult.error.message}`);
+        }
+      } else {
+        const inserted = insertResult.data as { id: string };
+        contentId = inserted.id;
+      }
+
+      // Update last_run_at LUÔN (success hoặc duplicate skip - cả 2 đều là "workflow đã chạy")
+      // Tránh cron-job.org retry 5 phút sau loop spam khi duplicate (Day 11 M4 dedup window)
       const updateResult = await supabase
         .from('workflows')
         .update({ last_run_at: new Date().toISOString() } as never)
@@ -146,14 +166,16 @@ export const workflowRunner = inngest.createFunction(
       if (updateResult.error)
         throw new Error(`Update workflow last_run failed: ${updateResult.error.message}`);
 
-      return inserted.id;
+      return { contentId, skipped, skipReason };
     });
 
     return {
       success: true,
-      content_id: contentId,
+      content_id: saveResult.contentId,
       content_type: contentType,
       variants_count: generated.variants.length,
+      skipped: saveResult.skipped,
+      skip_reason: saveResult.skipReason,
     };
   },
 );

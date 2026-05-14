@@ -36,6 +36,11 @@ export function OnboardingShell() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveFieldErrors, setSaveFieldErrors] = useState<Record<string, string>>({})
 
+  const clearSaveError = () => {
+    setSaveError(null)
+    setSaveFieldErrors({})
+  }
+
   if (!isHydrated) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -45,8 +50,7 @@ export function OnboardingShell() {
   }
 
   const handleConfirm = () => {
-    setSaveError(null)
-    setSaveFieldErrors({})
+    clearSaveError()
     const formData = form.getValues()
     startTransition(async () => {
       const result = await saveBrandVoice(formData)
@@ -112,6 +116,7 @@ export function OnboardingShell() {
                   isSubmitting={isPending}
                   onConfirm={handleConfirm}
                   onEdit={(step) => {
+                    clearSaveError()
                     exitPreview()
                     goToStep(step)
                   }}
@@ -134,8 +139,14 @@ export function OnboardingShell() {
           {!showPreview && (
             <StepNavigation
               currentStep={currentStep}
-              onBack={goBack}
-              onNext={goNext}
+              onBack={() => {
+                clearSaveError()
+                goBack()
+              }}
+              onNext={() => {
+                clearSaveError()
+                goNext()
+              }}
               isSubmitting={isPending}
             />
           )}

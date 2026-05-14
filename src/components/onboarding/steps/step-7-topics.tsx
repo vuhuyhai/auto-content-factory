@@ -15,17 +15,40 @@ import { TOPICS_BY_INDUSTRY } from "@/lib/onboarding/constants"
 import type { OnboardingFormData } from "@/lib/onboarding/types"
 
 /**
- * Chuyển tên brand thành prefix viết tắt cho hashtag.
- * VD: "Ladysfit" → "LF", "Vietnam Society of Excellence" → "VSE"
+ * Generate brand prefix từ brand name.
+ * - 1 từ ngắn (<=4 chars): toàn bộ uppercase ("ACF" → "ACF")
+ * - 1 từ CamelCase ("LinkedIn", "TikTok"): chữ đầu của mỗi boundary ("LI", "TT")
+ * - 1 từ dài lowercase ("Ladysfit", "google"): 2 chars đầu uppercase ("LA", "GO")
+ *   Note: Cố tình KHÔNG dùng first + last char vì sinh prefix khó đoán ("LT" cho Ladysfit)
+ * - Multi-word (>=2 words): chữ đầu của 3 từ đầu ("Vietnam Society of Excellence" → "VSO")
  */
 function getBrandPrefix(brandName: string): string {
   const cleaned = brandName.trim()
   if (!cleaned) return "BR"
+
   const words = cleaned.split(/\s+/).filter(Boolean)
+
   if (words.length === 1) {
     const w = words[0]
-    return w.length <= 4 ? w.toUpperCase() : (w[0] + w[w.length - 1]).toUpperCase()
+
+    if (w.length <= 4) {
+      return w.toUpperCase()
+    }
+
+    const upperCaseIndices: number[] = []
+    for (let i = 1; i < w.length; i++) {
+      if (w[i] === w[i].toUpperCase() && w[i] !== w[i].toLowerCase()) {
+        upperCaseIndices.push(i)
+      }
+    }
+
+    if (upperCaseIndices.length > 0) {
+      return (w[0] + w[upperCaseIndices[0]]).toUpperCase()
+    }
+
+    return w.slice(0, 2).toUpperCase()
   }
+
   return words
     .slice(0, 3)
     .map((w) => w[0])
