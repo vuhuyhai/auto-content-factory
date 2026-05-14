@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { FileText, Calendar, Workflow as WorkflowIcon } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { FileText } from 'lucide-react';
 import {
   countContentsByStatusForCurrentUser,
   getContentsTotalCount,
@@ -15,6 +13,7 @@ import {
 } from '@/lib/contents/types';
 import { ContentsFilterTabs } from '@/components/contents/contents-filter-tabs';
 import { ContentsPagination } from '@/components/contents/contents-pagination';
+import { ContentsBulkActions } from '@/components/contents/contents-bulk-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,19 +42,6 @@ const EMPTY_MESSAGES: Record<FilterKey, string> = {
   rejected: 'Chưa từ chối content nào.',
   generating: 'Không có content nào đang tạo.',
 };
-
-function formatRelativeTime(iso: string): string {
-  const now = Date.now();
-  const t = new Date(iso).getTime();
-  const diffMin = Math.floor((now - t) / 60000);
-  if (diffMin < 1) return 'Vừa xong';
-  if (diffMin < 60) return `${diffMin} phút trước`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} giờ trước`;
-  const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 7) return `${diffDay} ngày trước`;
-  return new Date(iso).toLocaleDateString('vi-VN');
-}
 
 function baseHref(status?: ContentStatus): string {
   return status ? `/dashboard/contents?status=${status}` : '/dashboard/contents';
@@ -114,46 +100,7 @@ export default async function ContentsPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <>
-          <div className="grid gap-4">
-            {contents.map((content) => {
-              const variantCount = content.variants?.length ?? 0;
-              const statusLabel = CONTENT_STATUS_LABELS[content.status];
-
-              return (
-                <Link
-                  key={content.id}
-                  href={`/dashboard/contents/${content.id}`}
-                  className="block"
-                >
-                  <Card className="p-6 hover:shadow-md hover:border-[#c73937]/30 transition-all">
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <h3 className="text-lg font-semibold leading-snug line-clamp-2 flex-1">
-                        {content.source_title ?? 'Không có tiêu đề'}
-                      </h3>
-                      <Badge variant="outline" className="shrink-0">
-                        {statusLabel}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                      <span className="inline-flex items-center gap-1">
-                        <WorkflowIcon className="w-3.5 h-3.5" />
-                        {content.workflow_name ?? 'Workflow'}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {formatRelativeTime(content.generated_at)}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <FileText className="w-3.5 h-3.5" />
-                        {variantCount} variant
-                      </span>
-                    </div>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+          <ContentsBulkActions contents={contents} statusFilter={parsedStatus} />
 
           <ContentsPagination
             currentPage={currentPage}

@@ -9,3 +9,10 @@ export const updateStatusSchema = z.object({
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
+
+export const bulkUpdateStatusSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+  status: z.enum(CONTENT_STATUS_TUPLE, { message: 'Status không hợp lệ' }),
+});
+
+export type BulkUpdateStatusInput = z.infer<typeof bulkUpdateStatusSchema>;

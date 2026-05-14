@@ -29,6 +29,11 @@ export interface ContentWithWorkflow extends Content {
   workflow_name: string | null;
 }
 
+export interface BulkUpdateInput {
+  ids: string[];
+  status: ContentStatus;
+}
+
 export function normalizeHashtag(tag: string): string {
   const trimmed = tag.trim().replace(/^#+/, '');
   return trimmed ? `#${trimmed}` : '';
