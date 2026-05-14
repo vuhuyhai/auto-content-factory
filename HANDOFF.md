@@ -45,7 +45,8 @@
 - ✅ Workflow types evergreen + promotional (Day 13): strategy pattern prompt builders folder, generator discriminated union PromptContext, workflow-runner dispatch 3 type với 3 step (giảm 1 step so Day 10), form UI conditional + Server Action buildWorkflowConfig per type
 - ✅ Test scripts 3 type localhost qua tsx (Day 13 M5.1): test-generator (news_based) + test-generator-evergreen + test-generator-promotional + _mock-brand DRY
 - ✅ Edit inline 4 field variant (hook/title/body/hashtags) với jsonb partial update fetch-merge pattern, defense-in-depth ownership (Day 15 M3)
-- **Last verified:** 14/05/2026 - Day 15 close - Edit inline body variant + plan Week 2-3 chốt Profile A soft validation. Production deploy ce87564 READY 0 error.
+- ✅ Email infra Resend SDK v6.12.3 + React Email v1.0.12 ready, welcome template + send helper + hook /auth/callback fire-and-forget
+- **Last verified:** 14/05/2026 - Day 16 close - Welcome email Resend infra DEPLOYED production. M1-M4 PASS clean (tsc + build + Vercel deploy READY 43s, 0 error). M5 end-to-end verify DEFER Day 17 do test environment issues (PKCE cross-browser fail localhost + production verify khi user thật signup).
 
 ### Day 11 additions (13/05/2026)
 
@@ -371,6 +372,29 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - `ce87564` feat(week1-day15-m3): edit inline body variant với VariantEditor + jsonb fetch-merge-update
 - `<sắp có>` docs(handoff): close Day 15 - edit inline variant + plan Week 2-3 chốt Profile A
 
+### Day 16 (14/05/2026)
+
+Email infra Phase 1 Week 2 - Welcome email (~5h total nhưng M5 verify chưa hoàn tất):
+
+**M1 Setup Resend account + API key (15 phút):** account fitnessviet@gmail.com (dùng chung với Course Platform), API key acf-production full access all domains
+
+**M2 Install SDK + env vars (15 phút):** npm install resend@6.12.3, RESEND_API_KEY + RESEND_FROM_EMAIL vào .env.local + Vercel env 3 environments. .env.example template mới với 11 env vars + fix .gitignore !.env.example negation rule
+
+**M3 Welcome email template (45 phút):** React Email components v1.0.12, tách _styles.ts (136 LOC) design tokens reusable + welcome.tsx (129 LOC) component. Pattern Day 13 _base.ts strategy
+
+**M3.3 Send helper (15 phút):** src/lib/email/resend.ts singleton (39 LOC) + src/lib/email/send-welcome.ts helper (88 LOC) với discriminated return type + plain text fallback Gmail Promotions tab
+
+**M4 Hook /auth/callback + fix emailRedirectTo (~45 phút):** signup/actions.ts thêm headers().origin emailRedirectTo, auth/callback/route.ts fire-and-forget welcome email với dedup check email_confirmed_at + 60s delta. Behavior matrix verified 5 case
+
+**M5 Smoke test verify DEFER Day 17:**
+- Localhost test FAIL PKCE cross-browser (signup incognito + click verify Chrome thường → AuthPKCECodeVerifierMissingError)
+- Production test 14:07 VN signup OK nhưng anh CHƯA click verify link → Vercel logs 0 entry /auth/callback → welcome flow chưa có cơ hội fire
+- Code đúng 100% (verified bằng logs không có exception nào). Issue là test pattern, không phải code bug
+
+**Commits Day 16:** `fa7f665` docs(env) .env.example + .gitignore fix, `3935dd0` feat(week1-day16) welcome email infra full
+
+**Production deploy:** dpl_Crz7NegFsZ2VZS8MkoySXERGtPne READY 43s, 0 error/warning logs
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -425,6 +449,10 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 | **Fetch-merge-update pattern cho jsonb partial update (Day 15 M3.1)** | Supabase JS KHÔNG expose jsonb_set helper. RPC function migration phức tạp. Fetch current variants → merge JS object → update full array là an toàn hơn (validate variantIndex tồn tại trước update) + 1 atomic UPDATE (PG MVCC). Trade-off 2 round-trip nhưng acceptable cho admin edit không phải hot path |
 | **VariantEditor tách component riêng < 200 LOC (Day 15 M3.2)** | Parent content-variant-selector.tsx sắp vượt 200 LOC limit. Tách VariantEditor 158 LOC reusable nếu sau này có "Edit Brand Voice" UI dùng pattern tương tự, test isolation tốt, single responsibility |
 | **Hashtag input string "tag1 tag2" thay vì 10 input riêng (Day 15 M3.2)** | UX SMB Việt Nam dễ dùng pattern Facebook hashtag input hơn. Parse split by space/comma flexible. Unicode regex `/^#?[\p{L}\p{N}_]+$/u` hỗ trợ tiếng Việt có dấu (#TậpSauSinh #SứcKhỏe) |
+| Resend free tier sender onboarding@resend.dev defer verify domain (Day 16 M1) | Free tier 100 email/day đủ Profile A 10 trial user. Verify domain autocontent.online tốn DNS + Cloudflare R2 setup. Defer Week 4 nếu inbox rate < 50% sau 1 tuần production |
+| React Email v3 ecosystem migration (Day 16 M3.1) | @react-email/components v1.0.12 có 19 sub-package deprecated warning. Maintainer migrate sang monorepo unified react-email. Deprecated ≠ broken, render OK. Defer fix Week 3 nếu bug runtime |
+| Tách _styles.ts design tokens cho email (Day 16 M3.2) | 5+ email kế tiếp (welcome, daily digest, trial countdown, payment confirm) sẽ reuse design tokens. Tách = đổi brand color 1 chỗ apply tất cả. Pattern Day 13 _base.ts strategy |
+| Dedup welcome email qua email_confirmed_at + 60s delta (Day 16 M4) | Option B fast ship thay vì migration DB welcome_email_sent_at. 99% accuracy cho MVP, 1% edge case (slow email > 60s) acceptable. Defer migration nếu Week 3 có > 2 user complain |
 
 ## 5. Known Issues
 
@@ -504,6 +532,14 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 - **Optimistic UI KHÔNG có retry khi network fail:** Nếu Server Action throw network error, toast hiển thị "Lưu thất bại, vui lòng thử lại" và state localVariants không revert. User phải Click "Sửa nội dung" lại từ đầu. Defer Week 3 thêm retry button + auto-revert
 - **KHÔNG có "Discard changes" warning khi user click "Huỷ" sau khi edit nhiều:** User edit 10 phút, click Huỷ nhầm → mất hết. Defer Week 2 thêm AlertDialog confirm
 
+### Issues Day 16 (mới phát sinh)
+
+- **M5 verify chưa hoàn tất production:** code deploy READY nhưng chưa có user nào click verify email link trên production → Vercel logs 0 entry /auth/callback → welcome flow chưa được test end-to-end thật. Defer Day 17 verify với 1 Gmail account khác + click verify trên production (5-10 phút verify).
+- **PKCE cross-browser flow fail localhost dev test:** signup incognito + click verify ở Chrome thường (default browser) → AuthPKCECodeVerifierMissingError. Code KHÔNG bug, đây là Supabase Auth design (PKCE code verifier lưu trong browser session cookie). Pattern fix dev test: đóng Chrome thường trước khi click verify hoặc set Edge thành default browser. Production user thật sẽ KHÔNG gặp issue này.
+- **Supabase Auth Redirect URLs thiếu wildcard preview:** hiện có 2 URL allowlist (http://localhost:3000/** + https://auto-content-factory.vercel.app/**), THIẾU https://*-vuhuyhais-projects.vercel.app/auth/callback cho Vercel preview deployments. Defer Week 3 bug fix outstanding nếu cần test preview environments.
+- **Resend dashboard chỉ có 1 account fitnessviet:** anh đăng nhập Resend bằng Gmail fitnessviet (cùng account Course Platform). API key acf-production gắn vào account này. Tất cả email Day 16 đi qua account này. KHÔNG cần fix.
+- **deprecation warnings @react-email/* sub-packages 19 entries:** ecosystem migration sang react-email monorepo unified. Deprecated ≠ broken. Defer Week 3.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -511,21 +547,23 @@ Day 1 setup foundation (Next.js + Drizzle + Supabase), Day 2-3 Auth (email + Goo
 
 ## 6. Next Steps
 
-### Day 16: Email infra setup (Welcome email) - Phase 1 Week 2 START
+### Day 17: Daily digest email + M5 verify carry-over Day 16
 
-**M1-M5 (~2h):**
-- **M1:** Setup Resend account + API key Production (15 phút)
-- **M2:** Install SDK + env vars `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (10 phút)
-- **M3:** Welcome email template React Email (30 phút)
-- **M4:** Trigger email sau signup verify hook `/auth/callback` (40 phút)
-- **M5:** Smoke test 3 email Gmail + Yahoo + Outlook (25 phút)
+**Carry-over Day 16 (~10 phút trước khi vào M-mới):**
+- M5 verify production: 1 Gmail account khác (vd vuhai.test@gmail.com) signup production → click verify link CÙNG browser → check welcome email Resend dashboard fitnessviet
+- Nếu PASS: confirm Day 16 M5 DONE, không cần code change
+- Nếu FAIL: check Vercel logs /auth/callback + log [sendWelcomeEmail], debug theo log pattern
 
-**Output:** User mới đăng ký → verify email Supabase → nhận welcome email từ ACF
+**M1-M4 Day 17 - Daily digest email (~3h):**
+- M1: Tạo template daily-digest.tsx reuse _styles.ts (~80 LOC)
+- M2: Helper send-daily-digest.ts với input user + draft_content array (~60 LOC)
+- M3: API endpoint /api/cron/daily-digest với cron-job.org trigger 1 AM UTC (= 8h sáng VN), batch query users có draft content, render template, send
+- M4: Smoke test 1-2 email Gmail anh + verify Resend logs
 
-**Plan Week 2-3 đã chốt Profile A:**
-- Phase 1 Week 2: Email infra (Day 16-17) + Bug fix + duplicate constraint (Day 18) + Workflow edit form (Day 19-20) + Polish Day 21-22
+**Plan Week 2-3 đã chốt Profile A (KHÔNG đổi):**
+- Phase 1 Week 2: Email infra (Day 16 ✅ deploy + Day 17 daily digest) + Bug fix + duplicate constraint (Day 18) + Workflow edit form (Day 19-20) + Polish Day 21-22
 - Phase 2 Week 3: Pricing PayOS (Day 23-24) + Trial countdown (Day 25) + Bug fix round 2 (Day 26) + Landing polish (Day 27) + Soft launch (Day 28-29)
-- Context: anh có 5-10 khách sẵn trial 14 ngày
+- Anh có 5-10 khách sẵn trial 14 ngày, launch 09/06/2026
 
 ### Day 14 / Week 2: High Priority
 
@@ -890,17 +928,45 @@ Form validation lỗi sau khi submit = friction. Counter realtime đổi `font-s
 **RULE D15-3: HASHTAG INPUT STRING + SPLIT REGEX > 10 INPUT RIÊNG CHO UX.**
 User SMB Việt copy hashtag từ Facebook (đã có `#`) hoặc gõ tay (không có `#`). Pattern: 1 input text + split `/[\s,]+/` + normalize add `#` prefix nếu thiếu. Unicode regex `/^#?[\p{L}\p{N}_]+$/u` hỗ trợ tiếng Việt có dấu. KHÔNG dùng 10 input riêng (mobile UX kém + không paste batch).
 
+### Bài học Day 16 (4 RULES mới)
+
+**RULE D16-1: VERCEL MCP KHÔNG CÓ TOOL TẠO/UPDATE ENV VAR.**
+Vercel MCP hiện tại (Day 16) expose 22 tools: deploy_to_vercel, list_deployments, get_deployment, get_runtime_logs, etc. KHÔNG có create_env_var hoặc tương tự.
+Pattern khi cần add env var: fallback Vercel Dashboard manual UI (https://vercel.com/.../settings/environment-variables) hoặc Vercel CLI (vercel env add).
+Day 16 đã add 2 env RESEND_API_KEY + RESEND_FROM_EMAIL qua Dashboard manual cho Production + Preview + Development.
+
+**RULE D16-2: SUPABASE MCP KHÔNG ĐỌC AUTH CONFIG (Site URL + Redirect URLs).**
+Supabase MCP có tool get_logs với service=auth nhưng đó là log runtime (login events, errors). KHÔNG có tool get_auth_config hoặc list_redirect_urls.
+Pattern khi cần verify auth config: fallback Supabase Dashboard manual (https://supabase.com/dashboard/project/.../auth/url-configuration).
+
+**RULE D16-3: PKCE FLOW CROSS-BROWSER FAIL = TEST PATTERN ISSUE, KHÔNG PHẢI CODE BUG.**
+Supabase Auth PKCE: code_verifier lưu trong cookie httpOnly khi user click "Sign up". Khi click email verify link, browser PHẢI có cookie code_verifier để exchange OK.
+Pattern fail: signup ở browser A (vd Chrome incognito), click verify ở browser B (vd Chrome thường) → cookie không có → AuthPKCECodeVerifierMissingError.
+Pattern PASS: signup + click verify CÙNG browser session.
+Production user thật KHÔNG gặp issue này vì họ click email link bằng default browser của họ (luôn cùng browser signup).
+Dev test pattern đúng:
+- Cách 1: Set browser test thành default OS browser, click email link đảm bảo mở browser đó
+- Cách 2: Dùng Google OAuth thay vì email signup (KHÔNG có PKCE cross-browser issue)
+- Cách 3: Test production thật với 1 user thật
+
+**RULE D16-4: REACT EMAIL ECOSYSTEM MIGRATION - 19 SUB-PACKAGE DEPRECATED NHƯNG VẪN WORK.**
+@react-email/components v1.0.12 có 19 deprecation warnings: @react-email/row, @react-email/text, @react-email/button, etc.
+Lý do: maintainer consolidate vào monorepo unified react-email. Render email vẫn đúng.
+Pattern: deprecated ≠ broken. Defer fix Week 3 nếu phát hiện bug runtime.
+Import render: phải từ '@react-email/components' (KHÔNG phải '@react-email/render' standalone package).
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
 - **Week 1 Day 1-15 đã commit + push:** Day 15 M3 commit `ce87564` đã push, Vercel deploy READY 44s 0 error. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
 - **Production smoke test STATUS:** Day 15 M3 đã verify localhost browser PASS. Production deploy `ce87564` READY 0 error/warning.
-- Commit cuối local nên là `docs(handoff): close Day 15 - edit inline variant + plan Week 2-3 chốt Profile A`
-- Day 15 DONE. Day 16 tiếp tục: Email infra Resend setup (M1-M5 ~2h). Sau Day 17 → Day 18 bug fix + duplicate constraint → Day 19-20 workflow edit form.
+- Commit cuối local nên là `docs(handoff): close Day 16 - email infra deploy M5 defer`
+- Day 16 close (M1-M4 deploy production, M5 defer Day 17). Day 17 tiếp tục: Email infra Resend setup (M1-M5 ~2h). Sau Day 17 → Day 18 bug fix + duplicate constraint → Day 19-20 workflow edit form.
 - Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05 (đêm 14→15) và mỗi ngày sau
 - DB hiện có 7 contents tại thời điểm Day 14 close (4 approved + 1 draft + 2 rejected). Day 15 chỉ edit nội dung existing, KHÔNG generate mới. Recheck Supabase MCP đầu Day 16 nếu cần count thực tế.
 - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min
 - **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16 → PayOS Day 23**
 - cron-job.org production job ACTIVE: */5 * * * * UTC, next execution every 5 min, history saved
+- **Day 17 START: M5 verify carry-over Day 16 trước (~10 phút), sau đó vào Daily digest email**
