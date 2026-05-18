@@ -93,7 +93,7 @@ export function ContentsBulkActions({ contents, statusFilter }: Props) {
         </label>
       </div>
 
-      <div className="grid gap-4">
+      <div className={`grid gap-4 ${selectedCount > 0 ? 'pb-24' : ''}`}>
         {contents.map((content) => (
           <ContentListItem
             key={content.id}
