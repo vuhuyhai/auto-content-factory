@@ -725,7 +725,7 @@ Polish Phase 1 Week 2 (~2h):
 
 ### Issues Day 20-21 (mới phát sinh)
 
-- **public.profiles KHÔNG có FK ra auth.users (không CASCADE):** Phát hiện Day 20 khi cleanup user test +acf1. Rủi ro: xóa user qua `DELETE FROM auth.users WHERE id=...` có thể (a) để lại row mồ côi ở public.profiles + brands + workflows + contents, hoặc (b) bị Postgres chặn DELETE do constraint violation từ bảng ref `brands.user_id`. Workaround Day 20-21: DELETE manual theo thứ tự ngược (contents → workflows → brands → profiles → auth.users). Defer Phase 2 review: thêm FK `profiles.id REFERENCES auth.users(id) ON DELETE CASCADE` + audit các bảng khác (brands.user_id, etc).
+- **public.profiles KHÔNG có FK ra auth.users (mắt xích FK bị đứt 1 chỗ):** Phát hiện Day 20, query xác minh đầy đủ Day 21. Thực tế: cây CASCADE từ profiles xuống hoạt động ĐẦY ĐỦ - brands.user_id, workflows.brand_id, contents.workflow_id, contents.brand_id, content_logs.brand_id, subscriptions.user_id tất cả đều ON DELETE CASCADE. Xóa 1 row profiles tự dọn sạch brands + workflows + contents + content_logs + subscriptions. Mắt xích đứt DUY NHẤT: profiles.id không có FK ra auth.users.id. Hệ quả: xóa user đúng cách chỉ cần 2 lệnh - (1) DELETE FROM profiles WHERE id='<uid>' tự cascade hết phần dưới, (2) DELETE FROM auth.users WHERE id='<uid>' riêng. Rủi ro nếu làm sai thứ tự: xóa auth.users trước mà quên profiles để lại profile mồ côi; xóa profiles mà quên auth.users thì user còn login được nhưng app lỗi thiếu profile. Defer Phase 2: thêm FK profiles.id REFERENCES auth.users(id) ON DELETE CASCADE để liền mạch toàn chuỗi.
 - **User test +acf2 cần dọn sau khi verify B1 production:** `aotapgym+acf2@gmail.com` id `70b6cce7-15fa-42c5-becb-eec3a2b0f472` brand "Ladysfit" `2a8cd998-bd5f-487d-a81d-9ed97a5d9836`. 0 workflow + 0 content nên cleanup nhanh. Day 21 step 7 thực hiện qua Supabase MCP.
 - **Day 19-20 commit (7 commit) chưa verify đầy đủ trên production:** Day 19 (e67eda0 + 11556bf) đã push + Vercel build, Day 20 (5 commit) chưa push tại thời điểm Day 21 START. Dồn về Day 21 step 4-5 push + verify deployment 1 lần.
 
@@ -759,7 +759,7 @@ Phase 1 Week 2 milestone đóng Day 21. Phase 2 Week 3 START:
 
 **Day 26: Bug fix round 2 (~3h)**
 - Outstanding issues Phase 1 chưa fix: contents.brand_id denormalized check constraint, Drizzle DATABASE_URL, Multi-source batch generation news_based, 3 file > 200 LOC refactor
-- FK profiles → auth.users CASCADE (phát hiện Day 20-21)
+- FK profiles.id → auth.users.id ON DELETE CASCADE (mắt xích đứt duy nhất - phần còn lại của chuỗi đã CASCADE đủ, xác minh Day 21)
 
 **Day 27: Landing polish + tracking (~2h)**
 - Posthog event tracking signup → trial start → upgrade conversion funnel
@@ -1181,4 +1181,4 @@ Signup: map code-based actionable ("email đã đăng ký" → user know action:
   - Pre-flight verify cron đêm 18→19/05 fire OK (Vercel logs + Supabase contents recent)
   - Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard)
   - Đọc lại plan Phase 2 Profile A chốt Day 15 + Day 21
-- **Phát hiện Day 20 cần xử lý Phase 2:** `public.profiles` KHÔNG có FK ra `auth.users` (không CASCADE). DELETE user cần thực hiện manual theo thứ tự ngược (contents → workflows → brands → profiles → auth.users). Day 26 bug fix round 2 thêm migration FK CASCADE.
+- **Phát hiện Day 20-21 cấu trúc FK (đã query xác minh Day 21):** Cây CASCADE từ profiles xuống hoạt động đầy đủ (brands/workflows/contents/content_logs/subscriptions đều ON DELETE CASCADE). Xóa user đúng cách chỉ 2 lệnh: DELETE FROM profiles (tự cascade) → DELETE FROM auth.users. Mắt xích đứt duy nhất: profiles không có FK ra auth.users. Day 26 bug fix round 2 thêm FK profiles → auth.users CASCADE.
