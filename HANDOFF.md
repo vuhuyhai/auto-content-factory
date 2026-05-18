@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 18 close - Bug fix outstanding round 1: content duplicate constraint (UNIQUE INDEX partial + workflow-runner handle 23505 graceful + last_run_at update both branches), getBrandPrefix CamelCase fix, npm typecheck/lint scripts, saveError banner clear navigation, signup error 7 codes tiếng Việt. Build + typecheck PASS, Vercel deploy READY. Day 19 START workflow edit form reuse create form mode=edit + manual test M3 saveError + M2 brand prefix.
+**Status:** Week 1 Day 19 close - Workflow edit form (reuse create form mode=edit): updateWorkflow Server Action lock type + workflowToFormData reverse-map + route [id]/edit + button Sửa + banner warning enabled. Smoke test 5 case browser PASS. Build 16 routes. M2a getBrandPrefix verify browser PASS (Ladysfit → LA). M2b saveError defer browser test. Day 20 START tiếp tục plan Phase 1 Week 2.
 
 ## 2. Current State
 
@@ -54,7 +54,8 @@
 - ✅ npm run typecheck + npm run lint scripts (alias tsc --noEmit) - ESLint flat config defer Phase 2 (Day 18 M2)
 - ✅ saveError banner clear navigation handlers (onEdit + goBack + goNext + handleConfirm helper clearSaveError) (Day 18 M3)
 - ✅ Signup error translateSignupError helper map 7 Supabase codes tiếng Việt có dấu + login fix diacritics (Day 18 M4)
-- **Last verified:** 14/05/2026 - Day 18 close - Bug fix round 1 + duplicate constraint M1-M4 PASS clean (tsc + build + Vercel deploy READY). Manual test M2 brand prefix + M3 saveError defer Day 19 cùng workflow edit form.
+- ✅ Workflow edit form (Day 19): route /dashboard/workflows/[id]/edit reuse WorkflowForm mode=edit, updateWorkflow Server Action lock type + giữ last_run_at, workflowToFormData reverse-map config snake_case → camelCase, button Sửa icon Pencil trên card, banner warning khi edit workflow enabled=true
+- **Last verified:** 18/05/2026 - Day 19 close - Workflow edit form M1 PASS (commit e67eda0, build 16 routes). M2a getBrandPrefix browser verify PASS.
 
 ### Day 11 additions (13/05/2026)
 
@@ -483,6 +484,23 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - `e2133a9` feat(week1-day18): bug fix outstanding round 1 + content duplicate constraint
 - `0256ad2` docs(handoff): close Day 18
 
+### Day 19 (18/05/2026)
+
+**M1: Workflow edit form reuse create form mode=edit (~2h):**
+- M1.1: workflowToFormData(workflow) reverse-map helper trong types.ts (config snake_case → WorkflowFormData camelCase, cast type + scheduleCron). updateWorkflow Server Action trong actions.ts: validate workflowFormSchema + defense-in-depth ownership qua brands!inner.user_id + buildWorkflowConfig reuse + UPDATE chỉ 3 cột schedule_cron/enabled/config, KHÔNG đụng type/brand_id/last_run_at. actions.ts 286 LOC.
+- M1.2: WorkflowForm thêm props mode/workflowId/initialValues, backward compat create (gọi không props chạy như cũ). defaultValues dùng initialValues ?? DEFAULT. onSubmit dispatch updateWorkflow vs createWorkflow theo mode. Type radio group disabled khi mode=edit + hint text. Submit button text theo mode. workflow-form.tsx 372 LOC.
+- M1.3: Route mới src/app/dashboard/workflows/[id]/edit/page.tsx Server Component fetch getWorkflowById + notFound + workflowToFormData + render WorkflowForm mode=edit. Banner amber warning khi workflow.enabled=true. Button Sửa icon Pencil trong workflow-card.tsx link tới edit page.
+- M1.4: Smoke test browser 5 case PASS (icon Sửa hiển thị, edit Ladysfit news_based sửa tên, sửa schedule, edit evergreen type-specific field đúng, validation tên trống). DB verify Supabase MCP: config.name + schedule_cron đổi đúng, type giữ nguyên cả 3, last_run_at giữ nguyên không bị NULL.
+- Build PASS 5.3s 16 routes (route mới [id]/edit). Commit e67eda0 push GitHub.
+
+**M2: Verify Day 18 fix carry-over (~30p):**
+- M2a getBrandPrefix browser verify: tạo user test riêng, onboarding flow. Brand "Ladysfit" → hashtag prefix "LA" (#LA_SanPham, #LA_KhuyenMai). Brand rỗng → "BR" fallback. Day 18 M2 CamelCase fix confirmed work end-to-end production code path (step-7-topics.tsx).
+- M2b saveError banner clear: code review Day 18 (clearSaveError 4 touchpoint handleConfirm/onEdit/onBack/onNext) đủ tin cậy. Browser test defer - cần ép saveBrandVoice fail, verify khi user thật onboard.
+
+**Commits Day 19:**
+- `e67eda0` feat(week1-day19-m1): workflow edit form reuse create form mode=edit
+- `<sắp có>` docs(handoff): close Day 19
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -571,7 +589,7 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - ~~Signup error message quá generic~~ ✅ Fixed Day 18 M4 (translateSignupError 7 codes tiếng Việt)
 - Sub-header BrandVoiceCard "Xem lại và confirm" không hợp dashboard readonly
 - Drizzle client chưa setup DATABASE_URL env
-- Workflow card không có button "Sửa workflow" (edit name/sources/schedule)
+- ~~Workflow card không có button "Sửa workflow" (edit name/sources/schedule)~~ ✅ Fixed Day 19 M1 (button Sửa icon Pencil + route [id]/edit, type locked)
 - Vercel Cron handler workflow timezone bug (workflow `0 7 * * *` UTC = 14h VN time, không phải 7h sáng VN)
 - Workflow type 'evergreen' và 'promotional' chưa có content config Day 9 logic
 - Delete workflow cascade contents chưa test với data thật
@@ -652,6 +670,12 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - **ESLint flat config chưa setup:** `npm run lint` hiện alias `tsc --noEmit`. JSX-specific rules (`react/no-unescaped-entities`, `react-hooks/exhaustive-deps`) defer Phase 2 setup riêng.
 - **Signup error mapping chỉ 7 code Supabase:** Có code khác hiếm gặp (vd CAPTCHA fail, hCaptcha disabled) chưa map. Default fallback "Không thể tạo tài khoản lúc này" catch-all OK MVP.
 
+### Issues Day 19 (mới phát sinh)
+
+- **M2b saveError manual browser test defer:** cần ép saveBrandVoice fail (network hoặc throw tạm). Code review xác nhận clearSaveError 4 touchpoint đúng. Verify khi user thật onboard (Profile A 10 trial).
+- **User test onboarding (...+acftest@gmail.com) còn sót trên DB + onboarding dở dang:** Cleanup khi tiện qua Supabase MCP nếu cần dọn workspace.
+- **3 file vượt 200 LOC limit:** actions.ts 286, workflow-form.tsx 372, workflow-card.tsx 280. Refactor tách defer Phase 2.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -691,8 +715,13 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - ✅ Pagination /dashboard/contents song song với filter tabs (Day 14 M1)
 - Edit body variant inline (textarea + save) → carry-over Day 15 M3
 
-**P4 - Workflow edit form (reuse create form mode=edit):**
+**✅ P4 - Workflow edit form (reuse create form mode=edit):** DONE Day 19 (commit e67eda0)
 - User sửa được name/sources/schedule/type-specific config sau khi tạo
+
+### Day 20: Tiếp tục plan Phase 1 Week 2
+
+- Theo plan đã chốt: Polish Day 21-22 (hoặc theo plan anh chốt lại Day 20)
+- Carry-over Day 19: M2b saveError browser verify khi có user thật onboard
 
 ### Week 2-3: Content Review UI + Email delivery
 - Approve/reject UI với edit inline body
@@ -704,7 +733,7 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - saveError persistent banner trong onboarding
 - Add npm run lint script vào package.json
 - BrandVoiceCard refactor base/wrapper
-- Workflow edit form (reuse create form mode=edit)
+- ~~Workflow edit form (reuse create form mode=edit)~~ ✅ Done Day 19 (commit e67eda0)
 - "Edit Brand Voice" button trên dashboard
 - workflow-card.tsx + actions.ts refactor < 200 LOC
 - Improve signup error message
