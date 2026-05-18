@@ -1,6 +1,6 @@
 // Pricing Section - 3 tier (Free / Starter / Pro)
-// Source content: LANDING_CONTENT.md - Phần 7 BRIDGE (Lời Chào)
-// Design: 3 card grid, Pro card highlighted với border accent + badge "Phù hợp nhất"
+// Cap nhat Day 23 M1: gia moi 199K/399K, tinh nang theo han muc + ban hang, trial 7 ngay
+// Design: 3 card grid, Pro card highlighted voi border accent + badge "Phu hop nhat"
 
 import { Check, X } from "lucide-react";
 import Link from "next/link";
@@ -26,12 +26,13 @@ const PRICING_TIERS: PricingTier[] = [
     price: "0đ",
     suffix: "Mãi mãi miễn phí",
     included: [
-      "4 bài viết tự động mỗi tháng",
       "1 brand voice profile",
-      "Lịch sử bài viết 30 ngày",
+      "1 workflow tự động",
+      "5 bài viết tự động mỗi tháng",
+      "Xuất bài định dạng Facebook",
     ],
     excluded: [
-      "Workflow tin tức tự động",
+      "Email digest hằng ngày",
       "Gợi ý prompt hình ảnh",
       "Hỗ trợ qua email",
     ],
@@ -40,17 +41,18 @@ const PRICING_TIERS: PricingTier[] = [
   },
   {
     name: "Starter",
-    description: "Cho freelancer, coach, consultant",
-    price: "399K",
+    description: "Cho freelancer, coach, chủ shop nhỏ",
+    price: "199K",
     suffix: "mỗi tháng",
     included: [
-      "20 bài viết tự động mỗi tháng",
       "1 brand voice profile",
-      "Workflow tin tức tự động",
-      "Gợi ý prompt hình ảnh",
+      "5 workflow tự động",
+      "90 bài viết tự động mỗi tháng",
+      "Đủ 3 loại workflow: tin tức, thường xuyên, khuyến mãi",
       "Xuất bài định dạng Facebook + LinkedIn",
-      "Lịch sử bài viết 6 tháng",
-      "Hỗ trợ qua email trong 48h",
+      "Gợi ý prompt hình ảnh",
+      "Email digest hằng ngày",
+      "Hỗ trợ qua email",
     ],
     excluded: [],
     cta: { label: "Nâng cấp Starter", href: "/signup?plan=starter" },
@@ -59,17 +61,17 @@ const PRICING_TIERS: PricingTier[] = [
   {
     name: "Pro",
     description: "Cho chủ chuỗi, SMB và team marketing",
-    price: "999K",
+    price: "399K",
     suffix: "mỗi tháng",
     included: [
-      "60 bài viết tự động mỗi tháng",
-      "1 brand voice profile",
-      "Workflow tin tức tự động",
-      "Gợi ý prompt hình ảnh",
+      "3 brand voice profile (nhiều thương hiệu)",
+      "Workflow không giới hạn",
+      "Bài viết tự động không giới hạn",
+      "Đủ 3 loại workflow: tin tức, thường xuyên, khuyến mãi",
       "Xuất bài định dạng Facebook + LinkedIn",
-      "Lịch sử bài viết không giới hạn",
-      "Hỗ trợ qua email trong 24h",
-      "1 buổi tư vấn brand voice 1-1 mỗi quý",
+      "Gợi ý prompt hình ảnh",
+      "Email digest hằng ngày",
+      "Hỗ trợ ưu tiên",
     ],
     excluded: [],
     cta: { label: "Đăng ký Pro", href: "/signup?plan=pro" },
@@ -82,7 +84,7 @@ export function PricingSection() {
     <section className="w-full bg-white py-16 md:py-24 border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 md:px-12">
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
-          <Badge variant="outline" className="border-[#E63946] text-[#E63946]">
+          <Badge variant="outline" className="border-accent-acf text-accent-acf">
             Bảng giá
           </Badge>
           <h2
@@ -92,7 +94,7 @@ export function PricingSection() {
             3 gói linh hoạt, dùng được ngay hôm nay
           </h2>
           <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-            Bắt đầu Free để thử brand voice. Nâng cấp Starter hoặc Pro khi sẵn sàng. Đổi gói linh hoạt mỗi tháng, không cam kết dài hạn.
+            Bắt đầu miễn phí, hoặc dùng thử 7 ngày đầy đủ tính năng. Đổi gói linh hoạt mỗi tháng, không cam kết dài hạn.
           </p>
         </div>
 
@@ -100,10 +102,10 @@ export function PricingSection() {
           {PRICING_TIERS.map((tier) => (
             <Card
               key={tier.name}
-              className={`rounded-[20px] border-slate-200 bg-white p-8 flex flex-col gap-6 h-full transition-colors duration-300 hover:border-slate-300 relative ${tier.highlighted ? "border-[#E63946] border-2 shadow-lg shadow-[#E63946]/10 scale-100 md:scale-105" : ""}`}
+              className={`rounded-[20px] border-slate-200 bg-white p-8 flex flex-col gap-6 h-full transition-colors duration-300 hover:border-slate-300 relative ${tier.highlighted ? "border-accent-acf border-2 shadow-lg shadow-accent-acf/10 scale-100 md:scale-105" : ""}`}
             >
               {tier.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#E63946] text-white text-xs font-semibold px-4 py-1 rounded-full uppercase tracking-wider">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-acf text-white text-xs font-semibold px-4 py-1 rounded-full uppercase tracking-wider">
                   Phù hợp nhất
                 </span>
               )}
@@ -121,7 +123,7 @@ export function PricingSection() {
               <ul className="flex flex-col gap-3 flex-1">
                 {tier.included.map((text) => (
                   <li key={text} className="flex gap-3 items-start">
-                    <Check className={`w-5 h-5 shrink-0 mt-0.5 ${tier.name === "Free" ? "text-slate-400" : "text-[#E63946]"}`} />
+                    <Check className={`w-5 h-5 shrink-0 mt-0.5 ${tier.name === "Free" ? "text-slate-400" : "text-accent-acf"}`} />
                     <span className="text-sm text-slate-700 leading-relaxed">{text}</span>
                   </li>
                 ))}
@@ -138,7 +140,7 @@ export function PricingSection() {
                   asChild
                   size="lg"
                   variant={tier.highlighted ? "default" : "outline"}
-                  className={`w-full ${tier.highlighted ? "bg-[#E63946] hover:bg-[#d12d3a] text-white" : ""}`}
+                  className={`w-full ${tier.highlighted ? "bg-accent-acf hover:bg-accent-acf/90 text-white" : ""}`}
                 >
                   <Link href={tier.cta.href}>{tier.cta.label}</Link>
                 </Button>
