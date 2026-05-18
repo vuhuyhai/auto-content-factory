@@ -36,7 +36,7 @@ function parsePage(raw: string | undefined): number {
 }
 
 const EMPTY_MESSAGES: Record<FilterKey, string> = {
-  all: 'Chưa có nội dung nào. Workflow sẽ tự generate khi đến lịch.',
+  all: 'Bạn chưa có nội dung nào. Tạo một workflow để hệ thống tự viết content theo lịch.',
   draft: 'Không có content nào chờ duyệt. 🎉',
   approved: 'Chưa duyệt content nào.',
   rejected: 'Chưa từ chối content nào.',
@@ -89,6 +89,14 @@ export default async function ContentsPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center justify-center py-16 text-center px-4">
           <FileText className="w-12 h-12 text-gray-300 mb-4" />
           <p className="text-gray-500 max-w-md">{EMPTY_MESSAGES[currentStatus]}</p>
+          {currentStatus === 'all' && (
+            <Link
+              href="/dashboard/workflows/new"
+              className="mt-4 inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            >
+              Tạo workflow đầu tiên
+            </Link>
+          )}
           {currentPage > 1 && (
             <p className="text-sm text-gray-500 mt-3">
               Trang {currentPage} không có nội dung.{' '}
