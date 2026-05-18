@@ -8,9 +8,11 @@ import {
   Megaphone,
   Clock,
   Trash2,
+  Pencil,
   Loader2,
   Play,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -217,6 +219,16 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
                 </>
               )}
             </Button>
+
+            {/* Edit button */}
+            <Link
+              href={`/dashboard/workflows/${workflow.id}/edit`}
+              aria-label="Sửa workflow"
+              title="Sửa workflow"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+            >
+              <Pencil className="h-4 w-4" />
+            </Link>
 
             {/* Delete button + AlertDialog */}
             <AlertDialog>

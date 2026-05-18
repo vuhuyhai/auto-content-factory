@@ -87,3 +87,32 @@ export const DEFAULT_WORKFLOW_FORM_DATA: WorkflowFormData = {
   productLink: '',
   offer: '',
 };
+
+/**
+ * Convert DB workflow row (config JSONB snake_case) sang WorkflowFormData (camelCase)
+ * để fill vào edit form.
+ */
+export function workflowToFormData(workflow: WorkflowWithConfig): WorkflowFormData {
+  const config = workflow.config;
+  const base: WorkflowFormData = {
+    ...DEFAULT_WORKFLOW_FORM_DATA,
+    name: config?.name ?? '',
+    type: workflow.type as ContentType,
+    // DB có thể chứa cron cũ ngoài 5 preset, edit form sẽ hiển thị fallback
+    scheduleCron: workflow.scheduleCron as ScheduleCronValue,
+    enabled: workflow.enabled,
+  };
+
+  if (!config) return base;
+
+  if (workflow.type === 'news_based' && 'news_sources' in config) {
+    base.newsSources = config.news_sources ?? [];
+  } else if (workflow.type === 'evergreen' && 'topic_focus' in config) {
+    base.topicFocus = config.topic_focus ?? '';
+  } else if (workflow.type === 'promotional' && 'product_link' in config) {
+    base.productLink = config.product_link ?? '';
+    base.offer = config.offer ?? '';
+  }
+
+  return base;
+}

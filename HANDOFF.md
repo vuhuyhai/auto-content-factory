@@ -480,8 +480,8 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - Production smoke test: deploy LIVE, partial index verify còn, runtime logs clean
 
 **Commits Day 18:**
-- `<sắp có>` feat(week1-day18): bug fix outstanding round 1 + content duplicate constraint
-- `<sắp có>` docs(handoff): close Day 18
+- `e2133a9` feat(week1-day18): bug fix outstanding round 1 + content duplicate constraint
+- `0256ad2` docs(handoff): close Day 18
 
 ## 4. Architecture Decisions
 

@@ -24,9 +24,21 @@ type WorkflowFormInput = z.input<typeof workflowFormSchema>;
 type WorkflowFormOutput = z.output<typeof workflowFormSchema>;
 import { CONTENT_TYPES, SCHEDULE_PRESETS } from '@/lib/workflows/constants';
 import { DEFAULT_WORKFLOW_FORM_DATA } from '@/lib/workflows/types';
-import { createWorkflow } from '../actions';
+import type { WorkflowFormData } from '@/lib/workflows/types';
+import { createWorkflow, updateWorkflow } from '../actions';
 
-export function WorkflowForm() {
+interface WorkflowFormProps {
+  mode?: 'create' | 'edit';
+  workflowId?: string;
+  initialValues?: WorkflowFormData;
+}
+
+export function WorkflowForm({
+  mode = 'create',
+  workflowId,
+  initialValues,
+}: WorkflowFormProps = {}) {
+  const isEdit = mode === 'edit';
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -35,7 +47,7 @@ export function WorkflowForm() {
 
   const form = useForm<WorkflowFormInput, unknown, WorkflowFormOutput>({
     resolver: zodResolver(workflowFormSchema),
-    defaultValues: DEFAULT_WORKFLOW_FORM_DATA,
+    defaultValues: initialValues ?? DEFAULT_WORKFLOW_FORM_DATA,
     mode: 'onBlur',
   });
 
@@ -69,7 +81,10 @@ export function WorkflowForm() {
     setFieldErrors({});
 
     startTransition(async () => {
-      const result = await createWorkflow(values);
+      const result =
+        isEdit && workflowId
+          ? await updateWorkflow(workflowId, values)
+          : await createWorkflow(values);
 
       if (!result?.ok) {
         setServerError(result?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.');
@@ -128,17 +143,18 @@ export function WorkflowForm() {
           {CONTENT_TYPES.map((opt) => (
             <label
               key={opt.value}
-              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
+              className={`flex items-start gap-3 rounded-lg border p-3 transition ${
                 watchedType === opt.value
                   ? 'border-pink-500 bg-pink-50'
                   : 'border-zinc-200 hover:border-zinc-300'
-              }`}
+              } ${isEdit ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
             >
               <input
                 type="radio"
                 value={opt.value}
                 checked={watchedType === opt.value}
                 onChange={() => form.setValue('type', opt.value, { shouldValidate: true })}
+                disabled={isEdit}
                 className="mt-1 accent-pink-600"
               />
               <div className="flex-1">
@@ -148,6 +164,11 @@ export function WorkflowForm() {
             </label>
           ))}
         </div>
+        {isEdit && (
+          <p className="text-xs text-zinc-500">
+            Không thể đổi loại workflow sau khi tạo. Tạo workflow mới nếu cần loại khác.
+          </p>
+        )}
         {form.formState.errors.type && (
           <p className="text-xs text-red-600">{form.formState.errors.type.message}</p>
         )}
@@ -350,10 +371,10 @@ export function WorkflowForm() {
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Đang tạo...
+              {isEdit ? 'Đang lưu...' : 'Đang tạo...'}
             </>
           ) : (
-            'Tạo workflow'
+            isEdit ? 'Lưu thay đổi' : 'Tạo workflow'
           )}
         </Button>
       </div>

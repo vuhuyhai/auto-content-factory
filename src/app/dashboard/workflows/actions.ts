@@ -243,3 +243,89 @@ export async function runWorkflow(
     };
   }
 }
+
+/**
+ * Server Action cập nhật workflow đã tồn tại.
+ * - Lock field `type` (không update — tránh phá config JSONB shape)
+ * - Chỉ update: schedule_cron, enabled, config
+ * - Defense-in-depth: JOIN brands verify ownership trước khi update
+ *   (ngoài RLS đã enforce ở DB)
+ */
+export async function updateWorkflow(
+  workflowId: string,
+  input: WorkflowFormSchema
+): Promise<CreateWorkflowResult> {
+  // 1. Validate
+  const parsed = workflowFormSchema.safeParse(input);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const field = issue.path.join('.');
+      if (field && !fieldErrors[field]) {
+        fieldErrors[field] = issue.message;
+      }
+    }
+    return {
+      ok: false,
+      message: 'Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.',
+      fieldErrors,
+    };
+  }
+
+  const data = parsed.data;
+
+  // 2. Auth check
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      ok: false,
+      message: 'Phiên đăng nhập hết hạn.',
+    };
+  }
+
+  // 3. Defense-in-depth ownership: workflow JOIN brands
+  const { data: existing, error: ownerError } = await supabase
+    .from('workflows')
+    .select('id, brands!inner(user_id)')
+    .eq('id', workflowId)
+    .eq('brands.user_id', user.id)
+    .maybeSingle();
+
+  if (ownerError || !existing) {
+    return {
+      ok: false,
+      message: 'Không tìm thấy workflow hoặc bạn không có quyền.',
+    };
+  }
+
+  // 4. Build config JSONB theo type (helper dùng chung với createWorkflow)
+  const config = buildWorkflowConfig(data);
+
+  // 5. UPDATE — KHÔNG update type, brand_id, last_run_at
+  const { error: updateError } = await supabase
+    .from('workflows')
+    .update({
+      schedule_cron: data.scheduleCron,
+      enabled: data.enabled,
+      config,
+    } as never)
+    .eq('id', workflowId);
+
+  if (updateError) {
+    console.error('[updateWorkflow] update error:', updateError.message);
+    return {
+      ok: false,
+      message: 'Không thể cập nhật workflow.',
+    };
+  }
+
+  // 6. Revalidate + redirect
+  revalidatePath('/dashboard/workflows');
+  revalidatePath('/dashboard');
+  redirect('/dashboard/workflows');
+}
