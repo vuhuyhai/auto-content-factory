@@ -723,6 +723,18 @@ Polish Phase 1 Week 2 (~2h):
 - **User test onboarding (...+acftest@gmail.com) còn sót trên DB + onboarding dở dang:** Cleanup khi tiện qua Supabase MCP nếu cần dọn workspace.
 - **3 file vượt 200 LOC limit:** actions.ts 286, workflow-form.tsx 372, workflow-card.tsx 280. Refactor tách defer Phase 2.
 
+### Day 21 verification - kết quả thực thi (18/05/2026)
+
+Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
+- Smoke test full PASS: npm run typecheck zero error, npm run build PASS 17 route (route /dashboard/workflows/[id]/edit Day 19 build OK), RLS 6/6 bảng, unique index Day 18 contents_workflow_source_url_unique còn nguyên.
+- Phát hiện HANDOFF ghi sai cấu trúc FK → sửa 3 chỗ (commit c30b5ab). Chi tiết FK đúng xem mục Issues Day 20-21 bên dưới.
+- Production deploy: commit c30b5ab READY, serve traffic. Code Day 19-21 thực tế đã LIVE từ sáng 18/05 (deployment 4f57d91 READY 03:59 UTC).
+- Verify B1 production (commit 7ba6751): trang /dashboard/contents empty state hiển thị đúng câu mới "Bạn chưa có nội dung nào. Tạo một workflow để hệ thống tự viết content theo lịch." + nút CTA đỏ "Tạo workflow đầu tiên" href đúng /dashboard/workflows/new.
+- Verify B2 production (commit 37d5440): tab filter "Từ chối" hiển thị đúng nhãn rút gọn (không còn "Đã từ chối").
+- Runtime logs production 24h (commit c30b5ab): sạch, 0 error/fatal.
+- Cleanup user test +acf3 (aotapgym+acf3@gmail.com): user này đã onboarding hoàn tất có brand. DELETE FROM profiles cascade xóa luôn brand, DELETE FROM auth.users xóa user. Verify count brands = 0 → CHUỖI CASCADE PHASE 5.5 ĐÃ CHẠY THẬT, không chỉ đọc trên schema. DB sạch 0 user test +acf*.
+- PHASE 1 WEEK 2 MILESTONE: verify đầy đủ, đóng chính thức.
+
 ### Issues Day 20-21 (mới phát sinh)
 
 - **public.profiles KHÔNG có FK ra auth.users (mắt xích FK bị đứt 1 chỗ):** Phát hiện Day 20, query xác minh đầy đủ Day 21. Thực tế: cây CASCADE từ profiles xuống hoạt động ĐẦY ĐỦ - brands.user_id, workflows.brand_id, contents.workflow_id, contents.brand_id, content_logs.brand_id, subscriptions.user_id tất cả đều ON DELETE CASCADE. Xóa 1 row profiles tự dọn sạch brands + workflows + contents + content_logs + subscriptions. Mắt xích đứt DUY NHẤT: profiles.id không có FK ra auth.users.id. Hệ quả: xóa user đúng cách chỉ cần 2 lệnh - (1) DELETE FROM profiles WHERE id='<uid>' tự cascade hết phần dưới, (2) DELETE FROM auth.users WHERE id='<uid>' riêng. Rủi ro nếu làm sai thứ tự: xóa auth.users trước mà quên profiles để lại profile mồ côi; xóa profiles mà quên auth.users thì user còn login được nhưng app lỗi thiếu profile. Defer Phase 2: thêm FK profiles.id REFERENCES auth.users(id) ON DELETE CASCADE để liền mạch toàn chuỗi.
