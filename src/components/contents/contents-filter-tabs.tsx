@@ -15,7 +15,7 @@ const TABS: readonly TabDef[] = [
   { key: 'all', label: 'Tất cả', href: '/dashboard/contents' },
   { key: 'draft', label: 'Chờ duyệt', href: '/dashboard/contents?status=draft' },
   { key: 'approved', label: 'Đã duyệt', href: '/dashboard/contents?status=approved' },
-  { key: 'rejected', label: 'Đã từ chối', href: '/dashboard/contents?status=rejected' },
+  { key: 'rejected', label: 'Từ chối', href: '/dashboard/contents?status=rejected' },
 ] as const;
 
 interface Props {
