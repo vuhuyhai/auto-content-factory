@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 19 close - Workflow edit form (reuse create form mode=edit): updateWorkflow Server Action lock type + workflowToFormData reverse-map + route [id]/edit + button Sửa + banner warning enabled. Smoke test 5 case browser PASS. Build 16 routes. M2a getBrandPrefix verify browser PASS (Ladysfit → LA). M2b saveError defer browser test. Day 20 START tiếp tục plan Phase 1 Week 2.
+**Status:** Week 1 Day 21 close - **PHASE 1 WEEK 2 MILESTONE DONE**. Day 20 Polish 5 commit (a3 xoá nút Hero CTA chưa có target / a4 BrandVoiceCard sub-header conditional readonly / b1 empty state /dashboard/contents thêm CTA "Tạo workflow đầu tiên" + thuần Việt copy / b2 mobile tab rejected shorten "Đã từ chối"→"Từ chối" / b3 sticky bar padding-bottom pb-24 tránh che content cuối). Day 20 A1 M2b saveError 4/4 touchpoint clearSaveError PASS code review (line 53/119/143/147 onboarding-shell). A2 user test +acf1 cleanup DB. Day 21 đóng milestone: HANDOFF close + smoke test hybrid (build + typecheck + lint) + push 6 commit → Vercel auto-deploy → B1 verify production với +acf2 → cleanup +acf2 → runtime logs clean. Day 22 START Phase 2 Week 3 - Pricing PayOS Day 23-24.
 
 ## 2. Current State
 
@@ -55,7 +55,10 @@
 - ✅ saveError banner clear navigation handlers (onEdit + goBack + goNext + handleConfirm helper clearSaveError) (Day 18 M3)
 - ✅ Signup error translateSignupError helper map 7 Supabase codes tiếng Việt có dấu + login fix diacritics (Day 18 M4)
 - ✅ Workflow edit form (Day 19): route /dashboard/workflows/[id]/edit reuse WorkflowForm mode=edit, updateWorkflow Server Action lock type + giữ last_run_at, workflowToFormData reverse-map config snake_case → camelCase, button Sửa icon Pencil trên card, banner warning khi edit workflow enabled=true
-- **Last verified:** 18/05/2026 - Day 19 close - Workflow edit form M1 PASS (commit e67eda0, build 16 routes). M2a getBrandPrefix browser verify PASS.
+- ✅ Polish Phase 1 close (Day 20): Hero CTA "Xem cách hoạt động" xoá (link section chưa tồn tại) + BrandVoiceCard sub-header conditional theo readonly + empty state /dashboard/contents thêm CTA "Tạo workflow đầu tiên" cho currentStatus='all' + mobile tab "Đã từ chối"→"Từ chối" shorten + sticky bulk bar padding-bottom pb-24 tránh che content cuối list mobile
+- ✅ saveError banner clearSaveError 4/4 touchpoint verified (Day 20 A1): code review onboarding-shell.tsx line 53 handleConfirm + line 119 onEdit + line 143 onBack + line 147 onNext gọi đúng cả 4 chỗ. Issue Day 19 M2b CLOSED.
+- ✅ **PHASE 1 WEEK 2 MILESTONE DONE (Day 21):** Email infra + Bug fix outstanding + Workflow edit + Polish. Production LIVE end-to-end pipeline với 6 commit Day 20-21 deploy.
+- **Last verified:** 18/05/2026 - Day 21 close - Phase 1 milestone DONE (commit Day 20 5 polish + Day 21 HANDOFF docs).
 
 ### Day 11 additions (13/05/2026)
 
@@ -499,7 +502,51 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 
 **Commits Day 19:**
 - `e67eda0` feat(week1-day19-m1): workflow edit form reuse create form mode=edit
-- `<sắp có>` docs(handoff): close Day 19
+- `11556bf` docs(handoff): close Day 19 - workflow edit form + brand prefix verify
+
+### Day 20 (18/05/2026)
+
+Polish Phase 1 Week 2 (~2h):
+
+**A-track (UX/copy nhanh):**
+
+- **A3: Hero CTA "Xem cách hoạt động" xoá (commit db2e358):** Hero section có 2 CTA, nút "Xem cách hoạt động" link tới `/#how-it-works` nhưng section đó CHƯA tồn tại trên landing page → click không scroll đi đâu, UX confuse. Xoá hẳn nút thay vì stub link. Quyết định: nếu Phase 2 thêm section how-it-works, sẽ add lại CTA tương ứng.
+- **A4: BrandVoiceCard sub-header conditional readonly (commit 2cba186):** Sub-header "Xem lại và confirm" hiển thị TRÊN dashboard readonly view → không hợp ngữ cảnh (user đã confirm rồi, đang xem lại). Wrap conditional `{!readonly && <p>Xem lại và confirm</p>}`. Onboarding flow vẫn hiển thị sub-header (mode confirm), dashboard readonly không hiển thị.
+
+**B-track (UX feedback Day 14-15):**
+
+- **B1: Empty state /dashboard/contents thêm CTA "Tạo workflow đầu tiên" (commit 7ba6751):** Issue Day 12 P2 line 623 + user feedback: empty state hiện 5 thông điệp khác nhau theo filter (all/draft/approved/rejected/generating) nhưng KHÔNG có hành động tiếp theo cho currentStatus='all'. Thêm `<Link href="/dashboard/workflows/new">` button đỏ chỉ hiện khi `currentStatus === 'all'`. Đồng thời sửa copy `all` từ "Chưa có nội dung nào. Workflow sẽ tự generate khi đến lịch." → "Bạn chưa có nội dung nào. Tạo một workflow để hệ thống tự viết content theo lịch." (thuần Việt, action-oriented). Other filter messages giữ nguyên.
+- **B2: Mobile tab "Đã từ chối" → "Từ chối" shorten (commit 37d5440):** Issue Day 12 P2 line 621: filter tabs 4 nhãn overflow viewport < 380px. Shorten label thay vì bỏ count badge (badge giữ giá trị UX). `CONTENT_STATUS_LABELS.rejected: 'Đã từ chối' → 'Từ chối'` ở types.ts. Other status label giữ nguyên (draft/approved labels < 6 chars OK).
+- **B3: Sticky bulk bar padding-bottom tránh che content cuối (commit 1b572c2):** Issue Day 14 line 639: position fixed bottom-0 bar 60px che content cuối list mobile. Thêm `pb-24` (96px ≈ bar 60px + safety) cho main container `/dashboard/contents/page.tsx` khi `selectedIds.size > 0`. Pattern: padding-bottom conditional theo state (KHÔNG dynamic-height bar, dùng fixed pb đủ safety).
+
+**Day 20 (không commit):**
+
+- **A1: Test M2b saveError 4/4 touchpoint PASS code review:** clearSaveError gọi đúng cả 4 chỗ onboarding-shell.tsx (line 53 handleConfirm + line 119 onEdit + line 143 onBack + line 147 onNext). Banner persistent issue Day 19 M2b CLOSED. Skip browser ép-fail test (cần mock saveBrandVoice throw, tốn 30p, code review đủ tin cậy với 4 touchpoint rõ ràng).
+- **A2: Dọn user test +acf1 khỏi DB:** xoá sạch auth.users + cascading profiles row qua Supabase MCP. Phát hiện: bảng `public.profiles` KHÔNG có FK ra `auth.users` (không CASCADE) → phải DELETE từng bảng manually (profiles trước, auth.users sau). Ghi vào Known Issues Day 20 mới.
+
+**Commits Day 20 (5 commit polish):**
+- `2cba186` fix(week1-day20-a4): sub-header BrandVoiceCard conditional theo readonly
+- `db2e358` fix(week1-day20-a3): bo nut Xem cach hoat dong trong Hero (link section chua ton tai)
+- `37d5440` fix(week1-day20-b2): rut gon nhan tab rejected thanh Tu choi cho mobile
+- `1b572c2` fix(week1-day20-b3): them padding-bottom tranh sticky bar che content cuoi
+- `7ba6751` fix(week1-day20-b1): empty state them nut CTA tao workflow + sua chu thuan Viet
+
+### Day 21 (18/05/2026)
+
+**Đóng milestone Phase 1 Week 2 (~1.5h):**
+
+- Step 0 (đầu phiên): Query Supabase tìm user +acf2 → identify `aotapgym+acf2@gmail.com` id `70b6cce7-15fa-42c5-becb-eec3a2b0f472` brand "Ladysfit" `2a8cd998-bd5f-487d-a81d-9ed97a5d9836`, 0 workflow + 0 content (hoàn cảnh test B1 lý tưởng). Defer cleanup sau khi anh visual verify B1 production.
+- Step 1: Update HANDOFF.md - đóng issue Day 18-20 fix + thêm phát hiện FK profiles + Day 20 + Day 21 entries + chuyển state Section 6 sang Phase 2 Week 3.
+- Step 2: Commit HANDOFF Day 21 close.
+- Step 3: Smoke test hybrid - em chạy `npm run typecheck` + `npm run lint` (alias typecheck) + `npm run build` local PASS. Browser flow (login, workflow create, content review) defer anh tự test khi cần.
+- Step 4: Push 6 commit (5 Day 20 + 1 Day 21 HANDOFF) → Vercel auto-deploy.
+- Step 5: Verify Vercel deployment READY qua MCP list_deployments.
+- Step 6: Anh login production với `aotapgym+acf2@gmail.com` → `/dashboard/contents` → screenshot CTA đỏ "Tạo workflow đầu tiên" hiển thị.
+- Step 7: Cleanup user +acf2 qua Supabase MCP: DELETE brands WHERE id='2a8cd998-...' → DELETE profiles WHERE id='70b6cce7-...' → DELETE auth.users WHERE id='70b6cce7-...' (manual cascade vì profiles không có FK).
+- Step 8: Final post-deploy verify - Vercel runtime logs production 24h filter error|fatal clean.
+
+**Commits Day 21:**
+- `<sắp có>` docs(handoff): close Day 21 - Phase 1 Week 2 milestone DONE + Day 20 polish + FK profiles finding
 
 ## 4. Architecture Decisions
 
@@ -581,13 +628,13 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 - Resend chưa verify domain (Week 3)
 - Cloudflare R2 bucket acf-assets chưa tạo (Week 2-3)
 - contents.brand_id denormalized có nguy cơ drift - cần CHECK constraint
-- CTA "Xem cách hoạt động" trong Hero link tới /#how-it-works - chưa có section đó
+- ~~CTA "Xem cách hoạt động" trong Hero link tới /#how-it-works - chưa có section đó~~ ✅ Fixed Day 20 A3 (xoá hẳn nút, defer re-add nếu Phase 2 build section how-it-works)
 - ~~getBrandPrefix logic sai "Ladysfit" → `LT_` thay vì `LF_`. Fix Week 2.~~ ✅ Fixed Day 18 M2 (CamelCase detection, "Ladysfit" → "LA" - trade-off accept)
 - ~~saveError banner persistent trong onboarding sau khi user edit thành công~~ ✅ Fixed Day 18 M3 (clearSaveError helper 4 touchpoint - manual visual test defer Day 19)
 - ~~`npm run lint` script missing trong package.json~~ ✅ Fixed Day 18 M2 (alias `tsc --noEmit`, ESLint flat config defer Phase 2)
 - Claude API chưa integrate cho synthesize brand voice trong onboarding (Day 6 dùng rule-based)
 - ~~Signup error message quá generic~~ ✅ Fixed Day 18 M4 (translateSignupError 7 codes tiếng Việt)
-- Sub-header BrandVoiceCard "Xem lại và confirm" không hợp dashboard readonly
+- ~~Sub-header BrandVoiceCard "Xem lại và confirm" không hợp dashboard readonly~~ ✅ Fixed Day 20 A4 (conditional `{!readonly && ...}`, onboarding flow vẫn hiển thị)
 - Drizzle client chưa setup DATABASE_URL env
 - ~~Workflow card không có button "Sửa workflow" (edit name/sources/schedule)~~ ✅ Fixed Day 19 M1 (button Sửa icon Pencil + route [id]/edit, type locked)
 - Vercel Cron handler workflow timezone bug (workflow `0 7 * * *` UTC = 14h VN time, không phải 7h sáng VN)
@@ -618,9 +665,9 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 
 ### Issues Day 12 P2 (mới phát sinh)
 
-- **Mobile tab "Đã từ chối" overflow cắt chữ:** Filter tabs 4 nhãn quá dài trên viewport < 380px, overflow-x-auto work nhưng UX cảm giác chật. Defer Week 2: cân nhắc bỏ count badge mobile hoặc shorten label "Từ chối" thay "Đã từ chối"
+- ~~**Mobile tab "Đã từ chối" overflow cắt chữ:** Filter tabs 4 nhãn quá dài trên viewport < 380px~~ ✅ Fixed Day 20 B2 (shorten "Đã từ chối"→"Từ chối" trong CONTENT_STATUS_LABELS, giữ count badge)
 - **Filter tab transition animation thiếu:** Active border đổi instant khi click, không có sliding animation. UX acceptable nhưng có thể polish Week 3
-- **Empty state messages dynamic theo filter, nhưng KHÔNG có CTA "tạo workflow":** User vào tab "Chờ duyệt" rỗng chỉ thấy "Không có content nào chờ duyệt. 🎉" - thiếu hành động đi tiếp. Defer Week 2 cùng workflow types evergreen + promotional
+- ~~**Empty state messages dynamic theo filter, nhưng KHÔNG có CTA "tạo workflow":** User vào tab "Chờ duyệt" rỗng chỉ thấy "Không có content nào chờ duyệt. 🎉" - thiếu hành động đi tiếp~~ ✅ Fixed Day 20 B1 (CTA "Tạo workflow đầu tiên" chỉ hiện currentStatus='all', + thuần Việt copy)
 - **No bulk approve/reject:** User phải click từng content. Khi DB có >50 contents Week 4 sẽ cần bulk action. Defer Week 3
 - **No content edit inline:** User chỉ approve/reject nguyên text, KHÔNG sửa được body variant. Defer Week 2-3 cùng "Edit Brand Voice" UI
 
@@ -636,7 +683,7 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 ### Issues Day 14 (mới phát sinh)
 
 - **Bulk action không có "Chọn tất cả TẤT CẢ trang" (chỉ chọn trang hiện tại):** Hiện checkbox master chỉ tick contents trong page 20 hiện tại. Khi user có > 20 contents và muốn approve all draft, phải click qua từng page. Defer Week 2 khi có data nhiều: thêm option "Chọn tất cả 100 contents trong filter này" với background job
-- **Sticky bottom bar che content cuối list trên mobile:** Position fixed bottom-0, content cuối có thể bị bar 60px che. Defer Week 2: thêm padding-bottom dynamic cho list khi selectedIds.size > 0
+- ~~**Sticky bottom bar che content cuối list trên mobile:** Position fixed bottom-0, content cuối có thể bị bar 60px che~~ ✅ Fixed Day 20 B3 (pb-24 conditional khi selectedIds.size > 0)
 - **Bulk reject KHÔNG có confirmation dialog:** User click "Từ chối" 7 contents là apply ngay, không có "Bạn có chắc?". OK cho draft (vì có thể revert) nhưng risky khi user có > 50 contents. Defer Week 2 khi có data nhiều: thêm AlertDialog cho bulk reject > 5 items
 - **Pagination KHÔNG có jump-to-page input:** Chỉ Prev/Next, không có "Trang [_] / 10" để nhảy nhanh. OK Day 14 (DB chỉ có 7 content), defer Week 3 khi có > 100 contents
 - **content-list-item.tsx checkbox click area nhỏ:** Mobile tap target < 44x44px. Defer accessibility audit Week 3
@@ -672,9 +719,15 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 
 ### Issues Day 19 (mới phát sinh)
 
-- **M2b saveError manual browser test defer:** cần ép saveBrandVoice fail (network hoặc throw tạm). Code review xác nhận clearSaveError 4 touchpoint đúng. Verify khi user thật onboard (Profile A 10 trial).
+- ~~**M2b saveError manual browser test defer:** cần ép saveBrandVoice fail~~ ✅ Closed Day 20 A1 (code review 4/4 touchpoint PASS line 53/119/143/147 onboarding-shell.tsx, skip browser ép-fail vì code review đủ tin cậy)
 - **User test onboarding (...+acftest@gmail.com) còn sót trên DB + onboarding dở dang:** Cleanup khi tiện qua Supabase MCP nếu cần dọn workspace.
 - **3 file vượt 200 LOC limit:** actions.ts 286, workflow-form.tsx 372, workflow-card.tsx 280. Refactor tách defer Phase 2.
+
+### Issues Day 20-21 (mới phát sinh)
+
+- **public.profiles KHÔNG có FK ra auth.users (không CASCADE):** Phát hiện Day 20 khi cleanup user test +acf1. Rủi ro: xóa user qua `DELETE FROM auth.users WHERE id=...` có thể (a) để lại row mồ côi ở public.profiles + brands + workflows + contents, hoặc (b) bị Postgres chặn DELETE do constraint violation từ bảng ref `brands.user_id`. Workaround Day 20-21: DELETE manual theo thứ tự ngược (contents → workflows → brands → profiles → auth.users). Defer Phase 2 review: thêm FK `profiles.id REFERENCES auth.users(id) ON DELETE CASCADE` + audit các bảng khác (brands.user_id, etc).
+- **User test +acf2 cần dọn sau khi verify B1 production:** `aotapgym+acf2@gmail.com` id `70b6cce7-15fa-42c5-becb-eec3a2b0f472` brand "Ladysfit" `2a8cd998-bd5f-487d-a81d-9ed97a5d9836`. 0 workflow + 0 content nên cleanup nhanh. Day 21 step 7 thực hiện qua Supabase MCP.
+- **Day 19-20 commit (7 commit) chưa verify đầy đủ trên production:** Day 19 (e67eda0 + 11556bf) đã push + Vercel build, Day 20 (5 commit) chưa push tại thời điểm Day 21 START. Dồn về Day 21 step 4-5 push + verify deployment 1 lần.
 
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
@@ -683,70 +736,66 @@ Bug fix outstanding round 1 + content duplicate constraint (~3h):
 
 ## 6. Next Steps
 
-### Day 17: Daily digest email + M5 verify carry-over Day 16
+### Day 22: Phase 2 Week 3 START - Pricing PayOS planning
 
-**Carry-over Day 16 (~10 phút trước khi vào M-mới):**
-- M5 verify production: 1 Gmail account khác (vd vuhai.test@gmail.com) signup production → click verify link CÙNG browser → check welcome email Resend dashboard fitnessviet
-- Nếu PASS: confirm Day 16 M5 DONE, không cần code change
-- Nếu FAIL: check Vercel logs /auth/callback + log [sendWelcomeEmail], debug theo log pattern
+Phase 1 Week 2 milestone đóng Day 21. Phase 2 Week 3 START:
 
-**M1-M4 Day 17 - Daily digest email (~3h):**
-- M1: Tạo template daily-digest.tsx reuse _styles.ts (~80 LOC)
-- M2: Helper send-daily-digest.ts với input user + draft_content array (~60 LOC)
-- M3: API endpoint /api/cron/daily-digest với cron-job.org trigger 1 AM UTC (= 8h sáng VN), batch query users có draft content, render template, send
-- M4: Smoke test 1-2 email Gmail anh + verify Resend logs
+**Pre-flight Day 22 (~30p):**
+- Verify cron đêm 18→19/05 (workflow Ladysfit 7h sáng VN) fire OK qua Vercel runtime logs + Supabase contents recent
+- Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard + Gmail inbox)
+- Đọc lại plan Phase 2 Profile A đã chốt Day 15 - confirm Pricing 3 tier (Free/Starter/Pro) đầy đủ feature matrix
 
-**Plan Week 2-3 đã chốt Profile A (KHÔNG đổi):**
-- Phase 1 Week 2: Email infra (Day 16 ✅ deploy + Day 17 daily digest) + Bug fix + duplicate constraint (Day 18) + Workflow edit form (Day 19-20) + Polish Day 21-22
-- Phase 2 Week 3: Pricing PayOS (Day 23-24) + Trial countdown (Day 25) + Bug fix round 2 (Day 26) + Landing polish (Day 27) + Soft launch (Day 28-29)
-- Anh có 5-10 khách sẵn trial 14 ngày, launch 09/06/2026
+**Day 23-24: Pricing PayOS integration (~6-8h)**
+- M1: Pricing page UI 3 tier với feature matrix + CTA "Bắt đầu trial 14 ngày"
+- M2: PayOS SDK integration (server-side checkout session) + webhook handler verify signature
+- M3: Schema migration `subscriptions` table (user_id + tier + status + trial_start + trial_end + payos_subscription_id)
+- M4: Trial countdown banner global layout dashboard
+- M5: End-to-end test với chính anh (signup → start trial → upgrade → webhook → DB persist)
 
-### Day 14 / Week 2: High Priority
+**Day 25: Trial countdown email (~2h)**
+- Template trial-ending-3-days.tsx + trial-ending-1-day.tsx reuse Day 16 _styles.ts
+- Endpoint /api/cron/trial-reminders schedule 9h sáng VN daily
+- Logic: query subscriptions WHERE trial_end - NOW() = 3 days OR 1 day
 
-**✅ Day 13:** Workflow types evergreen + promotional
+**Day 26: Bug fix round 2 (~3h)**
+- Outstanding issues Phase 1 chưa fix: contents.brand_id denormalized check constraint, Drizzle DATABASE_URL, Multi-source batch generation news_based, 3 file > 200 LOC refactor
+- FK profiles → auth.users CASCADE (phát hiện Day 20-21)
 
-**P2 - Multi-source batch generation (~2-3h):**
-- Workflow news_based có 3 nguồn RSS × 3 articles = 9 candidates per run
-- Loop generate multiple content, skip article đã có (dedup theo source_url)
-- Test với 2-3 RSS sources VN (TuoiTre, Dantri, CafeBiz)
+**Day 27: Landing polish + tracking (~2h)**
+- Posthog event tracking signup → trial start → upgrade conversion funnel
+- Hero section how-it-works (re-add CTA "Xem cách hoạt động" Day 20 A3 đã xoá)
+- Mobile responsive audit toàn bộ landing
 
-**P3 PARTIAL (Day 14 M2): Bulk actions DONE. Edit inline 4 field defer Day 15.**
-- ✅ Bulk approve/reject checkbox + action bar (Day 14 M2)
-- ✅ Pagination /dashboard/contents song song với filter tabs (Day 14 M1)
-- Edit body variant inline (textarea + save) → carry-over Day 15 M3
+**Day 28-29: Soft launch (~4-6h)**
+- Phỏng vấn 5 SMB Việt Nam confirm pricing $10-30/tháng acceptable
+- Invite 5-10 khách anh có sẵn vào trial 14 ngày
+- Monitor Vercel + Sentry + Resend dashboard real-time
+- Daily standup HANDOFF update conversion metric
 
-**✅ P4 - Workflow edit form (reuse create form mode=edit):** DONE Day 19 (commit e67eda0)
-- User sửa được name/sources/schedule/type-specific config sau khi tạo
+**Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
-### Day 20: Tiếp tục plan Phase 1 Week 2
+### Outstanding issues Phase 2 (defer từ Phase 1)
 
-- Theo plan đã chốt: Polish Day 21-22 (hoặc theo plan anh chốt lại Day 20)
-- Carry-over Day 19: M2b saveError browser verify khi có user thật onboard
-
-### Week 2-3: Content Review UI + Email delivery
-- Approve/reject UI với edit inline body
-- Resend integration gửi content draft email cho user review
-- Cloudflare R2 storage cho media assets
-
-### Week 3: Fix outstanding known issues
-- getBrandPrefix logic fix
-- saveError persistent banner trong onboarding
-- Add npm run lint script vào package.json
-- BrandVoiceCard refactor base/wrapper
-- ~~Workflow edit form (reuse create form mode=edit)~~ ✅ Done Day 19 (commit e67eda0)
+- `contents.brand_id` denormalized check constraint
+- Drizzle client DATABASE_URL setup (hoặc bỏ Drizzle nếu Supabase client đủ)
+- Multi-source batch generation news_based (3 RSS × 3 articles = 9 candidates per run)
+- 3 file > 200 LOC refactor: actions.ts 286, workflow-form.tsx 372, workflow-card.tsx 280
+- FK `profiles.id REFERENCES auth.users(id) ON DELETE CASCADE` + audit brands/workflows/contents FK
+- BrandVoiceCard refactor base/wrapper pattern
 - "Edit Brand Voice" button trên dashboard
-- workflow-card.tsx + actions.ts refactor < 200 LOC
-- Improve signup error message
-- Content duplicate constraint
-- Pagination /dashboard/contents
-- Backup cron GitHub Actions
+- Resend domain verify (autocontent.online) - thoát Resend free tier 100/day
+- Cloudflare R2 bucket acf-assets cho image asset (promotional workflows)
+- Backup cron GitHub Actions (secondary trigger nếu cron-job.org down)
+- contents pagination jump-to-page input
+- Bulk reject confirmation dialog AlertDialog
+- VariantEditor "Discard changes" warning khi click Huỷ
+- ESLint flat config setup (hiện npm run lint alias typecheck)
 
-### Week 4: Payment + Polish + Launch
-- PayOS integration cho 3 tier (Free/Starter/Pro)
-- Stripe trial flow (14 ngày guarantee per landing)
-- Sentry monitoring
+### Week 4: Launch
 - Domain autocontent.online connect Vercel
+- Sentry monitoring full setup
 - Multi-brand support (relax MVP rule "1 brand per user")
+- Post-launch retention analysis
 
 ## 7. Context cho AI
 
@@ -1118,24 +1167,18 @@ Signup: map code-based actionable ("email đã đăng ký" → user know action:
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
-- Em fetch HANDOFF đầu chat. Nếu cache cũ → cross-check git log local
-- **Week 1 Day 1-15 đã commit + push:** Day 15 M3 commit `ce87564` đã push, Vercel deploy READY 44s 0 error. Production LIVE end-to-end pipeline với auto-trigger cron-job.org → Vercel → Inngest → Claude → DB. **Đêm 13→14/05/2026: cron Ladysfit tự chạy lần đầu thành công không có Vũ Hải can thiệp.**
-- **Production smoke test STATUS:** Day 15 M3 đã verify localhost browser PASS. Production deploy `ce87564` READY 0 error/warning.
-- Commit cuối local nên là `docs(handoff): close Day 18 - bug fix outstanding round 1 + content duplicate constraint`
-- Day 18 close commit + push GitHub
-- Production deploy commit Day 18 LIVE
-- DB schema thêm UNIQUE INDEX `contents_workflow_source_url_unique` (partial WHERE source_url IS NOT NULL)
-- `workflow-runner.ts` handle 23505 graceful + last_run_at update both branches
-- File mới `src/lib/auth/error-messages.ts` (translateSignupError 49 LOC, 7 Supabase code mapped)
-- `npm run typecheck` + `npm run lint` available (cả 2 alias `tsc --noEmit`)
-- cron-job.org "ACF Daily Digest" ACTIVE schedule 1 AM UTC (8h sáng VN)
-- DB hiện 1 user fitnessviet với last_digest_sent_at = 14/05 21:54 VN
-- Workflow Ladysfit `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN, sẽ auto-trigger 7h sáng VN ngày 15/05 (đêm 14→15) và mỗi ngày sau
-- 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable, KHÔNG auto-trigger
-- cron-job.org production jobs ACTIVE: "ACF Workflow Runner" `*/5 * * * *` UTC + "ACF Daily Digest" `0 1 * * *` UTC
-- **Context Week 2-3 đã chốt: Profile A soft validation, plan 14 ngày 22-30h, anh có 5-10 khách sẵn trial 14 ngày, giữ thứ tự email Day 16-17 ✅ → PayOS Day 23**
-- **Day 19 START: Workflow edit form (reuse create form mode=edit) + manual test M3 saveError banner clear + M2 brand prefix.**
-- **Verify đầu Day 19:**
-  - Cron đêm 15/05 (7h sáng VN ngày 15) fire Ladysfit workflow với UNIQUE constraint active. Query Supabase `contents WHERE workflow_id='b01973cb-...' AND generated_at > NOW() - INTERVAL '12 hours'` xác nhận content mới insert OK (không trùng article cũ trong DB).
-  - Daily digest 8h sáng VN ngày 15 cũng fire (cron-job.org "ACF Daily Digest"). Verify Resend dashboard + Gmail inbox tab Inbox (KHÔNG Promotions).
-  - Vercel runtime logs filter `[workflow-runner]` xem có log "skip duplicate" nào không (nếu cron đêm gặp article đã có).
+- Em fetch HANDOFF đầu chat. **GitHub raw URL cache bản cũ (Day 1) - đã xác nhận lại Day 20.** Dùng bản đính kèm Project knowledge làm chuẩn HOẶC cross-check git log local.
+- **PHASE 1 WEEK 2 MILESTONE DONE (Day 21):** Email infra (Day 16-17) + Bug fix outstanding (Day 18) + Workflow edit form (Day 19) + Polish (Day 20) + đóng milestone (Day 21).
+- **6 commit Day 20-21 push GitHub Day 21:** 5 Day 20 polish (2cba186 a4 / db2e358 a3 / 37d5440 b2 / 1b572c2 b3 / 7ba6751 b1) + 1 Day 21 HANDOFF close. Vercel auto-deploy verify Day 21 step 5.
+- **Production end-to-end pipeline LIVE:** cron-job.org → Vercel → Inngest → Claude → DB. Auto-trigger ổn định từ đêm 13→14/05/2026.
+- **DB hiện trạng Day 21 trước cleanup:**
+  - User Ladysfit chính (`fitnessviet@gmail.com`) workflow `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN
+  - User test +acf2 (`aotapgym+acf2@gmail.com` id `70b6cce7`) brand "Ladysfit" `2a8cd998` 0 workflow + 0 content - **CLEANUP Day 21 step 7** sau khi anh verify B1
+  - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable
+- **cron-job.org production jobs ACTIVE:** "ACF Workflow Runner" `*/5 * * * *` UTC + "ACF Daily Digest" `0 1 * * *` UTC
+- **Plan Phase 2 Week 3 chốt:** Pricing PayOS Day 23-24 → Trial countdown Day 25 → Bug fix round 2 Day 26 → Landing polish Day 27 → Soft launch Day 28-29. Target launch 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention).
+- **Day 22 START Phase 2:**
+  - Pre-flight verify cron đêm 18→19/05 fire OK (Vercel logs + Supabase contents recent)
+  - Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard)
+  - Đọc lại plan Phase 2 Profile A chốt Day 15 + Day 21
+- **Phát hiện Day 20 cần xử lý Phase 2:** `public.profiles` KHÔNG có FK ra `auth.users` (không CASCADE). DELETE user cần thực hiện manual theo thứ tự ngược (contents → workflows → brands → profiles → auth.users). Day 26 bug fix round 2 thêm migration FK CASCADE.
