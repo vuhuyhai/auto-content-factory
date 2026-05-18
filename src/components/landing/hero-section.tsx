@@ -41,9 +41,6 @@ export function HeroSection() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/#how-it-works">Xem cách hoạt động</Link>
-              </Button>
             </div>
           </Card>
 
