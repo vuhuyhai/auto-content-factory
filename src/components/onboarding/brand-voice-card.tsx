@@ -85,7 +85,9 @@ export function BrandVoiceCard({
           Brand Voice Card của bạn
         </h2>
         <p className="text-sm text-slate-600">
-          Xem lại và confirm. Bạn có thể edit từng phần nếu cần.
+          {readonly
+            ? 'Đây là brand voice AI dùng để viết nội dung cho bạn.'
+            : 'Xem lại brand voice. Bấm biểu tượng bút chì để sửa từng mục, rồi bấm xác nhận.'}
         </p>
       </header>
 
