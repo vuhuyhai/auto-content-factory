@@ -53,7 +53,7 @@ function LoginForm() {
             type="email"
             required
             autoComplete="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-acf focus:border-transparent"
             placeholder="ban@congty.com"
           />
         </div>
@@ -72,7 +72,7 @@ function LoginForm() {
             required
             autoComplete="current-password"
             minLength={6}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-acf focus:border-transparent"
           />
         </div>
 
@@ -88,7 +88,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full bg-accent-acf text-white font-medium py-2.5 rounded-lg hover:bg-accent-acf/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isPending ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>
@@ -109,7 +109,7 @@ function LoginForm() {
         Chưa có tài khoản?{' '}
         <Link
           href="/signup"
-          className="text-blue-600 font-medium hover:underline"
+          className="text-accent-acf font-medium hover:underline"
         >
           Đăng ký miễn phí
         </Link>

@@ -34,7 +34,7 @@ export default function SignupPage() {
               type="email"
               required
               autoComplete="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-acf focus:border-transparent"
               placeholder="ban@congty.com"
             />
           </div>
@@ -53,7 +53,7 @@ export default function SignupPage() {
               required
               autoComplete="new-password"
               minLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-acf focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
               Tối thiểu 8 ký tự.
@@ -72,7 +72,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full bg-accent-acf text-white font-medium py-2.5 rounded-lg hover:bg-accent-acf/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             {isPending ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
           </button>
@@ -93,7 +93,7 @@ export default function SignupPage() {
           Đã có tài khoản?{' '}
           <Link
             href="/login"
-            className="text-blue-600 font-medium hover:underline"
+            className="text-accent-acf font-medium hover:underline"
           >
             Đăng nhập
           </Link>
