@@ -4,6 +4,7 @@ import { countDraftContentsForCurrentUser } from "@/lib/contents/queries"
 import Sidebar from "./sidebar"
 import MobileDrawer from "./mobile-drawer"
 import UserMenu from "./user-menu"
+import { TrialBanner } from "@/components/billing/trial-banner"
 
 interface DashboardShellProps {
   children: ReactNode
@@ -27,7 +28,10 @@ export default async function DashboardShell({ children }: DashboardShellProps) 
           <UserMenu />
         </header>
 
-        <div className="px-4 py-6 md:px-8 md:py-8">{children}</div>
+        <div className="px-4 py-6 md:px-8 md:py-8">
+          <TrialBanner />
+          {children}
+        </div>
       </main>
     </div>
   )
