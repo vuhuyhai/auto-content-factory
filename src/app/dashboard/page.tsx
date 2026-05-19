@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react'
 import { getCurrentUserBrand } from '@/lib/brands/queries'
 import { guideToFormData } from '@/lib/brands/converters'
 import { BrandVoiceCard } from '@/components/onboarding/brand-voice-card'
+import { UpgradeCard } from '@/components/billing/upgrade-card'
 
 export default async function DashboardPage() {
   const brand = await getCurrentUserBrand()
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
         </p>
       </div>
       <BrandVoiceCard data={formData} readonly />
+      <UpgradeCard />
     </div>
   )
 }
