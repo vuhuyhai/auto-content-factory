@@ -15,7 +15,7 @@ interface PlanOption {
   highlighted: boolean;
 }
 
-const PLANS: PlanOption[] = [
+const ALL_PLANS: PlanOption[] = [
   {
     tier: 'starter',
     name: 'Starter',
@@ -42,7 +42,14 @@ const PLANS: PlanOption[] = [
   },
 ];
 
-export function UpgradeCard() {
+interface UpgradeCardProps {
+  /** Cac goi duoc phep hien thi. Component cha quyet dinh dua tren tier hien tai. */
+  visibleTiers: ('starter' | 'pro')[];
+  /** Tieu de phu, doi theo trang thai user (vd: dang Starter thi moi len Pro). */
+  subtitle: string;
+}
+
+export function UpgradeCard({ visibleTiers, subtitle }: UpgradeCardProps) {
   const [isPending, startActionTransition] = useTransition();
   const [toast, setToast] = useState<ToastState>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
@@ -79,14 +86,16 @@ export function UpgradeCard() {
     });
   }
 
+  const plans = ALL_PLANS.filter((p) => visibleTiers.includes(p.tier));
+
+  if (plans.length === 0) return null;
+
   return (
     <section className="mt-10">
       <h2 className="text-xl font-semibold text-slate-900 mb-1">
         Nâng cấp gói
       </h2>
-      <p className="text-sm text-slate-500 mb-5">
-        Dùng thử 7 ngày miễn phí, hoặc thanh toán ngay để mở khóa đầy đủ tính năng.
-      </p>
+      <p className="text-sm text-slate-500 mb-5">{subtitle}</p>
 
       {toast && (
         <div
@@ -101,7 +110,7 @@ export function UpgradeCard() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {PLANS.map((plan) => (
+        {plans.map((plan) => (
           <div
             key={plan.tier}
             className={`rounded-xl border bg-white p-6 flex flex-col gap-4 ${
