@@ -1,6 +1,6 @@
 // Consequence Section - 3 timeline (6 tháng, 1 năm, 5 năm)
 // Source content: LANDING_CONTENT.md - Phần 3 BRIDGE (Amplify)
-// Design: Vertical timeline, accent #E63946, slate-100 background (warning tone)
+// Design: Vertical timeline, accent token accent-acf, slate-100 background (warning tone)
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,7 @@ export function ConsequenceSection() {
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
           <Badge
             variant="outline"
-            className="border-[#E63946] text-[#E63946]"
+            className="border-accent-acf text-accent-acf"
           >
             Cảnh báo
           </Badge>
@@ -70,7 +70,7 @@ export function ConsequenceSection() {
             >
               <div className="flex flex-col md:flex-row gap-6 md:gap-12 items-start">
                 <div className="flex-1 flex flex-col gap-3">
-                  <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-[#E63946]">
+                  <span className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-accent-acf">
                     {card.timeline}
                   </span>
                   <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-snug">
@@ -81,7 +81,7 @@ export function ConsequenceSection() {
                   </p>
                 </div>
                 <div className="md:w-64 flex flex-col items-start md:items-end gap-1 md:border-l md:border-slate-200 md:pl-8">
-                  <span className="text-3xl md:text-4xl font-bold text-[#E63946] tracking-tight">
+                  <span className="text-3xl md:text-4xl font-bold text-accent-acf tracking-tight">
                     {card.statValue}
                   </span>
                   <span className="text-sm text-slate-500 leading-relaxed md:text-right">

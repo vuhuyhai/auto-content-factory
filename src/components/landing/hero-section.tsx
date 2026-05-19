@@ -1,6 +1,6 @@
 // Hero Section - Bento Grid Pattern A (Hero-Left)
 // Source content: LANDING_CONTENT.md - Phần 1 + 2 rút gọn
-// Design: Light Bento, accent #E63946, gap 24px desktop, radius 20px
+// Design: Light Bento, accent token accent-acf, gap 24px desktop, radius 20px
 
 import { Mic2, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -14,9 +14,9 @@ export function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 md:px-12">
         <div className="grid grid-cols-4 md:grid-cols-12 gap-4 md:gap-6 auto-rows-fr">
           {/* Hero Card */}
-          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-8 md:row-span-2 p-8 md:p-12 flex flex-col justify-between min-h-[400px] border-l-4 border-l-[#E63946]">
+          <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-8 md:row-span-2 p-8 md:p-12 flex flex-col justify-between min-h-[400px] border-l-4 border-l-accent-acf">
             <div>
-              <Badge variant="outline" className="text-[#E63946] border-[#E63946]/40 mb-6">
+              <Badge variant="outline" className="text-accent-acf border-accent-acf/40 mb-6">
                 Auto-Content Factory
               </Badge>
               <h1
@@ -34,7 +34,7 @@ export function HeroSection() {
               <Button
                 size="lg"
                 asChild
-                className="bg-[#E63946] hover:bg-[#d12d3a] text-white"
+                className="bg-accent-acf hover:bg-[#d12d3a] text-white"
               >
                 <Link href="/signup">
                   Bắt đầu Free
@@ -46,7 +46,7 @@ export function HeroSection() {
 
           {/* Stat Card 1 */}
           <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-2 md:col-span-4 p-6 md:p-8 flex flex-col justify-center">
-            <div className="text-4xl md:text-5xl font-bold text-[#E63946] leading-none mb-3 tracking-tight">
+            <div className="text-4xl md:text-5xl font-bold text-accent-acf leading-none mb-3 tracking-tight">
               4-6h
             </div>
             <div className="text-sm text-slate-600 leading-relaxed">
@@ -56,7 +56,7 @@ export function HeroSection() {
 
           {/* Stat Card 2 */}
           <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-2 md:col-span-4 p-6 md:p-8 flex flex-col justify-center">
-            <div className="text-4xl md:text-5xl font-bold text-[#E63946] leading-none mb-3 tracking-tight">
+            <div className="text-4xl md:text-5xl font-bold text-accent-acf leading-none mb-3 tracking-tight">
               16-24h
             </div>
             <div className="text-sm text-slate-600 leading-relaxed">
@@ -66,7 +66,7 @@ export function HeroSection() {
 
           {/* Feature Card 1 */}
           <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-4 p-8 flex flex-col justify-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-accent-acf/10 text-accent-acf flex items-center justify-center">
               <Mic2 size={24} />
             </div>
             <h3 className="text-xl md:text-2xl font-semibold text-slate-900 mt-2">
@@ -79,7 +79,7 @@ export function HeroSection() {
 
           {/* Feature Card 2 */}
           <Card className="rounded-[20px] border-slate-200 bg-white transition-colors duration-300 hover:border-slate-300 col-span-4 md:col-span-8 p-8 flex flex-col justify-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-accent-acf/10 text-accent-acf flex items-center justify-center">
               <Sparkles size={24} />
             </div>
             <h3 className="text-xl md:text-2xl font-semibold text-slate-900 mt-2">

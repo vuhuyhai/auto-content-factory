@@ -47,7 +47,7 @@ export function BonusGuaranteeSection() {
     <section className="w-full bg-slate-50 py-20 md:py-32 border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 md:px-12">
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
-          <Badge variant="outline" className="border-[#E63946] text-[#E63946]">
+          <Badge variant="outline" className="border-accent-acf text-accent-acf">
             Bonus đặc biệt
           </Badge>
           <h2
@@ -67,21 +67,21 @@ export function BonusGuaranteeSection() {
               key={card.title}
               className="col-span-4 md:col-span-4 rounded-[20px] border-slate-200 bg-white p-6 md:p-8 flex flex-col gap-4 transition-colors duration-300 hover:border-slate-300"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-accent-acf/10 text-accent-acf flex items-center justify-center">
                 {card.icon}
               </div>
               <h3 className="text-xl font-semibold text-slate-900">{card.title}</h3>
               <p className="text-base text-slate-600 leading-relaxed flex-1">{card.description}</p>
-              <span className="inline-flex items-center text-xs font-bold uppercase tracking-wider text-[#E63946] mt-auto">
+              <span className="inline-flex items-center text-xs font-bold uppercase tracking-wider text-accent-acf mt-auto">
                 {card.value}
               </span>
             </Card>
           ))}
         </div>
 
-        <div className="rounded-[20px] bg-white border-2 border-[#E63946]/20 p-8 md:p-12 mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#E63946]/10 flex items-center justify-center shrink-0">
-            <ShieldCheck size={48} className="text-[#E63946]" />
+        <div className="rounded-[20px] bg-white border-2 border-accent-acf/20 p-8 md:p-12 mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center">
+          <div className="w-16 h-16 rounded-2xl bg-accent-acf/10 flex items-center justify-center shrink-0">
+            <ShieldCheck size={48} className="text-accent-acf" />
           </div>
           <div className="flex-1">
             <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-3">
@@ -93,8 +93,8 @@ export function BonusGuaranteeSection() {
           </div>
         </div>
 
-        <div className="rounded-[20px] bg-[#E63946]/5 border border-[#E63946]/20 p-6 mb-8 flex gap-3 items-start">
-          <AlarmClock size={20} className="text-[#E63946] shrink-0 mt-1" />
+        <div className="rounded-[20px] bg-accent-acf/5 border border-accent-acf/20 p-6 mb-8 flex gap-3 items-start">
+          <AlarmClock size={20} className="text-accent-acf shrink-0 mt-1" />
           <p className="text-sm md:text-base text-slate-700 leading-relaxed">
             Bonus 100 suất chỉ áp dụng cho người đăng ký Pro trong tháng này. Sau ngày 30/06/2026, chỉ còn giá Pro thuần, không có 3 bonus đi kèm.
           </p>
@@ -113,13 +113,13 @@ export function BonusGuaranteeSection() {
               </div>
             ))}
           </div>
-          <p className="text-xl md:text-2xl font-bold text-[#E63946] mt-2">
+          <p className="text-xl md:text-2xl font-bold text-accent-acf mt-2">
             Tất cả chỉ với 999K cho tháng đầu tiên
           </p>
           <Button
             asChild
             size="lg"
-            className="w-full md:w-auto md:self-start bg-[#E63946] hover:bg-[#d12d3a] text-white"
+            className="w-full md:w-auto md:self-start bg-accent-acf hover:bg-[#d12d3a] text-white"
           >
             <Link href="/signup?plan=pro&bonus=true">
               Đăng ký Pro nhận bonus

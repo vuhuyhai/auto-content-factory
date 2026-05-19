@@ -11,8 +11,8 @@ export function FinalCtaSection() {
   return (
     <section className="w-full bg-white py-16 md:py-24 border-t border-slate-100">
       <div className="max-w-4xl mx-auto px-4 md:px-12">
-        <div className="rounded-[20px] border-2 border-[#E63946]/20 bg-white p-8 md:p-16 text-center flex flex-col gap-6 items-center mb-12 shadow-lg shadow-[#E63946]/5">
-          <Badge variant="outline" className="border-[#E63946]/40 text-[#E63946]">
+        <div className="rounded-[20px] border-2 border-accent-acf/20 bg-white p-8 md:p-16 text-center flex flex-col gap-6 items-center mb-12 shadow-lg shadow-accent-acf/5">
+          <Badge variant="outline" className="border-accent-acf/40 text-accent-acf">
             Hành động
           </Badge>
           <h2
@@ -28,7 +28,7 @@ export function FinalCtaSection() {
             <Button
               asChild
               size="lg"
-              className="bg-[#E63946] hover:bg-[#d12d3a] text-white"
+              className="bg-accent-acf hover:bg-[#d12d3a] text-white"
             >
               <Link href="/signup?plan=pro&bonus=true">
                 Đăng ký Pro - nhận 3 bonus 5.5 triệu

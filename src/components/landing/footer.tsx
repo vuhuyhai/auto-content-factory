@@ -1,6 +1,6 @@
 // Footer - 4 cột (logo + 3 nav columns) + bottom bar
 // Background slate-900 dark để tách rõ khỏi trang trắng
-// Accent #E63946 chỉ ở hover social
+// Accent token accent-acf chỉ ở hover social
 
 import Link from "next/link";
 
@@ -100,7 +100,7 @@ export function Footer() {
             <Link
               href="https://facebook.com"
               aria-label="Facebook"
-              className="text-slate-400 hover:text-[#E63946] transition-colors duration-200"
+              className="text-slate-400 hover:text-accent-acf transition-colors duration-200"
             >
               <FacebookIcon size={20} />
             </Link>

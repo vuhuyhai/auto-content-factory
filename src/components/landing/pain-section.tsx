@@ -1,6 +1,6 @@
 // Pain Section - 3 lớp vấn đề (bên ngoài, bên trong, triết lý)
 // Source content: LANDING_CONTENT.md - Phần 2 BRIDGE
-// Design: Bento Quad Grid, accent #E63946, light theme
+// Design: Bento Quad Grid, accent token accent-acf, light theme
 
 import { Clock, BrainCog, Target } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -44,7 +44,7 @@ export function PainSection() {
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
           <Badge
             variant="outline"
-            className="border-[#E63946] text-[#E63946]"
+            className="border-accent-acf text-accent-acf"
           >
             Bạn có quen?
           </Badge>
@@ -68,7 +68,7 @@ export function PainSection() {
               <span className="text-xs uppercase tracking-wider text-slate-500 font-medium">
                 {card.eyebrow}
               </span>
-              <div className="w-12 h-12 rounded-xl bg-[#E63946]/10 text-[#E63946] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-accent-acf/10 text-accent-acf flex items-center justify-center">
                 {card.icon}
               </div>
               <h3 className="text-xl md:text-2xl font-semibold text-slate-900 leading-snug">
