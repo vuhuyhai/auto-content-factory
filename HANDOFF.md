@@ -62,7 +62,8 @@
 - ✅ **Pricing landing cập nhật giá mới (Day 23 M1):** Trang `PricingSection` landing đổi Starter 199K, Pro 399K, feature matrix theo tier mới. Thời gian dùng thử đổi 14 ngày → 7 ngày trên toàn bộ flow (text UI, banner, Server Action `TRIAL_DAYS`).
 - ✅ **Bảng `subscriptions` tạo lại (Day 23 M2):** 10 cột: `id`, `user_id` UNIQUE + FK CASCADE, `tier`, `status`, `trial_start`, `trial_end`, `current_period_end`, `payos_order_code` bigint, `created_at`, `updated_at`. RLS bật, 1 policy SELECT own. Bảng cũ (Day 1 schema) thiếu cột nên DROP + tạo lại (lúc đó rỗng, không mất data).
 - ✅ **PayOS tích hợp đầy đủ code (Day 23-24):** `@payos/node` v2.0.5, file `src/lib/payos/client.ts` + `constants.ts` (TRIAL_DAYS + TIER_CONFIG + isPaidTier) + `actions.ts` (startTrial trial-only + createPaymentLink gọi PayOS) + `webhook/route.ts` (verify chữ ký + check code='00' + cập nhật subscriptions + profiles) + `queries.ts` (getCurrentUserSubscription RLS). UI: `TrialBanner` 4 trạng thái (active = ẩn, trialing còn ngày, trialing hết hạn, chưa có gói) trong dashboard shell + `UpgradeCard` 2 nút "Bắt đầu dùng thử" / "Thanh toán ngay" trong dashboard.
-- **Last verified:** 19/05/2026 - Day 24 close - Pricing + PayOS M1-M5 code complete. `npx tsc --noEmit` + `npm run build` PASS. Chờ deploy + test webhook end-to-end thật.
+- ✅ **Day 23-24 hoàn thành (19/05/2026):** trang giá mới (Free 0đ / Starter 199K / Pro 399K), tích hợp thanh toán PayOS đầy đủ (startTrial + createPaymentLink + webhook), tách UpgradeSection (server, ẩn gói đã mua) / UpgradeCard (client), gắn tên miền `autocontent.online` (DNS + SSL OK), email templates cập nhật domain mới. Đã test thanh toán THẬT 199K thành công, webhook fire, DB cập nhật status='active' đúng. Sẵn sàng cho Day 25.
+- **Last verified:** 19/05/2026 - Day 24 close - Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. `npx tsc --noEmit` + `npm run build` PASS. Domain `autocontent.online` LIVE.
 
 ### Day 11 additions (13/05/2026)
 
@@ -606,6 +607,18 @@ Polish Phase 1 Week 2 (~2h):
 - `e7e59ce` feat(week3-day24-m4): webhook payos handler - verify chu ky + kiem code 00 + cap nhat subscription
 - `404b47a` feat(week3-day24-m5): trial banner 4 trang thai + cleanup test user
 
+### Day 23-24 Summary (tổng kết post-deploy)
+
+- Day 23-24: Cập nhật trang giá (Free 0đ / Starter 199K / Pro 399K)
+- Day 23-24: Tạo bảng `subscriptions` (10 cột, RLS bật, 1 policy SELECT own)
+- Day 23-24: Tích hợp PayOS - client, constants, 2 Server Action (`startTrial`, `createPaymentLink`), `UpgradeCard`
+- Day 23-24: Webhook PayOS tại `/api/payos/webhook` - verify chữ ký, cập nhật subscriptions + profiles
+- Day 23-24: Banner đếm ngược trial (`TrialBanner`, 4 trạng thái)
+- Day 23-24: Tách `UpgradeSection` (server) / `UpgradeCard` (client) - ẩn gói đã mua
+- Day 23-24: Gắn tên miền `autocontent.online`, DNS + SSL xong
+- Day 23-24: Test thanh toán thật 199K thành công, webhook cập nhật DB đúng
+- Day 23-24: Rà callback sau khi đổi tên miền - Supabase URL Config, Google OAuth, URL preview trong email
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -679,6 +692,9 @@ Polish Phase 1 Week 2 (~2h):
 | **`payos_order_code = floor(Date.now()/1000)` (Day 23 M3)** | PayOS yêu cầu orderCode là số (number, không phải string). `Date.now()/1000` cho ra số giây Unix - vừa là number, vừa monotonic tăng dần, vừa không trùng (1 user không thể click 2 lần trong < 1 giây thực tế). Lưu bigint để future-proof năm 2038+ |
 | **Webhook trả 200 khi không tìm thấy subscription, trả 500 chỉ khi lỗi DB cần retry (Day 24 M4)** | PayOS retry webhook 3 lần nếu nhận non-2xx. Trường hợp `payos_order_code` không tìm thấy trong DB (subscription bị xóa, hoặc test ngoài flow) → retry vô ích, log warning và trả 200 để PayOS dừng. Lỗi DB transient (insert/update fail) trả 500 để PayOS retry. Phân biệt "không có gì để làm" (200) vs "lỗi tạm thời" (500) |
 | **Webhook chỉ nâng cấp khi `data.code === '00'` (Day 24 M4)** | PayOS gửi webhook cho CẢ giao dịch thất bại (timeout, hủy, sai OTP). Code '00' nghĩa là thành công, code khác là fail/cancel. Check sớm tránh nâng cấp nhầm subscription thành active khi user chưa trả tiền. Pattern same as Stripe `event.type === 'payment_intent.succeeded'` |
+| **Giá Free 0đ / Starter 199.000đ / Pro 399.000đ + trial 7 ngày mở khoá toàn bộ Pro (Day 23-24)** | Chốt 3 tier giá VND theo soft validation Phase 1. Trial 7 ngày (rút từ 14 ngày Day 22) đủ để SMB cảm nhận giá trị nhưng không kéo dài lưỡng lự. Trial mở khoá toàn bộ tính năng Pro để user trải nghiệm cao nhất → conversion tốt hơn restrict feature. |
+| **PayOS không có sandbox, test bằng tiền thật. `orderCode = floor(Date.now()/1000)` (Day 23-24)** | PayOS không cung cấp môi trường sandbox/test mode. Verify webhook end-to-end phải dùng tiền thật (anh test 199K thành công Day 24). `orderCode` phải là number (PayOS yêu cầu), `Date.now()/1000` cho số giây Unix monotonic + không trùng + bigint future-proof 2038+. |
+| **Tên miền chính `autocontent.online`, Vercel domain `auto-content-factory.vercel.app` giữ làm alias (Day 24)** | Domain riêng cần thiết cho branding + email deliverability (Resend verify domain Phase 2) + tránh phụ thuộc Vercel subdomain. Giữ Vercel domain làm alias để preview URL trong email vẫn hoạt động + backup link cũ trong test data không 404. Sau đổi domain phải rà 3 callback: Supabase URL Config (Auth Redirect URLs), Google OAuth Authorized redirect URIs, URL trong email templates. |
 
 ## 5. Known Issues
 
@@ -817,38 +833,12 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 6. Next Steps
 
-### Day 22-24: Pricing PayOS DONE (code complete) - chờ deploy + test webhook thật
+### Roadmap đến soft launch
 
-Phase 1 Week 2 milestone đóng Day 21. Day 22 pre-flight + cleanup DB. Day 23 M1 pricing UI + M2 subscriptions table + M3 PayOS integration. Day 24 M4 webhook + M5 trial banner. Code complete + tsc + build PASS.
-
-**Sau Day 24 cần làm tiếp (~1h):**
-- Push 4 commit Day 23-24 → Vercel auto-deploy.
-- Đăng ký webhook URL với PayOS dashboard: `https://auto-content-factory.vercel.app/api/payos/webhook`.
-- Test thanh toán thật bằng tiền nhỏ (5K-10K) qua tài khoản cá nhân để verify webhook fire + DB cập nhật status='active'.
-- Verify TrialBanner 4 trạng thái production: trialing còn ngày (sau click "Bắt đầu dùng thử") + active (sau thanh toán) + trialing hết hạn (set trial_end = past) + chưa có gói (signup mới).
-
-**Day 25: Trial countdown email (~2h)**
-- Template trial-ending-3-days.tsx + trial-ending-1-day.tsx reuse Day 16 _styles.ts
-- Endpoint /api/cron/trial-reminders schedule 9h sáng VN daily
-- Logic: query subscriptions WHERE trial_end - NOW() = 3 days OR 1 day
-
-**Day 26: Bug fix round 2 (~3h)**
-- Điều tra/xử lý dứt điểm bug Turbopack dev Server Action chết âm thầm (workaround `npx next dev --webpack` không phải fix lâu dài).
-- Đồng bộ Drizzle `src/db/schema.ts` với DB thật (bảng `subscriptions` Day 23 M2 đã DROP + tạo lại 10 cột, schema.ts có thể còn khai báo cũ).
-- Enforcement hạn mức theo tier: chặn user free/trial tạo workflow vượt giới hạn (Free 1 workflow / Starter 5 workflow / Pro unlimited). Hiện chưa có enforcement - user click "Tạo workflow" vẫn tạo được không giới hạn.
-- Outstanding issues Phase 1 chưa fix: contents.brand_id denormalized check constraint, Drizzle DATABASE_URL, Multi-source batch generation news_based, 3 file > 200 LOC refactor.
-- FK profiles.id → auth.users.id ON DELETE CASCADE (mắt xích đứt duy nhất - phần còn lại của chuỗi đã CASCADE đủ, xác minh Day 21).
-
-**Day 27: Landing polish + tracking (~2h)**
-- Posthog event tracking signup → trial start → upgrade conversion funnel
-- Hero section how-it-works (re-add CTA "Xem cách hoạt động" Day 20 A3 đã xoá)
-- Mobile responsive audit toàn bộ landing
-
-**Day 28-29: Soft launch (~4-6h)**
-- Phỏng vấn 5 SMB Việt Nam confirm pricing $10-30/tháng acceptable
-- Invite 5-10 khách anh có sẵn vào trial 14 ngày
-- Monitor Vercel + Sentry + Resend dashboard real-time
-- Daily standup HANDOFF update conversion metric
+- **Day 25:** Email nhắc sắp hết trial (trial-ending-3-days + trial-ending-1-day, endpoint `/api/cron/trial-reminders` schedule 9h sáng VN daily, query `subscriptions WHERE trial_end - NOW() = 3d OR 1d`)
+- **Day 26:** Sửa bug, đồng bộ Drizzle schema, điều tra Turbopack, enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited) + FK `profiles.id → auth.users.id ON DELETE CASCADE`
+- **Day 27:** Polish landing page (PostHog conversion funnel signup → trial → upgrade, re-add CTA "Xem cách hoạt động", mobile responsive audit)
+- **Day 28-29:** Soft launch (target **09/06/2026**) - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
 
 **Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
