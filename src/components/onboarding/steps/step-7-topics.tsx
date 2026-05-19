@@ -103,8 +103,8 @@ export function Step7Topics() {
           Bạn muốn nói về chủ đề gì?
         </h2>
         <p className="text-sm text-slate-600">
-          Topics dùng để search news. Hashtags rotate trong content để tránh
-          trùng lặp.
+          Chủ đề dùng để tìm tin tức. Hashtag được luân phiên trong các bài
+          viết để tránh trùng lặp.
         </p>
       </header>
 
@@ -169,7 +169,8 @@ export function Step7Topics() {
         <div className="space-y-2 border-t pt-4">
           <FormLabel>Hashtag tự động</FormLabel>
           <FormDescription>
-            ACF tạo từ tên brand và chủ đề đã chọn. Bạn có thể edit sau.
+            ACF tạo từ tên thương hiệu và chủ đề đã chọn. Bạn có thể chỉnh sửa
+            sau.
           </FormDescription>
           <div className="flex flex-wrap gap-2 pt-2">
             {currentHashtags.length === 0 ? (
@@ -192,7 +193,7 @@ export function Step7Topics() {
                       })
                     }}
                     className="text-slate-400 hover:text-slate-700"
-                    aria-label={`Remove ${tag}`}
+                    aria-label={`Xóa ${tag}`}
                   >
                     <X className="h-3 w-3" />
                   </button>

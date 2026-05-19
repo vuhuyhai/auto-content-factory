@@ -33,8 +33,8 @@ export function Step3Archetype() {
           Giọng nói thương hiệu của bạn giống ai nhất?
         </h2>
         <p className="text-sm text-slate-600">
-          Đây là quyết định quan trọng nhất. Archetype này set base voice cho
-          mọi content AI viết sau này.
+          Đây là quyết định quan trọng nhất. Hình mẫu thương hiệu này định hình
+          giọng nền cho mọi bài viết AI tạo ra sau này.
         </p>
       </header>
 
@@ -43,9 +43,9 @@ export function Step3Archetype() {
         name="archetype"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="sr-only">Archetype</FormLabel>
+            <FormLabel className="sr-only">Hình mẫu thương hiệu</FormLabel>
             <FormDescription className="text-sm text-slate-500">
-              Chọn 1 trong 6 archetype. Bạn có thể đổi sau.
+              Chọn 1 trong 6 hình mẫu thương hiệu. Bạn có thể đổi sau.
             </FormDescription>
             <div className="grid gap-3 pt-2 md:grid-cols-2">
               {ARCHETYPE_LIST.map((key) => {

@@ -102,10 +102,10 @@ export async function saveBrandVoice(
       .single()
 
     if (insertError) {
-      console.error("[saveBrandVoice] Insert error:", insertError)
+      console.error("[saveBrandVoice] Insert error:", insertError.message, insertError)
       return {
         success: false,
-        error: `Lỗi lưu vào database: ${insertError.message}`,
+        error: "Không lưu được thông tin. Vui lòng thử lại sau ít phút.",
       }
     }
 

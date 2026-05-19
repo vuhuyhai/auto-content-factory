@@ -31,8 +31,8 @@ export function Step5PainPoints() {
           Khách hàng tìm đến bạn vì điều gì?
         </h2>
         <p className="text-sm text-slate-600">
-          Liệt kê 2-3 vấn đề chính khách hàng muốn giải quyết. AI dùng pain
-          points để chọn góc viết bài hấp dẫn.
+          Liệt kê 2-3 vấn đề chính khách hàng muốn giải quyết. AI dùng những
+          vấn đề này để chọn góc viết bài hấp dẫn.
         </p>
       </header>
 
@@ -43,7 +43,7 @@ export function Step5PainPoints() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Pain points của khách hàng{" "}
+                Vấn đề khách hàng đang gặp{" "}
                 <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
@@ -55,7 +55,7 @@ export function Step5PainPoints() {
               </FormControl>
               <FormDescription>
                 {painPoints.length}/500 ký tự (tối thiểu 50). Phân cách mỗi
-                pain bằng dấu `/` hoặc xuống dòng.
+                vấn đề bằng dấu / hoặc xuống dòng.
               </FormDescription>
               <FormMessage />
             </FormItem>

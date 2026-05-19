@@ -82,8 +82,9 @@ export function Step4Tone() {
           Điều chỉnh độ tinh tế của giọng nói
         </h2>
         <p className="text-sm text-slate-600">
-          Archetype set base voice, các slider này fine-tune. Mỗi slider 0-10
-          với sample text thay đổi realtime.
+          Hình mẫu thương hiệu định hình giọng nền, các thanh trượt này dùng
+          để tinh chỉnh. Mỗi thanh từ 0 đến 10, câu ví dụ bên cạnh thay đổi
+          ngay khi bạn kéo.
         </p>
       </header>
 
