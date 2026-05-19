@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Week 1 Day 21 close - **PHASE 1 WEEK 2 MILESTONE DONE**. Day 20 Polish 5 commit (a3 xoá nút Hero CTA chưa có target / a4 BrandVoiceCard sub-header conditional readonly / b1 empty state /dashboard/contents thêm CTA "Tạo workflow đầu tiên" + thuần Việt copy / b2 mobile tab rejected shorten "Đã từ chối"→"Từ chối" / b3 sticky bar padding-bottom pb-24 tránh che content cuối). Day 20 A1 M2b saveError 4/4 touchpoint clearSaveError PASS code review (line 53/119/143/147 onboarding-shell). A2 user test +acf1 cleanup DB. Day 21 đóng milestone: HANDOFF close + smoke test hybrid (build + typecheck + lint) + push 6 commit → Vercel auto-deploy → B1 verify production với +acf2 → cleanup +acf2 → runtime logs clean. Day 22 START Phase 2 Week 3 - Pricing PayOS Day 23-24.
+**Status:** Phase 2 Week 3 Day 24 - **Pricing + PayOS M1-M5 CODE COMPLETE**. Day 22 pre-flight DONE: cleanup DB còn 1 user thật fitnessviet@gmail.com (xóa 4 user test agency@marfit.vn + huyhaigym + aotapgym brand "Test ACF3" + vuhuyhieu.0910), verify cron đêm + daily digest, đọc lại plan Phase 2. Day 23 M1 pricing UI giá mới Starter 199K Pro 399K (commit c324b0e) + M2 subscriptions table 10 cột RLS bật (Supabase migration không commit code) + M3 PayOS @payos/node v2.0.5 integration startTrial + createPaymentLink + UpgradeCard 2 nút (commit ba7d35b). Day 24 M4 webhook verify chữ ký + check code='00' + cập nhật subscriptions/profiles (commit e7e59ce) + M5 TrialBanner 4 trạng thái + cleanup user test phát sinh (commit 404b47a). Chuẩn bị: deploy production → đăng ký webhook URL với PayOS → test thanh toán thật bằng tiền nhỏ.
 
 ## 2. Current State
 
@@ -58,7 +58,11 @@
 - ✅ Polish Phase 1 close (Day 20): Hero CTA "Xem cách hoạt động" xoá (link section chưa tồn tại) + BrandVoiceCard sub-header conditional theo readonly + empty state /dashboard/contents thêm CTA "Tạo workflow đầu tiên" cho currentStatus='all' + mobile tab "Đã từ chối"→"Từ chối" shorten + sticky bulk bar padding-bottom pb-24 tránh che content cuối list mobile
 - ✅ saveError banner clearSaveError 4/4 touchpoint verified (Day 20 A1): code review onboarding-shell.tsx line 53 handleConfirm + line 119 onEdit + line 143 onBack + line 147 onNext gọi đúng cả 4 chỗ. Issue Day 19 M2b CLOSED.
 - ✅ **PHASE 1 WEEK 2 MILESTONE DONE (Day 21):** Email infra + Bug fix outstanding + Workflow edit + Polish. Production LIVE end-to-end pipeline với 6 commit Day 20-21 deploy.
-- **Last verified:** 18/05/2026 - Day 21 close - Phase 1 milestone DONE (commit Day 20 5 polish + Day 21 HANDOFF docs).
+- ✅ **DB dọn về 1 user thật (Day 22-24):** Còn duy nhất `fitnessviet@gmail.com`. Day 22 phát hiện DB có 5 user, xóa 4 user test: `agency@marfit.vn`, `huyhaigym`, `aotapgym` brand "Test ACF3", `vuhuyhieu.0910`. Day 23-24 phát sinh thêm user test trong lúc thử flow, cleanup luôn cuối Day 24. State sạch trước deploy.
+- ✅ **Pricing landing cập nhật giá mới (Day 23 M1):** Trang `PricingSection` landing đổi Starter 199K, Pro 399K, feature matrix theo tier mới. Thời gian dùng thử đổi 14 ngày → 7 ngày trên toàn bộ flow (text UI, banner, Server Action `TRIAL_DAYS`).
+- ✅ **Bảng `subscriptions` tạo lại (Day 23 M2):** 10 cột: `id`, `user_id` UNIQUE + FK CASCADE, `tier`, `status`, `trial_start`, `trial_end`, `current_period_end`, `payos_order_code` bigint, `created_at`, `updated_at`. RLS bật, 1 policy SELECT own. Bảng cũ (Day 1 schema) thiếu cột nên DROP + tạo lại (lúc đó rỗng, không mất data).
+- ✅ **PayOS tích hợp đầy đủ code (Day 23-24):** `@payos/node` v2.0.5, file `src/lib/payos/client.ts` + `constants.ts` (TRIAL_DAYS + TIER_CONFIG + isPaidTier) + `actions.ts` (startTrial trial-only + createPaymentLink gọi PayOS) + `webhook/route.ts` (verify chữ ký + check code='00' + cập nhật subscriptions + profiles) + `queries.ts` (getCurrentUserSubscription RLS). UI: `TrialBanner` 4 trạng thái (active = ẩn, trialing còn ngày, trialing hết hạn, chưa có gói) trong dashboard shell + `UpgradeCard` 2 nút "Bắt đầu dùng thử" / "Thanh toán ngay" trong dashboard.
+- **Last verified:** 19/05/2026 - Day 24 close - Pricing + PayOS M1-M5 code complete. `npx tsc --noEmit` + `npm run build` PASS. Chờ deploy + test webhook end-to-end thật.
 
 ### Day 11 additions (13/05/2026)
 
@@ -548,6 +552,60 @@ Polish Phase 1 Week 2 (~2h):
 **Commits Day 21:**
 - `<sắp có>` docs(handoff): close Day 21 - Phase 1 Week 2 milestone DONE + Day 20 polish + FK profiles finding
 
+### Day 22 (19/05/2026)
+
+**Pre-flight Phase 2 Week 3 (~45p):**
+
+- Verify cron đêm 18→19/05 workflow Ladysfit fire OK qua Vercel runtime logs + Supabase contents.
+- Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard + Gmail inbox).
+- Đọc lại plan Phase 2 Profile A đã chốt Day 15 - confirm Pricing 3 tier (Free/Starter/Pro) + trial 7 ngày.
+- Audit DB user: phát hiện 5 user, trong đó 4 user test (agency@marfit.vn, huyhaigym, aotapgym brand "Test ACF3", vuhuyhieu.0910). Cleanup qua Supabase MCP cascade brands + workflows + contents + content_logs (auto via FK) + DELETE auth.users (manual). DB còn 1 user thật fitnessviet@gmail.com.
+
+**Commits Day 22:** không commit code, chỉ DB cleanup + plan reading.
+
+### Day 23 (19/05/2026)
+
+**M1 - Pricing UI giá mới (~30p):**
+- Cập nhật `src/components/landing/pricing-section.tsx` 3 tier: Free (0đ) / Starter (199.000đ) / Pro (399.000đ).
+- Feature matrix theo tier mới: Starter 5 workflow + 90 bài/tháng + digest, Pro 3 brand voice + unlimited + ưu tiên.
+- Đổi trial 14 ngày → 7 ngày trên text UI + CTA "Bắt đầu trial 7 ngày".
+- Commit `c324b0e` feat(week3-day23-m1).
+
+**M2 - Subscriptions table tạo lại (~20p):**
+- Supabase migration: DROP TABLE `subscriptions` cũ (Day 1 schema thiếu cột, lúc đó rỗng), CREATE TABLE mới 10 cột: `id`, `user_id` UNIQUE + FK CASCADE auth.users, `tier`, `status`, `trial_start`, `trial_end`, `current_period_end`, `payos_order_code` bigint, `created_at`, `updated_at`.
+- RLS bật, 1 policy SELECT own (`user_id = auth.uid()`). Ghi qua admin client (service_role) trong Server Action + Webhook.
+- Migration qua Supabase MCP, KHÔNG commit code (schema-only change).
+
+**M3 - PayOS integration code (~2h):**
+- Install `@payos/node` v2.0.5.
+- Tạo `src/lib/payos/client.ts` khởi tạo PayOS SDK từ env (PAYOS_CLIENT_ID + PAYOS_API_KEY + PAYOS_CHECKSUM_KEY).
+- Tạo `src/lib/payos/constants.ts`: `TRIAL_DAYS = 7`, `TIER_CONFIG` (starter 199K + pro 399K + features), `isPaidTier(tier)` type guard.
+- Tạo `src/lib/payos/actions.ts` 2 Server Action: `startTrial(tier)` chỉ ghi subscriptions status=trialing + update profiles.plan, KHÔNG gọi PayOS; `createPaymentLink(tier)` gọi PayOS tạo paymentLink + upsert subscriptions với `payos_order_code = floor(Date.now()/1000)`.
+- Tạo `src/components/billing/upgrade-card.tsx` Client Component 2 nút "Bắt đầu dùng thử 7 ngày" / "Thanh toán ngay", `useTransition` + toast inline 3s.
+- Commit `ba7d35b` feat(week3-day23-m3).
+
+**Commits Day 23:**
+- `c324b0e` feat(week3-day23-m1): cap nhat pricing section gia moi 199k 399k + tinh nang theo tier
+- `ba7d35b` feat(week3-day23-m3): tich hop payos - client + startTrial + createPaymentLink + upgrade card
+
+### Day 24 (19/05/2026)
+
+**M4 - Webhook PayOS (~1.5h):**
+- Tạo `src/app/api/payos/webhook/route.ts`: verify chữ ký bằng `payos.webhooks.verify()` + check `data.code === '00'` (giao dịch thành công, PayOS gửi webhook cho cả thất bại) + tìm subscription qua `payos_order_code` + cập nhật subscriptions status='active' + `current_period_end` (30 ngày từ hôm nay) + update profiles.plan.
+- Edge case xử lý: signature fail trả 401, không tìm thấy subscription trả 200 (tránh PayOS retry vô ích), lỗi DB cần retry trả 500.
+- Commit `e7e59ce` feat(week3-day24-m4).
+
+**M5 - Trial banner + cleanup test user (~45p):**
+- Tạo `src/lib/payos/queries.ts` `getCurrentUserSubscription()` RLS tự lọc theo user.
+- Tạo `src/components/billing/trial-banner.tsx` Server Component, 4 trạng thái: status='active' ẩn / trialing còn ngày màu vàng / trialing hết hạn màu đỏ / chưa có gói màu xám "Dùng thử 7 ngày miễn phí".
+- Gắn `<TrialBanner />` vào `src/components/dashboard/dashboard-shell.tsx` trên `{children}`.
+- Cleanup user test phát sinh trong khi thử flow Day 23-24 (user đã tạo subscription test). DB lại sạch về 1 user thật.
+- Commit `404b47a` feat(week3-day24-m5).
+
+**Commits Day 24:**
+- `e7e59ce` feat(week3-day24-m4): webhook payos handler - verify chu ky + kiem code 00 + cap nhat subscription
+- `404b47a` feat(week3-day24-m5): trial banner 4 trang thai + cleanup test user
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -616,6 +674,11 @@ Polish Phase 1 Week 2 (~2h):
 | CamelCase detection thay vì first+last char (Day 18 M2) | "Ladysfit" → "LT" (Day 6 logic) không predictable. CamelCase boundary detection (LinkedIn → LI) + lowercase 2-char fallback (Ladysfit → LA) deterministic + dễ đoán. Trade-off: KHÔNG ra "LF" cho Ladysfit, accept defer brand prefix custom field Week 4+ |
 | npm script lint = alias typecheck cho MVP (Day 18 M2) | Next.js 16 deprecated `next lint`. ESLint flat config setup tốn 30-45p + có thể conflict Next.js internal lint. Quick win: lint chạy `tsc --noEmit` (catch type error + JSX indirect). Full ESLint setup defer Phase 2 |
 | Signup map code-based + Login giữ generic (Day 18 M4) | Signup UX: user cần actionable error ("email đã đăng ký" → đăng nhập). Login UX: KHÔNG được leak email exists vs password wrong (security enumeration attack). Pattern khác nhau theo use case |
+| **Tách `startTrial` và `createPaymentLink` thành 2 Server Action riêng (Day 23 M3)** | Mô hình trial 7 ngày miễn phí trước → user click "Bắt đầu dùng thử" KHÔNG gọi PayOS, chỉ ghi subscriptions status='trialing'. Khi user click "Thanh toán ngay" mới gọi PayOS tạo payment link. Tách 2 action rõ trách nhiệm: trial = local DB only, pay = external API. Test isolation tốt, lỗi PayOS không ảnh hưởng trial flow |
+| **profiles.plan giữ bản tóm tắt, subscriptions giữ chi tiết (Day 23 M3 + Day 24 M4)** | `profiles.plan` (varchar) đọc nhanh ở mọi nơi (sidebar, dashboard, RLS) không cần JOIN. `subscriptions` lưu chi tiết status / trial_start / trial_end / current_period_end / payos_order_code. Webhook và Server Action cập nhật CẢ 2 cùng lúc để tránh drift. Trade-off duplicate field nhưng đọc nhanh + đơn giản hoá query khắp app |
+| **`payos_order_code = floor(Date.now()/1000)` (Day 23 M3)** | PayOS yêu cầu orderCode là số (number, không phải string). `Date.now()/1000` cho ra số giây Unix - vừa là number, vừa monotonic tăng dần, vừa không trùng (1 user không thể click 2 lần trong < 1 giây thực tế). Lưu bigint để future-proof năm 2038+ |
+| **Webhook trả 200 khi không tìm thấy subscription, trả 500 chỉ khi lỗi DB cần retry (Day 24 M4)** | PayOS retry webhook 3 lần nếu nhận non-2xx. Trường hợp `payos_order_code` không tìm thấy trong DB (subscription bị xóa, hoặc test ngoài flow) → retry vô ích, log warning và trả 200 để PayOS dừng. Lỗi DB transient (insert/update fail) trả 500 để PayOS retry. Phân biệt "không có gì để làm" (200) vs "lỗi tạm thời" (500) |
+| **Webhook chỉ nâng cấp khi `data.code === '00'` (Day 24 M4)** | PayOS gửi webhook cho CẢ giao dịch thất bại (timeout, hủy, sai OTP). Code '00' nghĩa là thành công, code khác là fail/cancel. Check sớm tránh nâng cấp nhầm subscription thành active khi user chưa trả tiền. Pattern same as Stripe `event.type === 'payment_intent.succeeded'` |
 
 ## 5. Known Issues
 
@@ -741,6 +804,12 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - **User test +acf2 cần dọn sau khi verify B1 production:** `aotapgym+acf2@gmail.com` id `70b6cce7-15fa-42c5-becb-eec3a2b0f472` brand "Ladysfit" `2a8cd998-bd5f-487d-a81d-9ed97a5d9836`. 0 workflow + 0 content nên cleanup nhanh. Day 21 step 7 thực hiện qua Supabase MCP.
 - **Day 19-20 commit (7 commit) chưa verify đầy đủ trên production:** Day 19 (e67eda0 + 11556bf) đã push + Vercel build, Day 20 (5 commit) chưa push tại thời điểm Day 21 START. Dồn về Day 21 step 4-5 push + verify deployment 1 lần.
 
+### Issues Day 22-24 (mới phát sinh)
+
+- **Turbopack dev bị lỗi nội bộ với Server Action:** Nút bấm Server Action (UpgradeCard `handleStartTrial` / `handlePay`) chết âm thầm khi chạy `npm run dev` (Turbopack default Next.js 16). Click không có request POST, không lỗi console, không lỗi network. `npm run build` production PASS hoàn toàn + `npx next dev --webpack` chạy đúng. Workaround hiện tại: dùng `npx next dev --webpack` cho dev local. Cần điều tra/xử lý dứt điểm Day 26 - có thể là bug Turbopack 16.2.6 với Server Action import từ file `'use server'` trong client component, hoặc cần upgrade Next.js minor.
+- **Drizzle `src/db/schema.ts` có thể còn khai báo bảng `subscriptions` cũ:** Day 23 M2 đã DROP + tạo lại bảng qua Supabase migration trực tiếp, chưa cập nhật Drizzle schema. Dự án hiện KHÔNG dùng Drizzle query (đã chốt Supabase client từ Day 7 RULE D7-6), nên không crash runtime. Đồng bộ schema.ts về đúng DB thật ở Day 26.
+- **M4 webhook chưa test end-to-end thật:** Code webhook handler đầy đủ (verify chữ ký + check code='00' + cập nhật DB) nhưng chỉ test được sau khi deploy production + đăng ký URL với PayOS + thanh toán thật bằng tiền nhỏ. PayOS webhook KHÔNG fire vào localhost. Defer test sau deploy.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -748,21 +817,15 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 6. Next Steps
 
-### Day 22: Phase 2 Week 3 START - Pricing PayOS planning
+### Day 22-24: Pricing PayOS DONE (code complete) - chờ deploy + test webhook thật
 
-Phase 1 Week 2 milestone đóng Day 21. Phase 2 Week 3 START:
+Phase 1 Week 2 milestone đóng Day 21. Day 22 pre-flight + cleanup DB. Day 23 M1 pricing UI + M2 subscriptions table + M3 PayOS integration. Day 24 M4 webhook + M5 trial banner. Code complete + tsc + build PASS.
 
-**Pre-flight Day 22 (~30p):**
-- Verify cron đêm 18→19/05 (workflow Ladysfit 7h sáng VN) fire OK qua Vercel runtime logs + Supabase contents recent
-- Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard + Gmail inbox)
-- Đọc lại plan Phase 2 Profile A đã chốt Day 15 - confirm Pricing 3 tier (Free/Starter/Pro) đầy đủ feature matrix
-
-**Day 23-24: Pricing PayOS integration (~6-8h)**
-- M1: Pricing page UI 3 tier với feature matrix + CTA "Bắt đầu trial 14 ngày"
-- M2: PayOS SDK integration (server-side checkout session) + webhook handler verify signature
-- M3: Schema migration `subscriptions` table (user_id + tier + status + trial_start + trial_end + payos_subscription_id)
-- M4: Trial countdown banner global layout dashboard
-- M5: End-to-end test với chính anh (signup → start trial → upgrade → webhook → DB persist)
+**Sau Day 24 cần làm tiếp (~1h):**
+- Push 4 commit Day 23-24 → Vercel auto-deploy.
+- Đăng ký webhook URL với PayOS dashboard: `https://auto-content-factory.vercel.app/api/payos/webhook`.
+- Test thanh toán thật bằng tiền nhỏ (5K-10K) qua tài khoản cá nhân để verify webhook fire + DB cập nhật status='active'.
+- Verify TrialBanner 4 trạng thái production: trialing còn ngày (sau click "Bắt đầu dùng thử") + active (sau thanh toán) + trialing hết hạn (set trial_end = past) + chưa có gói (signup mới).
 
 **Day 25: Trial countdown email (~2h)**
 - Template trial-ending-3-days.tsx + trial-ending-1-day.tsx reuse Day 16 _styles.ts
@@ -770,8 +833,11 @@ Phase 1 Week 2 milestone đóng Day 21. Phase 2 Week 3 START:
 - Logic: query subscriptions WHERE trial_end - NOW() = 3 days OR 1 day
 
 **Day 26: Bug fix round 2 (~3h)**
-- Outstanding issues Phase 1 chưa fix: contents.brand_id denormalized check constraint, Drizzle DATABASE_URL, Multi-source batch generation news_based, 3 file > 200 LOC refactor
-- FK profiles.id → auth.users.id ON DELETE CASCADE (mắt xích đứt duy nhất - phần còn lại của chuỗi đã CASCADE đủ, xác minh Day 21)
+- Điều tra/xử lý dứt điểm bug Turbopack dev Server Action chết âm thầm (workaround `npx next dev --webpack` không phải fix lâu dài).
+- Đồng bộ Drizzle `src/db/schema.ts` với DB thật (bảng `subscriptions` Day 23 M2 đã DROP + tạo lại 10 cột, schema.ts có thể còn khai báo cũ).
+- Enforcement hạn mức theo tier: chặn user free/trial tạo workflow vượt giới hạn (Free 1 workflow / Starter 5 workflow / Pro unlimited). Hiện chưa có enforcement - user click "Tạo workflow" vẫn tạo được không giới hạn.
+- Outstanding issues Phase 1 chưa fix: contents.brand_id denormalized check constraint, Drizzle DATABASE_URL, Multi-source batch generation news_based, 3 file > 200 LOC refactor.
+- FK profiles.id → auth.users.id ON DELETE CASCADE (mắt xích đứt duy nhất - phần còn lại của chuỗi đã CASCADE đủ, xác minh Day 21).
 
 **Day 27: Landing polish + tracking (~2h)**
 - Posthog event tracking signup → trial start → upgrade conversion funnel
@@ -1175,6 +1241,17 @@ Khi step.run gặp expected failure mode (duplicate, no new data, no eligible us
 
 **RULE D18-3: AUTH ERROR MESSAGE SIGNUP VS LOGIN KHÁC PATTERN.**
 Signup: map code-based actionable ("email đã đăng ký" → user know action: "đăng nhập"). Login: GIỮ generic single message ("Email hoặc mật khẩu không đúng") để chống enumeration attack (kẻ tấn công không phân biệt email exists vs password wrong). Khác biệt UX vs security trade-off. Helper translate map theo `error.code` (chính xác stable) + fallback `message.includes()` (legacy) + default generic catch-all.
+
+### Bài học Day 22-24 (2 RULES mới)
+
+**RULE D24-1: NÚT SERVER ACTION CHẾT ÂM THẦM + `npm run build` PASS = NGHI TURBOPACK DEV LỖI, KHÔNG PHẢI LỖI CODE.**
+Triệu chứng: Click button onClick → handler arrow → Server Action không có request POST trong Network tab, không lỗi console, không error UI. Nhưng `npx tsc --noEmit` PASS + `npm run build` production PASS sạch sẽ. Day 24 debug UpgradeCard `handleStartTrial` + `handlePay` mất ~30p vì giả định là lỗi code (typo, missing 'use server', client/server boundary sai).
+Cách kiểm chứng nhanh: dừng `npm run dev` Turbopack mặc định, chạy `npx next dev --webpack` → nếu hoạt động bình thường thì xác định là bug Turbopack 16.x với Server Action import từ file `'use server'` vào client component. Không tốn thời gian sửa code đúng.
+Pattern phòng ngừa: khi gặp Server Action không fire ở dev, FIRST check: build PASS không + Webpack dev có chạy được không. Trước rồi mới đào code.
+
+**RULE D24-2: CHỈ GIỮ MỘT TERMINAL `npm run dev` - NHIỀU DEV SERVER CHỒNG GÂY TEST NHẦM CỔNG.**
+Day 23-24 nhiều lần chạy `npm run dev` ở terminal mới mà quên đóng terminal cũ → Next.js fallback từ port 3000 sang 3001 → 3002. Browser test ở localhost:3000 (instance cũ KHÔNG có code mới), trong khi instance code mới đang ở port 3001. Mất thời gian "code đúng mà sao không thấy thay đổi".
+Pattern: trước khi `npm run dev`, kill các terminal cũ (Ctrl+C hoặc đóng cửa sổ). Nếu thấy log "Port 3000 is in use, using available port 3001" → STOP, kill instance khác. Hoặc luôn chỉ định cổng `npm run dev -- --port 3000` + ép thoát nếu port chiếm.
 
 ### Lưu ý cho chat tiếp theo
 
