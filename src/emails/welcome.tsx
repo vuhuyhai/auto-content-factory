@@ -124,6 +124,6 @@ export default function WelcomeEmail({
 WelcomeEmail.PreviewProps = {
   userName: 'Vũ Hải',
   userEmail: 'vuhai@example.com',
-  onboardingUrl: 'https://auto-content-factory.vercel.app/onboarding',
-  dashboardUrl: 'https://auto-content-factory.vercel.app/dashboard',
+  onboardingUrl: 'https://autocontent.online/onboarding',
+  dashboardUrl: 'https://autocontent.online/dashboard',
 } as WelcomeEmailProps;

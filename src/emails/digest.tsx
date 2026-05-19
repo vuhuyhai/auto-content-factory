@@ -186,5 +186,5 @@ DigestEmail.PreviewProps = {
     { contentId: '2', title: 'Bí quyết duy trì vóc dáng cho mẹ bỉm bận rộn', generatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
     { contentId: '3', title: 'Chế độ ăn low-carb tuần đầu - những điều cần biết', generatedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() },
   ],
-  reviewUrl: 'https://auto-content-factory.vercel.app/dashboard/contents?status=draft',
+  reviewUrl: 'https://autocontent.online/dashboard/contents?status=draft',
 } as DigestEmailProps;
