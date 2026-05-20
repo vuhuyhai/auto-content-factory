@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Phase 2 Week 3 Day 24 - **Polish UI trước public DONE**. Milestone gần đây: đã sửa metadata thật (title/description/openGraph/twitter/metadataBase + lang vi), đồng bộ màu thương hiệu về token `accent-acf` cho landing + login/signup, việt hoá thuật ngữ tiếng Anh trong onboarding step 3/4/5/7, ẩn lỗi DB thô khỏi message hiển thị cho người dùng. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: Day 25 email nhắc sắp hết trial.
+**Status:** Phase 2 Week 3 - **Polish UI hoàn thiện DONE** (session 20/05/2026). Milestone vừa xong 5 task polish: #1 fix fallback origin signup sang autocontent.online, #2 tạo 6 trang public mới (/terms /privacy /contact /roadmap /blog /docs) + bỏ link /docs/api khỏi footer, #3 centralize bonus offer constants thành OFFER_CONFIG, #4 favicon + OG image động ImageResponse static prerender, #5 tăng tap target nút edit lên 44x44px chuẩn WCAG/Apple HIG. Mỗi task 1 commit, tất cả pass build, local ahead origin/main 5 commits chưa push. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: push 5 commit + verify deploy autocontent.online.
 
 ## 2. Current State
 
@@ -63,8 +63,13 @@
 - ✅ **Bảng `subscriptions` tạo lại (Day 23 M2):** 10 cột: `id`, `user_id` UNIQUE + FK CASCADE, `tier`, `status`, `trial_start`, `trial_end`, `current_period_end`, `payos_order_code` bigint, `created_at`, `updated_at`. RLS bật, 1 policy SELECT own. Bảng cũ (Day 1 schema) thiếu cột nên DROP + tạo lại (lúc đó rỗng, không mất data).
 - ✅ **PayOS tích hợp đầy đủ code (Day 23-24):** `@payos/node` v2.0.5, file `src/lib/payos/client.ts` + `constants.ts` (TRIAL_DAYS + TIER_CONFIG + isPaidTier) + `actions.ts` (startTrial trial-only + createPaymentLink gọi PayOS) + `webhook/route.ts` (verify chữ ký + check code='00' + cập nhật subscriptions + profiles) + `queries.ts` (getCurrentUserSubscription RLS). UI: `TrialBanner` 4 trạng thái (active = ẩn, trialing còn ngày, trialing hết hạn, chưa có gói) trong dashboard shell + `UpgradeCard` 2 nút "Bắt đầu dùng thử" / "Thanh toán ngay" trong dashboard.
 - ✅ **Day 23-24 hoàn thành (19/05/2026):** trang giá mới (Free 0đ / Starter 199K / Pro 399K), tích hợp thanh toán PayOS đầy đủ (startTrial + createPaymentLink + webhook), tách UpgradeSection (server, ẩn gói đã mua) / UpgradeCard (client), gắn tên miền `autocontent.online` (DNS + SSL OK), email templates cập nhật domain mới. Đã test thanh toán THẬT 199K thành công, webhook fire, DB cập nhật status='active' đúng. Sẵn sàng cho Day 25.
-- ✅ **Polish UI trước public DONE (milestone gần nhất):** đã sửa metadata thật (title/description/openGraph/twitter/metadataBase + lang vi), đồng bộ màu thương hiệu về token `accent-acf` cho landing + login/signup, việt hoá thuật ngữ tiếng Anh trong onboarding step 3/4/5/7, ẩn lỗi DB thô khỏi message hiển thị cho người dùng.
-- **Last verified:** Polish UI trước public DONE. `npx tsc --noEmit` PASS. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE.
+- ✅ **Polish UI hoàn thiện DONE (milestone vừa xong):**
+  - Fix fallback origin signup từ vercel.app sang autocontent.online (Polish #1)
+  - Tạo 6 trang public mới: /terms /privacy /contact /roadmap /blog /docs, bỏ link /docs/api khỏi footer (Polish #2)
+  - Centralize bonus offer constants thành OFFER_CONFIG block trong bonus-guarantee-section.tsx (Polish #3)
+  - Favicon + OG image động dùng ImageResponse API, static prerender lúc build (Polish #4)
+  - Tăng tap target nút edit brand voice card lên 44x44px chuẩn WCAG/Apple HIG (Polish #5)
+- **Last verified:** 20/05/2026 - Polish UI hoàn thiện DONE (5 task, 5 commit, build PASS). Local ahead origin/main 5 commits, chưa push. Tiếp theo: push + verify deploy autocontent.online. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE.
 
 ### Day 11 additions (13/05/2026)
 
@@ -629,6 +634,38 @@ Polish Phase 1 Week 2 (~2h):
 - Việt hoá thuật ngữ tiếng Anh trong onboarding step 3, 4, 5, 7 (archetype → hình mẫu thương hiệu, pain point → vấn đề khách hàng đang gặp, và các từ khác)
 - Ẩn lỗi DB thô khỏi mắt người dùng ở `onboarding/actions.ts`, vẫn giữ log debug
 
+### Polish UI hoàn thiện (5 task, 5 commit)
+
+**Polish #1 - fix(signup): use autocontent.online as fallback origin**
+- src/app/(auth)/signup/actions.ts dùng 3 tầng fallback: headersList.get('origin') -> process.env.NEXT_PUBLIC_SITE_URL -> 'https://autocontent.online'
+- Bỏ hard-code 'https://auto-content-factory.vercel.app' cũ
+- Lý do: email confirm signup gửi link sai domain khi header origin thiếu
+
+**Polish #2 - feat(landing): add 6 public pages**
+- Tạo 6 trang static: /terms /privacy /contact /roadmap /blog /docs
+- /terms /privacy đầy đủ 7-8 mục cho PayOS + Supabase compliance, luật áp dụng VN, toà án Cần Thơ
+- /contact 3 card kênh (support/partner/press) + form Server Action với useActionState, TODO insert Supabase bảng contact_messages
+- /roadmap /blog /docs dạng "Coming soon" có chất, CTA về /contact
+- Header inline mỗi page (không tạo shared component, giữ scope nhỏ)
+- Bỏ link /docs/api khỏi footer (chưa có nội dung)
+
+**Polish #3 - refactor(landing): centralize bonus offer constants**
+- Tạo OFFER_CONFIG block trong bonus-guarantee-section.tsx với 5 field: LIMITED_SLOTS, BONUS_DEADLINE, REFUND_GUARANTEE_DAYS, TOTAL_BONUS_VALUE, PRO_FIRST_MONTH_PRICE
+- Thay hard-code 100, 14, 5.5 triệu, 999K, 30/06/2026, "tháng này" mơ hồ bằng reference vào OFFER_CONFIG
+- Đổi promo bonus sau này = 1 chỗ sửa, không lệch nhau
+
+**Polish #4 - feat(branding): add static favicon + OG image**
+- src/app/icon.tsx dùng ImageResponse, 32x32, chữ "A" trắng bold trên nền đỏ accent-acf #E63946 bo tròn 6px
+- src/app/opengraph-image.tsx dùng ImageResponse, 1200x630, layout 3 section (logo lockup + headline + URL chip)
+- KHÔNG dùng runtime='edge' vì static asset không phụ thuộc request, static prerender lúc build cho cache CDN vĩnh viễn
+- Next.js 16 tự pick up 2 file này, không cần touch layout.tsx
+
+**Polish #5 - fix(a11y): bump onboarding edit button to 44px tap target**
+- src/components/onboarding/brand-voice-card.tsx EditButton component đổi className từ "rounded p-1 ..." sang "-m-2 inline-flex h-11 w-11 items-center justify-center rounded ..."
+- Tap target 44x44px chuẩn WCAG 2.5.5 + Apple HIG
+- Icon Pencil giữ nguyên h-3.5 w-3.5 (14px), visual không đổi
+- Trick: negative margin -m-2 bù lại không phá layout SectionHeader
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -706,6 +743,10 @@ Polish Phase 1 Week 2 (~2h):
 | **PayOS không có sandbox, test bằng tiền thật. `orderCode = floor(Date.now()/1000)` (Day 23-24)** | PayOS không cung cấp môi trường sandbox/test mode. Verify webhook end-to-end phải dùng tiền thật (anh test 199K thành công Day 24). `orderCode` phải là number (PayOS yêu cầu), `Date.now()/1000` cho số giây Unix monotonic + không trùng + bigint future-proof 2038+. |
 | **Tên miền chính `autocontent.online`, Vercel domain `auto-content-factory.vercel.app` giữ làm alias (Day 24)** | Domain riêng cần thiết cho branding + email deliverability (Resend verify domain Phase 2) + tránh phụ thuộc Vercel subdomain. Giữ Vercel domain làm alias để preview URL trong email vẫn hoạt động + backup link cũ trong test data không 404. Sau đổi domain phải rà 3 callback: Supabase URL Config (Auth Redirect URLs), Google OAuth Authorized redirect URIs, URL trong email templates. |
 | **Màu thương hiệu dùng 1 nguồn duy nhất: token `accent-acf` trong `globals.css` (Polish UI)** | Không dùng mã màu cứng trong component. Đổi màu chỉ sửa 1 chỗ, tự reflect mọi nơi (landing, login/signup, dashboard). Tránh drift giữa các file khi rebrand hoặc tinh chỉnh hue. |
+| **Static asset (favicon, OG image, sitemap) KHÔNG dùng `runtime='edge'` (Polish #4)** | Edge chỉ dùng khi content phụ thuộc request (user data, geolocation, A/B test). Static asset prerender lúc build cho cache CDN vĩnh viễn, không tốn invocation crawler quét. |
+| **Promo offer values (LIMITED_SLOTS, BONUS_DEADLINE, prices) gom trong OFFER_CONFIG block tại đầu component (Polish #3)** | KHÔNG hard-code rải rác trong JSX. Đổi promo = 1 chỗ. |
+| **Tap target tối thiểu trên tất cả interactive element = 44x44px (WCAG 2.5.5 + Apple HIG) (Polish #5)** | Icon nhỏ vẫn giữ visual nhỏ, mở rộng tap area bằng padding/h-w + negative margin. |
+| **Server Action với form: dùng `action={fn}` prop trên form element, KHÔNG dùng onSubmit (Polish #2)** | Client component dùng useActionState từ react để handle pending/error state. |
 
 ## 5. Known Issues
 
@@ -837,13 +878,13 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - **Drizzle `src/db/schema.ts` có thể còn khai báo bảng `subscriptions` cũ:** Day 23 M2 đã DROP + tạo lại bảng qua Supabase migration trực tiếp, chưa cập nhật Drizzle schema. Dự án hiện KHÔNG dùng Drizzle query (đã chốt Supabase client từ Day 7 RULE D7-6), nên không crash runtime. Đồng bộ schema.ts về đúng DB thật ở Day 26.
 - **M4 webhook chưa test end-to-end thật:** Code webhook handler đầy đủ (verify chữ ký + check code='00' + cập nhật DB) nhưng chỉ test được sau khi deploy production + đăng ký URL với PayOS + thanh toán thật bằng tiền nhỏ. PayOS webhook KHÔNG fire vào localhost. Defer test sau deploy.
 
-### Polish còn lại cho Day 27
+### Issue nhỏ tồn (cho milestone sau)
 
-- **Footer landing có nhiều link 404:** `/roadmap`, `/blog`, `/docs`, `/terms`, `/privacy`, `/contact` đều chưa có route. Cần ẩn hoặc tạo trang stub trước public.
-- **`signup/actions.ts` fallback origin còn trỏ về URL `vercel.app` cũ:** Cần đổi sang `autocontent.online` cho khớp tên miền chính.
-- **Onboarding: nút edit brand voice card tap target nhỏ hơn 44px trên mobile:** Accessibility audit fail, khó bấm trên điện thoại.
-- **`bonus-guarantee-section` hard-code ngày `30/06/2026`:** Ngày này sẽ trôi qua, cần chuyển sang biến config hoặc tính tương đối.
-- **`layout.tsx` chưa có favicon và ảnh open graph:** Chờ khi có asset thiết kế. Metadata đã chuẩn bị sẵn `openGraph` ở Polish UI, chỉ thiếu file ảnh.
+- Footer Facebook icon link đang trỏ "https://facebook.com" placeholder, chưa phải fanpage thật của ACF. Sửa khi có fanpage chính thức.
+- Scarcity warning trong bonus-guarantee-section.tsx dòng 99 vẫn còn "người đăng ký Pro trong tháng này" - cụm "tháng này" mơ hồ. Có thể đổi thành "trong giai đoạn ưu đãi" nếu thấy cần.
+- contact/actions.ts hiện log + return success kể cả khi Supabase insert fail. Khi tạo bảng contact_messages, bỏ try/catch ép success, để user thấy lỗi thật.
+- Onboarding emoji trong SectionHeader (Khách hàng/Giọng nói/Tone/Điều khác biệt/Chủ đề/Bài mẫu) đang là string Unicode raw (đã bị PowerShell render lệch). Nên migrate sang Lucide icon hoặc Emoji component thống nhất với phần còn lại của UI.
+- 6 trang public mới mỗi trang có header inline ~10 dòng trùng lặp. Refactor thành shared `<PublicHeader />` component khi có time.
 
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
@@ -1273,3 +1314,7 @@ Pattern: trước khi `npm run dev`, kill các terminal cũ (Ctrl+C hoặc đón
 - **cron-job.org production jobs ACTIVE:** "ACF Workflow Runner" `*/5 * * * *` UTC + "ACF Daily Digest" `0 1 * * *` UTC
 - **Plan Phase 2 Week 3 chốt:** Day 25 trial reminders → Day 26 bug fix Turbopack + FK profiles + tier enforcement → Day 27 landing polish (footer 404, domain mới, favicon, OG image, accessibility) → Day 28-29 soft launch. Target launch 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention).
 - **Phát hiện Day 20-21 cấu trúc FK (đã query xác minh Day 21):** Cây CASCADE từ profiles xuống hoạt động đầy đủ (brands/workflows/contents/content_logs/subscriptions đều ON DELETE CASCADE). Xóa user đúng cách chỉ 2 lệnh: DELETE FROM profiles (tự cascade) → DELETE FROM auth.users. Mắt xích đứt duy nhất: profiles không có FK ra auth.users. Day 26 bug fix round 2 thêm FK profiles → auth.users CASCADE.
+- **Polish UI hoàn thiện DONE (5 task):** #1 fallback origin signup, #2 6 public pages + footer cleanup, #3 OFFER_CONFIG centralize, #4 favicon + OG static, #5 a11y tap target 44px
+- **Cursor diff pending gotcha:** prompt có chữ "hiển thị diff cho tôi xác nhận trước khi save" làm Cursor dừng ở preview, KHÔNG apply xuống disk. Verify trên disk bằng PowerShell Get-Content trước khi build/commit. Với polish nhỏ rõ ràng, nên ghi "apply trực tiếp, không cần diff" trong prompt.
+- **ImageResponse cho favicon/OG:** dùng Node runtime mặc định (KHÔNG runtime='edge'), Next.js 16 tự discover icon.tsx + opengraph-image.tsx ở src/app/, không cần touch layout.tsx
+- **Footer Facebook link vẫn placeholder** (issue nhỏ tồn)
