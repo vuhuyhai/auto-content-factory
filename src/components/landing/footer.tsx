@@ -43,7 +43,6 @@ const NAV_COLUMNS: NavColumn[] = [
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Hướng dẫn", href: "/docs" },
-      { label: "API docs", href: "/docs/api" },
     ],
   },
   {
