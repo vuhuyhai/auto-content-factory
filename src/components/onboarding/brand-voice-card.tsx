@@ -324,7 +324,7 @@ function EditButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+      className="-m-2 inline-flex h-11 w-11 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
       aria-label="Sửa"
     >
       <Pencil className="h-3.5 w-3.5" />
