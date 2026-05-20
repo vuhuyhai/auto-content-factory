@@ -30,7 +30,9 @@ export async function signup(
 
   const headersList = await headers()
   const origin =
-    headersList.get('origin') || 'https://auto-content-factory.vercel.app'
+    headersList.get('origin') ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'https://autocontent.online'
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({
