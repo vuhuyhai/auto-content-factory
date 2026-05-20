@@ -8,6 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+const OFFER_CONFIG = {
+  // Số suất bonus áp dụng cho người đăng ký Pro đầu tiên
+  LIMITED_SLOTS: 100,
+  // Ngày kết thúc ưu đãi bonus (format hiển thị: dd/mm/yyyy)
+  BONUS_DEADLINE: '30/06/2026',
+  // Số ngày bảo đảm hoàn tiền
+  REFUND_GUARANTEE_DAYS: 14,
+  // Tổng giá trị 3 bonus
+  TOTAL_BONUS_VALUE: '5.5 triệu',
+  // Giá Pro tháng đầu
+  PRO_FIRST_MONTH_PRICE: '999K',
+} as const
+
 interface BonusCardData {
   icon: React.ReactNode;
   title: string;
@@ -38,8 +51,8 @@ const BONUS_CARDS: BonusCardData[] = [
 
 const TOTAL_VALUE_ITEMS = [
   { label: "Pro tháng đầu", value: "Hệ thống viết content tự động" },
-  { label: "3 bonus", value: "Giá trị 5.5 triệu" },
-  { label: "Bảo đảm hoàn tiền", value: "14 ngày dùng thử rủi ro bằng 0" },
+  { label: "3 bonus", value: `Giá trị ${OFFER_CONFIG.TOTAL_BONUS_VALUE}` },
+  { label: "Bảo đảm hoàn tiền", value: `${OFFER_CONFIG.REFUND_GUARANTEE_DAYS} ngày dùng thử rủi ro bằng 0` },
 ];
 
 export function BonusGuaranteeSection() {
@@ -54,10 +67,10 @@ export function BonusGuaranteeSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.25] tracking-tight mt-4 mb-4"
             style={{ wordBreak: "keep-all" }}
           >
-            Dành cho 100 người đăng ký Pro đầu tiên
+            Dành cho {OFFER_CONFIG.LIMITED_SLOTS} người đăng ký Pro đầu tiên
           </h2>
           <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-            Đăng ký Pro trong tháng này nhận thêm 3 bonus tổng giá trị 5.5 triệu, không tính phí thêm.
+            Đăng ký Pro trước ngày {OFFER_CONFIG.BONUS_DEADLINE} nhận thêm 3 bonus tổng giá trị {OFFER_CONFIG.TOTAL_BONUS_VALUE}, không tính phí thêm.
           </p>
         </div>
 
@@ -85,10 +98,10 @@ export function BonusGuaranteeSection() {
           </div>
           <div className="flex-1">
             <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-3">
-              Bảo đảm hoàn tiền 14 ngày
+              Bảo đảm hoàn tiền {OFFER_CONFIG.REFUND_GUARANTEE_DAYS} ngày
             </h3>
             <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-              Dùng thử Pro trong 14 ngày đầu. Nếu không thấy hệ thống hiểu giọng brand, không thấy bài viết đăng được lên Facebook hoặc LinkedIn, hoàn lại 100% phí. Không hỏi lý do. Email một dòng là xong.
+              Dùng thử Pro trong {OFFER_CONFIG.REFUND_GUARANTEE_DAYS} ngày đầu. Nếu không thấy hệ thống hiểu giọng brand, không thấy bài viết đăng được lên Facebook hoặc LinkedIn, hoàn lại 100% phí. Không hỏi lý do. Email một dòng là xong.
             </p>
           </div>
         </div>
@@ -96,7 +109,7 @@ export function BonusGuaranteeSection() {
         <div className="rounded-[20px] bg-accent-acf/5 border border-accent-acf/20 p-6 mb-8 flex gap-3 items-start">
           <AlarmClock size={20} className="text-accent-acf shrink-0 mt-1" />
           <p className="text-sm md:text-base text-slate-700 leading-relaxed">
-            Bonus 100 suất chỉ áp dụng cho người đăng ký Pro trong tháng này. Sau ngày 30/06/2026, chỉ còn giá Pro thuần, không có 3 bonus đi kèm.
+            Bonus {OFFER_CONFIG.LIMITED_SLOTS} suất chỉ áp dụng cho người đăng ký Pro trong tháng này. Sau ngày {OFFER_CONFIG.BONUS_DEADLINE}, chỉ còn giá Pro thuần, không có 3 bonus đi kèm.
           </p>
         </div>
 
@@ -114,7 +127,7 @@ export function BonusGuaranteeSection() {
             ))}
           </div>
           <p className="text-xl md:text-2xl font-bold text-accent-acf mt-2">
-            Tất cả chỉ với 999K cho tháng đầu tiên
+            Tất cả chỉ với {OFFER_CONFIG.PRO_FIRST_MONTH_PRICE} cho tháng đầu tiên
           </p>
           <Button
             asChild
