@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Phase 2 Week 3 Day 24 - **Pricing + PayOS M1-M5 CODE COMPLETE**. Day 22 pre-flight DONE: cleanup DB còn 1 user thật fitnessviet@gmail.com (xóa 4 user test agency@marfit.vn + huyhaigym + aotapgym brand "Test ACF3" + vuhuyhieu.0910), verify cron đêm + daily digest, đọc lại plan Phase 2. Day 23 M1 pricing UI giá mới Starter 199K Pro 399K (commit c324b0e) + M2 subscriptions table 10 cột RLS bật (Supabase migration không commit code) + M3 PayOS @payos/node v2.0.5 integration startTrial + createPaymentLink + UpgradeCard 2 nút (commit ba7d35b). Day 24 M4 webhook verify chữ ký + check code='00' + cập nhật subscriptions/profiles (commit e7e59ce) + M5 TrialBanner 4 trạng thái + cleanup user test phát sinh (commit 404b47a). Chuẩn bị: deploy production → đăng ký webhook URL với PayOS → test thanh toán thật bằng tiền nhỏ.
+**Status:** Phase 2 Week 3 Day 24 - **Polish UI trước public DONE**. Milestone gần đây: đã sửa metadata thật (title/description/openGraph/twitter/metadataBase + lang vi), đồng bộ màu thương hiệu về token `accent-acf` cho landing + login/signup, việt hoá thuật ngữ tiếng Anh trong onboarding step 3/4/5/7, ẩn lỗi DB thô khỏi message hiển thị cho người dùng. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: Day 25 email nhắc sắp hết trial.
 
 ## 2. Current State
 
@@ -23,7 +23,7 @@
 - ✅ RLS verified dual-client SQL + UI smoke test
 - ✅ shadcn/ui base 14 components (Button, Card, Badge, Separator, Input, Textarea, Label, Slider, Form, Checkbox, RadioGroup, Select, AlertDialog, Avatar, DropdownMenu, Sheet - tất cả manual paste do Node v24)
 - ✅ Landing page 7 sections (Bento Grid + BRIDGE Framework)
-- ✅ Production: ✅ LIVE - https://auto-content-factory.vercel.app. Cron production ĐÊM ĐẦU TIÊN PASS - workflow Ladysfit 07:04 VN ngày 14/05/2026 auto-trigger qua cron-job.org → Vercel → Inngest → Claude → DB, content saved status=draft
+- ✅ Production: ✅ LIVE - https://autocontent.online (alias auto-content-factory.vercel.app). Cron production ĐÊM ĐẦU TIÊN PASS - workflow Ladysfit 07:04 VN ngày 14/05/2026 auto-trigger qua cron-job.org → Vercel → Inngest → Claude → DB, content saved status=draft
 - ✅ Onboarding flow 8 câu hỏi hoàn chỉnh
 - ✅ Dashboard layout với sidebar (4 nav items: Brand Voice + Workflows + Nội dung + Settings) + mobile drawer
 - ✅ User avatar dropdown với Logout
@@ -63,7 +63,8 @@
 - ✅ **Bảng `subscriptions` tạo lại (Day 23 M2):** 10 cột: `id`, `user_id` UNIQUE + FK CASCADE, `tier`, `status`, `trial_start`, `trial_end`, `current_period_end`, `payos_order_code` bigint, `created_at`, `updated_at`. RLS bật, 1 policy SELECT own. Bảng cũ (Day 1 schema) thiếu cột nên DROP + tạo lại (lúc đó rỗng, không mất data).
 - ✅ **PayOS tích hợp đầy đủ code (Day 23-24):** `@payos/node` v2.0.5, file `src/lib/payos/client.ts` + `constants.ts` (TRIAL_DAYS + TIER_CONFIG + isPaidTier) + `actions.ts` (startTrial trial-only + createPaymentLink gọi PayOS) + `webhook/route.ts` (verify chữ ký + check code='00' + cập nhật subscriptions + profiles) + `queries.ts` (getCurrentUserSubscription RLS). UI: `TrialBanner` 4 trạng thái (active = ẩn, trialing còn ngày, trialing hết hạn, chưa có gói) trong dashboard shell + `UpgradeCard` 2 nút "Bắt đầu dùng thử" / "Thanh toán ngay" trong dashboard.
 - ✅ **Day 23-24 hoàn thành (19/05/2026):** trang giá mới (Free 0đ / Starter 199K / Pro 399K), tích hợp thanh toán PayOS đầy đủ (startTrial + createPaymentLink + webhook), tách UpgradeSection (server, ẩn gói đã mua) / UpgradeCard (client), gắn tên miền `autocontent.online` (DNS + SSL OK), email templates cập nhật domain mới. Đã test thanh toán THẬT 199K thành công, webhook fire, DB cập nhật status='active' đúng. Sẵn sàng cho Day 25.
-- **Last verified:** 19/05/2026 - Day 24 close - Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. `npx tsc --noEmit` + `npm run build` PASS. Domain `autocontent.online` LIVE.
+- ✅ **Polish UI trước public DONE (milestone gần nhất):** đã sửa metadata thật (title/description/openGraph/twitter/metadataBase + lang vi), đồng bộ màu thương hiệu về token `accent-acf` cho landing + login/signup, việt hoá thuật ngữ tiếng Anh trong onboarding step 3/4/5/7, ẩn lỗi DB thô khỏi message hiển thị cho người dùng.
+- **Last verified:** Polish UI trước public DONE. `npx tsc --noEmit` PASS. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE.
 
 ### Day 11 additions (13/05/2026)
 
@@ -619,6 +620,15 @@ Polish Phase 1 Week 2 (~2h):
 - Day 23-24: Test thanh toán thật 199K thành công, webhook cập nhật DB đúng
 - Day 23-24: Rà callback sau khi đổi tên miền - Supabase URL Config, Google OAuth, URL preview trong email
 
+### Polish UI trước public
+
+- Thay metadata mặc định "Create Next App" bằng metadata thật (title, description, openGraph, twitter, metadataBase), đổi `lang` từ `en` sang `vi`
+- Sửa token `accent-acf` khớp chính xác màu `#E63946`
+- Gom màu landing về token `accent-acf` (6 file, bỏ hết mã cứng `#E63946`)
+- Đồng bộ màu trang login/signup từ xanh `blue` sang đỏ thương hiệu `accent-acf`
+- Việt hoá thuật ngữ tiếng Anh trong onboarding step 3, 4, 5, 7 (archetype → hình mẫu thương hiệu, pain point → vấn đề khách hàng đang gặp, và các từ khác)
+- Ẩn lỗi DB thô khỏi mắt người dùng ở `onboarding/actions.ts`, vẫn giữ log debug
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -695,6 +705,7 @@ Polish Phase 1 Week 2 (~2h):
 | **Giá Free 0đ / Starter 199.000đ / Pro 399.000đ + trial 7 ngày mở khoá toàn bộ Pro (Day 23-24)** | Chốt 3 tier giá VND theo soft validation Phase 1. Trial 7 ngày (rút từ 14 ngày Day 22) đủ để SMB cảm nhận giá trị nhưng không kéo dài lưỡng lự. Trial mở khoá toàn bộ tính năng Pro để user trải nghiệm cao nhất → conversion tốt hơn restrict feature. |
 | **PayOS không có sandbox, test bằng tiền thật. `orderCode = floor(Date.now()/1000)` (Day 23-24)** | PayOS không cung cấp môi trường sandbox/test mode. Verify webhook end-to-end phải dùng tiền thật (anh test 199K thành công Day 24). `orderCode` phải là number (PayOS yêu cầu), `Date.now()/1000` cho số giây Unix monotonic + không trùng + bigint future-proof 2038+. |
 | **Tên miền chính `autocontent.online`, Vercel domain `auto-content-factory.vercel.app` giữ làm alias (Day 24)** | Domain riêng cần thiết cho branding + email deliverability (Resend verify domain Phase 2) + tránh phụ thuộc Vercel subdomain. Giữ Vercel domain làm alias để preview URL trong email vẫn hoạt động + backup link cũ trong test data không 404. Sau đổi domain phải rà 3 callback: Supabase URL Config (Auth Redirect URLs), Google OAuth Authorized redirect URIs, URL trong email templates. |
+| **Màu thương hiệu dùng 1 nguồn duy nhất: token `accent-acf` trong `globals.css` (Polish UI)** | Không dùng mã màu cứng trong component. Đổi màu chỉ sửa 1 chỗ, tự reflect mọi nơi (landing, login/signup, dashboard). Tránh drift giữa các file khi rebrand hoặc tinh chỉnh hue. |
 
 ## 5. Known Issues
 
@@ -826,6 +837,14 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - **Drizzle `src/db/schema.ts` có thể còn khai báo bảng `subscriptions` cũ:** Day 23 M2 đã DROP + tạo lại bảng qua Supabase migration trực tiếp, chưa cập nhật Drizzle schema. Dự án hiện KHÔNG dùng Drizzle query (đã chốt Supabase client từ Day 7 RULE D7-6), nên không crash runtime. Đồng bộ schema.ts về đúng DB thật ở Day 26.
 - **M4 webhook chưa test end-to-end thật:** Code webhook handler đầy đủ (verify chữ ký + check code='00' + cập nhật DB) nhưng chỉ test được sau khi deploy production + đăng ký URL với PayOS + thanh toán thật bằng tiền nhỏ. PayOS webhook KHÔNG fire vào localhost. Defer test sau deploy.
 
+### Polish còn lại cho Day 27
+
+- **Footer landing có nhiều link 404:** `/roadmap`, `/blog`, `/docs`, `/terms`, `/privacy`, `/contact` đều chưa có route. Cần ẩn hoặc tạo trang stub trước public.
+- **`signup/actions.ts` fallback origin còn trỏ về URL `vercel.app` cũ:** Cần đổi sang `autocontent.online` cho khớp tên miền chính.
+- **Onboarding: nút edit brand voice card tap target nhỏ hơn 44px trên mobile:** Accessibility audit fail, khó bấm trên điện thoại.
+- **`bonus-guarantee-section` hard-code ngày `30/06/2026`:** Ngày này sẽ trôi qua, cần chuyển sang biến config hoặc tính tương đối.
+- **`layout.tsx` chưa có favicon và ảnh open graph:** Chờ khi có asset thiết kế. Metadata đã chuẩn bị sẵn `openGraph` ở Polish UI, chỉ thiếu file ảnh.
+
 ### D5 Gotchas (vẫn áp dụng)
 - D5-6: Vercel Framework Preset có thể bị set "Other" - check Settings → Build and Deployment
 - D5-7: Đừng dùng `vercel link` với "Pull env now: YES" khi Vercel chưa có env
@@ -887,7 +906,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - OS: Windows 11
 - Project root: D:\auto-content-factory
 - Repo: https://github.com/vuhuyhai/auto-content-factory
-- Production URL: https://auto-content-factory.vercel.app (autocontent.online connect Week 4)
+- Production URL: https://autocontent.online (alias https://auto-content-factory.vercel.app)
 - Vercel project: auto-content-factory (vuhuyhais-projects)
 - Supabase: fnhgtxxuudnqxxmzdpjx (Pro plan, ap-southeast-1)
 - Inngest: vuhai-acf / auto-content-factory production app, SDK 4.4.0
@@ -1248,16 +1267,9 @@ Pattern: trước khi `npm run dev`, kill các terminal cũ (Ctrl+C hoặc đón
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
 - Em fetch HANDOFF đầu chat. **GitHub raw URL cache bản cũ (Day 1) - đã xác nhận lại Day 20.** Dùng bản đính kèm Project knowledge làm chuẩn HOẶC cross-check git log local.
 - **PHASE 1 WEEK 2 MILESTONE DONE (Day 21):** Email infra (Day 16-17) + Bug fix outstanding (Day 18) + Workflow edit form (Day 19) + Polish (Day 20) + đóng milestone (Day 21).
-- **6 commit Day 20-21 push GitHub Day 21:** 5 Day 20 polish (2cba186 a4 / db2e358 a3 / 37d5440 b2 / 1b572c2 b3 / 7ba6751 b1) + 1 Day 21 HANDOFF close. Vercel auto-deploy verify Day 21 step 5.
+- **Phase 2 Week 3 Day 22-24 DONE:** Pricing UI + bảng subscriptions + tích hợp PayOS đầy đủ + webhook + Trial banner + domain `autocontent.online` + test thanh toán thật 199K PASS.
+- **Polish UI trước public DONE (milestone gần nhất):** metadata thật + token `accent-acf` đồng bộ landing + login/signup + việt hoá onboarding step 3/4/5/7 + ẩn lỗi DB thô.
 - **Production end-to-end pipeline LIVE:** cron-job.org → Vercel → Inngest → Claude → DB. Auto-trigger ổn định từ đêm 13→14/05/2026.
-- **DB hiện trạng Day 21 trước cleanup:**
-  - User Ladysfit chính (`fitnessviet@gmail.com`) workflow `b01973cb` cron `0 0 * * *` UTC = 7h sáng VN
-  - User test +acf2 (`aotapgym+acf2@gmail.com` id `70b6cce7`) brand "Ladysfit" `2a8cd998` 0 workflow + 0 content - **CLEANUP Day 21 step 7** sau khi anh verify B1
-  - 2 workflow test Day 13 (5926eb93 + d4fbdbd7) đã disable
 - **cron-job.org production jobs ACTIVE:** "ACF Workflow Runner" `*/5 * * * *` UTC + "ACF Daily Digest" `0 1 * * *` UTC
-- **Plan Phase 2 Week 3 chốt:** Pricing PayOS Day 23-24 → Trial countdown Day 25 → Bug fix round 2 Day 26 → Landing polish Day 27 → Soft launch Day 28-29. Target launch 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention).
-- **Day 22 START Phase 2:**
-  - Pre-flight verify cron đêm 18→19/05 fire OK (Vercel logs + Supabase contents recent)
-  - Verify daily digest 8h sáng VN ngày 19 gửi đúng (Resend dashboard)
-  - Đọc lại plan Phase 2 Profile A chốt Day 15 + Day 21
+- **Plan Phase 2 Week 3 chốt:** Day 25 trial reminders → Day 26 bug fix Turbopack + FK profiles + tier enforcement → Day 27 landing polish (footer 404, domain mới, favicon, OG image, accessibility) → Day 28-29 soft launch. Target launch 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention).
 - **Phát hiện Day 20-21 cấu trúc FK (đã query xác minh Day 21):** Cây CASCADE từ profiles xuống hoạt động đầy đủ (brands/workflows/contents/content_logs/subscriptions đều ON DELETE CASCADE). Xóa user đúng cách chỉ 2 lệnh: DELETE FROM profiles (tự cascade) → DELETE FROM auth.users. Mắt xích đứt duy nhất: profiles không có FK ra auth.users. Day 26 bug fix round 2 thêm FK profiles → auth.users CASCADE.
