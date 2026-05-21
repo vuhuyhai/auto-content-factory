@@ -45,7 +45,7 @@ export function HeroSection() {
                 size="lg"
                 asChild
                 variant="outline"
-                className="min-h-12 border-2 border-gray-900 bg-transparent text-gray-900 hover:bg-gray-900 hover:text-white"
+                className="min-h-12 border-2 border-slate-900 bg-transparent text-slate-900 hover:bg-slate-900 hover:text-white"
               >
                 <Link href="#samples">
                   Xem bài viết mẫu
