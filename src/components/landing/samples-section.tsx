@@ -2,6 +2,8 @@
 // Server Component: bằng chứng giọng văn linh hoạt, đặt trước Pricing
 // Anchor id="samples" cho CTA secondary trong Hero scroll tới
 
+import { Badge } from "@/components/ui/badge";
+
 interface SampleCard {
   badge: string;
   badgeClass: string;
@@ -53,16 +55,22 @@ export function SamplesSection() {
   return (
     <section
       id="samples"
-      className="w-full scroll-mt-20 bg-gray-50 py-16 px-4 md:py-24 md:px-6"
+      className="w-full scroll-mt-20 bg-slate-50 py-16 px-4 md:py-24 md:px-6"
     >
-      <div className="max-w-6xl mx-auto">
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent-acf mb-3">
+      <div className="max-w-5xl mx-auto">
+        <Badge
+          variant="outline"
+          className="border-accent-acf text-accent-acf mb-3"
+        >
           Bằng chứng giọng văn
-        </p>
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        </Badge>
+        <h2
+          className="text-3xl md:text-4xl font-bold text-slate-900 leading-[1.25] tracking-tight mb-4"
+          style={{ wordBreak: "keep-all" }}
+        >
           Cùng một hệ thống. 3 giọng khác nhau. Hoàn toàn Việt.
         </h2>
-        <p className="text-lg text-gray-600 max-w-3xl mb-12">
+        <p className="text-lg text-slate-600 max-w-3xl mb-12">
           Mỗi brand có persona riêng. ACF học giọng văn từ 8 câu hỏi rồi viết
           đúng tone. Đây là 3 bài thật do hệ thống tạo cho 3 brand khác nhau.
         </p>
@@ -71,25 +79,25 @@ export function SamplesSection() {
           {SAMPLE_CARDS.map((card) => (
             <article
               key={card.brand}
-              className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-200 hover:border-accent-acf hover:shadow-lg"
+              className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-200 hover:border-accent-acf hover:shadow-lg"
             >
               <span
                 className={`inline-block rounded px-2 py-1 text-xs font-semibold uppercase tracking-wider ${card.badgeClass}`}
               >
                 {card.badge}
               </span>
-              <span className="mt-2 text-sm font-semibold text-gray-900">
+              <span className="mt-2 text-sm font-semibold text-slate-900">
                 {card.brand}
               </span>
-              <span className="text-xs text-gray-500">{card.voice}</span>
+              <span className="text-xs text-slate-500">{card.voice}</span>
 
-              <div className="mt-4 mb-4 border-t border-gray-200" />
+              <div className="mt-4 mb-4 border-t border-slate-200" />
 
-              <h3 className="text-base font-bold text-gray-900 leading-snug">
+              <h3 className="text-base font-bold text-slate-900 leading-snug">
                 {card.title}
               </h3>
-              <p className="mt-2 text-sm italic text-gray-600">{card.hook}</p>
-              <p className="mt-3 text-sm leading-relaxed text-gray-700 line-clamp-5">
+              <p className="mt-2 text-sm italic text-slate-600">{card.hook}</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700 line-clamp-5">
                 {card.body}
               </p>
               <div className="mt-3 flex flex-wrap gap-1 text-xs text-blue-600">
@@ -99,7 +107,7 @@ export function SamplesSection() {
           ))}
         </div>
 
-        <p className="mt-12 text-center text-sm text-gray-600">
+        <p className="mt-12 text-center text-sm text-slate-600">
           3 bài này do ACF tạo. Brand Ladysfit và VSE là pilot user thật. Brand
           cà phê là mẫu minh hoạ khả năng linh hoạt giọng văn.
         </p>
