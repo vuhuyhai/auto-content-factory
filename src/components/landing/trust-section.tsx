@@ -11,13 +11,13 @@ interface ProofCard {
 
 const PROOF_CARDS: ProofCard[] = [
   {
-    stat: "100+",
-    caption: "bài viết đã tạo cho VSE và Ladysfit trong 6 tháng qua",
+    stat: "8",
+    caption:
+      "fanpage đã quản trị đồng thời, mỗi page hơn 50.000 lượt theo dõi",
   },
   {
-    stat: "2",
-    caption:
-      "brand pilot đang dùng hệ thống mỗi ngày — Vietnam Society of Excellence và Ladysfit",
+    stat: "10",
+    caption: "website mỗi tháng tạo hơn 30.000 lượt truy cập mỗi site",
   },
   {
     stat: "8/10",
@@ -43,8 +43,9 @@ export function TrustSection() {
           Sản phẩm không phải code Tây bỏ đi
         </h2>
         <p className="text-lg text-slate-600 max-w-2xl mb-12">
-          ACF được build bởi founder Việt cho SMB Việt. Đã chạy production cho 2
-          brand thật trước khi mở cho anh chị.
+          ACF được build bởi founder Việt cho SMB Việt. Tôi build từ chính kinh
+          nghiệm vận hành đa kênh content cho nhiều brand trước khi mở rộng cho
+          bạn.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -55,15 +56,18 @@ export function TrustSection() {
             </div>
             {/* TODO: Replace với ảnh thật src/public/founder.jpg khi có */}
             <h3 className="text-xl font-bold text-slate-900 mt-4">
-              Em là Vũ Hải
+              Tôi là Vũ Hải
             </h3>
             <p className="text-sm text-slate-600 mt-1">
-              Chairman Vietnam Society of Excellence, CEO Ladysfit
+              Chuyên gia tư vấn vận hành doanh nghiệp
             </p>
             <p className="text-base text-slate-700 leading-relaxed mt-4 max-w-md">
-              Em làm ACF vì chính em từng mất 6-8 giờ mỗi tuần viết content cho 2
-              brand. Sau khi build hệ thống cho VSE và Ladysfit, em mở cho mọi
-              chủ doanh nghiệp Việt Nam có cùng vấn đề.
+              Tôi từng quản trị đồng thời 8 fanpage Facebook với hơn 50.000 lượt
+              theo dõi mỗi page, và 10 website với hơn 30.000 lượt truy cập mỗi
+              tháng. Mỗi tuần mất 30-40 giờ chỉ để giữ content đều và đúng giọng
+              từng brand. ACF được build từ chính đau đầu này, sau khi tôi nhận
+              ra hệ thống có thể làm 80% công việc, con người chỉ cần làm 20%
+              quan trọng nhất.
             </p>
           </div>
 
