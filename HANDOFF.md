@@ -766,6 +766,41 @@ Email nhắc sắp hết trial - Phase 2 Week 4:
 4. Form action pattern là Next.js 16 RECOMMENDED cho Server Action - mọi component Server Action mới NÊN dùng pattern này thay vì useTransition + onClick
 5. Drop list 10 mục (xem Section 8): Git history hero Day 5, shadcn CLI Node v24, Vercel Cron timezone, DEP0169 url.parse (4 drop hẳn) + Cloudflare R2, backup cron GitHub Actions, pagination jump, VariantEditor discard warning, delete workflow cascade test, Claude API synthesize brand voice onboarding, signup_disabled flow (6+1 defer sau launch)
 
+### Day 27 (21/05/2026)
+
+Polish landing trước soft launch (~3 giờ, 4 commit, deploy production READY):
+
+**Task 1: Sticky nav + Hero CTA2 + Footer fix (commit `94062a5`):**
+- File mới `src/components/landing/landing-nav.tsx` (142 LOC Client Component): sticky top-0 z-50, transition bg khi scroll > 20px (bg-white/80 backdrop-blur-md + border-bottom), logo "ACF" mobile / "Auto-Content Factory" desktop, 4 anchor links (Tính năng/Bảng giá/Bonus/FAQ), CTA Đăng nhập outline + Bắt đầu Free đỏ, mobile menu slide-down (`@keyframes slideDown` thêm globals.css)
+- `src/app/page.tsx`: mount LandingNav đầu trang, anchor `id="features|pricing|bonus"` đặt qua div wrapper (không đụng pricing-section.tsx + bonus-guarantee-section.tsx như constraint), scroll-mt-20 cho offset nav
+- `src/components/landing/hero-section.tsx`: thêm CTA secondary "Xem bài viết mẫu ↓" border-2 border-gray-900 hover invert, href="#samples", min-h-12 tap target chuẩn
+- `src/components/landing/footer.tsx`: ẨN hẳn icon Facebook (placeholder link bỏ) với comment TODO replace fanpage thật
+- `globals.css`: thêm `html { scroll-behavior: smooth }`
+
+**Task 2: Trust + Samples sections (commit `103746c`):**
+- File mới `src/components/landing/trust-section.tsx` (87 LOC Server Component): eyebrow "AI ĐỨNG SAU" + H2 "Sản phẩm không phải code Tây bỏ đi" + sub, grid 2 cột founder (avatar tròn 80px gradient + chữ VH placeholder + tên + chức + body) / 3 proof card (100+/2/8/10 font-mono đỏ)
+- File mới `src/components/landing/samples-section.tsx` (130 LOC Server Component): `id="samples"` scroll-mt-20 đặt thẳng trên section element (tránh duplicate ID), eyebrow "BẰNG CHỨNG GIỌNG VĂN" + H2 + sub, 3 sample card (Ladysfit pink "Bụng dưới sau sinh" / VSE blue "Toyota 22 năm kaizen" / Cafe Hạt Mộc Châu amber "Khách order cà phê đen đá"), mỗi card có badge + brand + voice tag + divider + title + hook italic + body line-clamp-5 + hashtag Việt có dấu, flex flex-col h-full đồng cao
+- Đặt vị trí: Hero → Trust → Pain → Consequence → Samples → Pricing → Bonus → FinalCta
+- Pattern mới phát hiện (RULE D27-1): text trong JSX dùng nháy thẳng được khi đặt trong const array string literal → bypass eslint react/no-unescaped-entities vì rule chỉ áp text node JSX trực tiếp
+
+**Task 3: Padding chuẩn hoá + H2 scale anchor pattern (commit `9aeebf5`):**
+- Padding section: `py-16 md:py-24` cho Trust + Samples + Bonus (Bonus trước đó py-20 md:py-32 quá rộng đột biến)
+- H2 Pain + Consequence: bỏ `lg:text-5xl`, còn `text-3xl md:text-4xl` (content section)
+- H2 Pricing + Bonus + Final CTA: GIỮ `lg:text-5xl` (anchor section quyết định mua)
+- Phân cấp visual: content vs anchor, Krug rule "section quan trọng phải có visual weight khác"
+- 4 finding DEFER (Cursor phát hiện, chưa fix Task 3):
+  1. Token màu xám không nhất quán: section gốc `text-slate-900` vs Trust/Samples `text-gray-900`
+  2. `leading-[1.25]` + `wordBreak: keep-all` chỉ có section gốc, Trust/Samples không có
+  3. Background `bg-slate-*` vs `bg-gray-*` khác hue nhẹ
+  4. Eyebrow pattern khác: section gốc `Badge variant="outline"` vs Trust/Samples `<p>` text uppercase
+
+**Task 4: Merge + Deploy (commit `38fb399` merge to main):**
+- Merge --no-ff để giữ history 4 commit gom 1 merge commit
+- Push origin main, Vercel auto-deploy READY `38fb399` confirmed qua Vercel MCP list_deployments
+- Production verify qua Vercel web_fetch_vercel_url https://autocontent.online: 200 OK, x-vercel-cache PRERENDER, brotli encoding, lang="vi", tất cả 3 task render đúng trên production HTML
+
+**Tổng kết Day 27:** 10 files changed, +368/-33 lines, 4 commit, 3 giờ làm. Production LIVE với landing improvements: Sticky nav (Krug navigation), Hero secondary CTA (giảm friction), Trust section sau Hero (Spool trust gate), 3 sample bài Việt trước Pricing (bằng chứng giọng văn), padding đồng đều, phân cấp H2 anchor vs content. Sẵn sàng soft launch Day 28-29.
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -990,9 +1025,20 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 4. **Drizzle schema drift:** Bảng `subscriptions` tạo + sửa qua Supabase MCP direct (Day 23 M2 + Day 25 migration). Drizzle migrations `0000_gifted_unus.sql` + `0001_curious_silver_surfer.sql` lệch xa DB thật. Day 26 cần introspect schema từ DB → generate baseline migration, hoặc switch hẳn sang Supabase migrations (bỏ Drizzle migration). Dự án hiện KHÔNG dùng Drizzle query (Supabase client từ Day 7 RULE D7-6) nên không crash runtime.
 5. **Index duplication note (không phải bug):** Có 2 index cũ `idx_subscriptions_reminder_*_sent_at` (btree `sent_at` WHERE `IS NOT NULL`) tồn tại trước migration Day 25. 2 index mới `idx_subscriptions_reminder_*_null` phục vụ cron query (WHERE `sent_at IS NULL`). Giữ cả 4, KHÔNG drop - 2 index serve 2 hướng query khác nhau.
 
+### Day 27 finding - cần unify landing design tokens
+
+6 finding gom lại, đề xuất xử lý trong 1 task duy nhất Day 28 "Unify landing design tokens" (~45 phút):
+
+1. **Token màu xám slate vs gray inconsistent:** section gốc dùng `text-slate-900`, 2 section mới Trust/Samples dùng `text-gray-900`. Cùng hệ xám nhưng khác scale Tailwind.
+2. **`leading-[1.25]` + `wordBreak: keep-all` thiếu ở Trust/Samples:** chỉ có ở H2 section gốc, ảnh hưởng cách ngắt dòng tiếng Việt.
+3. **Background `bg-slate-50` vs `bg-gray-50` khác hue nhẹ:** section gốc dùng slate, Trust/Samples dùng gray.
+4. **Eyebrow pattern khác:** section gốc dùng `<Badge variant="outline">`, Trust/Samples dùng `<p>` text uppercase.
+5. **Trust section `max-w-6xl` hơi rộng** (Claude phát hiện khi xem ảnh full page): founder + 3 proof card cách xa nhau, cân nhắc thu hẹp container.
+6. **Sample card "trôi" về 1 phía** (Claude phát hiện khi xem ảnh full page): grid 3 card chưa căn đều thị giác, cần xem lại alignment.
+
 ### Issue nhỏ tồn (cho milestone sau)
 
-- Footer Facebook icon link đang trỏ "https://facebook.com" placeholder, chưa phải fanpage thật của ACF. Sửa khi có fanpage chính thức.
+- ~~Footer Facebook icon link đang trỏ "https://facebook.com" placeholder~~ ✅ Day 27 Task 1: ẩn hẳn icon Facebook + comment TODO. Hiện lại khi có fanpage chính thức.
 - Scarcity warning trong bonus-guarantee-section.tsx dòng 99 vẫn còn "người đăng ký Pro trong tháng này" - cụm "tháng này" mơ hồ. Có thể đổi thành "trong giai đoạn ưu đãi" nếu thấy cần.
 - contact/actions.ts hiện log + return success kể cả khi Supabase insert fail. Khi tạo bảng contact_messages, bỏ try/catch ép success, để user thấy lỗi thật.
 - Onboarding emoji trong SectionHeader (Khách hàng/Giọng nói/Tone/Điều khác biệt/Chủ đề/Bài mẫu) đang là string Unicode raw (đã bị PowerShell render lệch). Nên migrate sang Lucide icon hoặc Emoji component thống nhất với phần còn lại của UI.
@@ -1014,8 +1060,9 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
   - Finding #3 - sync `profiles.email` ↔ `auth.users.email` (trigger hoặc JOIN auth.users trong cron query)
   - Finding #4 - đồng bộ Drizzle schema với DB thật (introspect + baseline migration, hoặc switch sang Supabase migrations)
   - Điều tra Turbopack dev chết Server Action (xem Issues Day 22-24), enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited)
-- **Day 27:** Polish landing page (PostHog conversion funnel signup → trial → upgrade, re-add CTA "Xem cách hoạt động", mobile responsive audit)
-- **Day 28-29:** Soft launch (target **09/06/2026**) - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
+- ~~**Day 27:** Polish landing page~~ ✅ DONE 21/05/2026 (sticky nav + Hero CTA2 + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, 4 commit, merge `38fb399`, production READY)
+- **Day 28-29:** Soft launch (target **09/06/2026**) + **Unify landing design tokens** (~45p, gom 6 finding Day 27 - xem Section 5) - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
+- **Sau soft launch (nếu có time):** FAQ section (nav `#faq` hiện trỏ section chưa tồn tại) + bảng so sánh ACF vs Freelancer/Agency/ChatGPT
 
 **Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
@@ -1044,8 +1091,8 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 7. Context cho AI
 
-**Ngày cuối session:** 21/05/2026
-**Milestone hiện tại:** Phase 2 Week 4 Day 25 completed (Email trial reminder infra). Tiếp theo Day 26 (4 finding + roadmap).
+**Ngày cuối session:** 21/05/2026 - Day 27 DONE - polish landing live
+**Milestone hiện tại:** Phase 2 Week 4 Day 27 completed (Polish landing: sticky nav + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, production READY). Tiếp theo Day 28-29 soft launch + unify landing design tokens.
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
@@ -1423,6 +1470,14 @@ Pattern phòng ngừa: khi gặp Server Action không fire ở dev, FIRST check:
 Day 23-24 nhiều lần chạy `npm run dev` ở terminal mới mà quên đóng terminal cũ → Next.js fallback từ port 3000 sang 3001 → 3002. Browser test ở localhost:3000 (instance cũ KHÔNG có code mới), trong khi instance code mới đang ở port 3001. Mất thời gian "code đúng mà sao không thấy thay đổi".
 Pattern: trước khi `npm run dev`, kill các terminal cũ (Ctrl+C hoặc đóng cửa sổ). Nếu thấy log "Port 3000 is in use, using available port 3001" → STOP, kill instance khác. Hoặc luôn chỉ định cổng `npm run dev -- --port 3000` + ép thoát nếu port chiếm.
 
+### Bài học Day 27 (2 RULES mới)
+
+**RULE D27-1: TEXT JSX TRONG CONST ARRAY STRING LITERAL BYPASS ESLINT `react/no-unescaped-entities`.**
+Pattern: tạo const array `{title: 'text có nháy thẳng'}` render qua `{card.title}` thay vì hardcode trong JSX. ESLint rule chỉ scan text node trực tiếp giữa JSX tags, không scan JS expression. Áp dụng khi cần giữ dấu nháy thẳng chính tả tiếng Việt mà không phải escape `&apos;` lằng nhằng.
+
+**RULE D27-2: id ANCHOR ĐẶT THẲNG TRÊN SECTION ELEMENT trong file component, KHÔNG wrap div bên ngoài trong page.tsx.**
+Pattern: `<section id="samples" scroll-mt-20>` trong samples-section.tsx thay vì `<div id="samples"><SamplesSection/></div>` trong page.tsx. Tránh nguy cơ duplicate ID (`id="samples"` xuất hiện 2 lần = invalid HTML), giữ component self-contained. Lưu ý ngoại lệ: với section KHÔNG được phép sửa file (vd pricing/bonus theo constraint), vẫn dùng div wrapper trong page.tsx như Day 27 Task 1 đã làm cho `#features|#pricing|#bonus`.
+
 ### Lưu ý cho chat tiếp theo
 
 - HANDOFF.md raw URL: https://raw.githubusercontent.com/vuhuyhai/auto-content-factory/main/HANDOFF.md
@@ -1437,4 +1492,6 @@ Pattern: trước khi `npm run dev`, kill các terminal cũ (Ctrl+C hoặc đón
 - **Polish UI hoàn thiện DONE (5 task):** #1 fallback origin signup, #2 6 public pages + footer cleanup, #3 OFFER_CONFIG centralize, #4 favicon + OG static, #5 a11y tap target 44px
 - **Cursor diff pending gotcha:** prompt có chữ "hiển thị diff cho tôi xác nhận trước khi save" làm Cursor dừng ở preview, KHÔNG apply xuống disk. Verify trên disk bằng PowerShell Get-Content trước khi build/commit. Với polish nhỏ rõ ràng, nên ghi "apply trực tiếp, không cần diff" trong prompt.
 - **ImageResponse cho favicon/OG:** dùng Node runtime mặc định (KHÔNG runtime='edge'), Next.js 16 tự discover icon.tsx + opengraph-image.tsx ở src/app/, không cần touch layout.tsx
-- **Footer Facebook link vẫn placeholder** (issue nhỏ tồn)
+- ~~**Footer Facebook link vẫn placeholder**~~ ✅ Day 27: icon Facebook ẩn hẳn, hiện lại khi có fanpage thật
+- **Day 27 polish landing DONE:** sticky nav (landing-nav.tsx) + Hero CTA secondary "Xem bài viết mẫu ↓" + Trust section (founder + 3 proof) + Samples section (3 bài Việt: Ladysfit/VSE/Cafe mẫu) + padding `py-16 md:py-24` chuẩn hoá + H2 phân cấp anchor (`lg:text-5xl`) vs content (`md:text-4xl`). Production READY merge `38fb399`.
+- **Day 28 có task nhỏ kèm soft launch:** Unify landing design tokens (~45p) - 6 finding: slate vs gray, leading/wordBreak thiếu, bg hue lệch, eyebrow pattern, Trust max-w rộng, Sample card alignment (xem Section 5).
