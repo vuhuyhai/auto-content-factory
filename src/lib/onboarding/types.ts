@@ -1,4 +1,4 @@
-import type { BrandVoiceGuide } from "@/lib/db/schema"
+import type { BrandVoiceGuide } from "@/lib/db/types"
 
 // ============================================================================
 // ARCHETYPE TYPES

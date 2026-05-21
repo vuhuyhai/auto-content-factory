@@ -1,4 +1,4 @@
-import type { BrandVoiceGuide } from "@/lib/db/schema"
+import type { BrandVoiceGuide } from "@/lib/db/types"
 import type { OnboardingFormData } from "@/lib/onboarding/types"
 
 export function guideToFormData(guide: BrandVoiceGuide): OnboardingFormData {

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { BrandVoiceGuide } from "@/lib/db/schema"
+import type { BrandVoiceGuide } from "@/lib/db/types"
 
 export interface Brand {
   id: string

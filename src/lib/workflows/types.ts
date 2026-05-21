@@ -1,4 +1,4 @@
-import type { Workflow } from '@/lib/db/schema';
+import type { Workflow } from '@/lib/db/types';
 
 /**
  * Form data shape cho workflow create/edit form.

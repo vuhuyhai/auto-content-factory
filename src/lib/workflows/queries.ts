@@ -37,8 +37,8 @@ export async function getCurrentUserWorkflows(): Promise<WorkflowWithConfig[]> {
     scheduleCron: row.schedule_cron,
     enabled: row.enabled,
     config: (row.config as WorkflowConfig | null) ?? null,
-    lastRunAt: row.last_run_at ? new Date(row.last_run_at) : null,
-    createdAt: new Date(row.created_at),
+    lastRunAt: row.last_run_at ?? null,
+    createdAt: row.created_at,
   }));
 }
 
@@ -65,7 +65,7 @@ export async function getWorkflowById(id: string): Promise<WorkflowWithConfig | 
     scheduleCron: data.schedule_cron,
     enabled: data.enabled,
     config: (data.config as WorkflowConfig | null) ?? null,
-    lastRunAt: data.last_run_at ? new Date(data.last_run_at) : null,
-    createdAt: new Date(data.created_at),
+    lastRunAt: data.last_run_at ?? null,
+    createdAt: data.created_at,
   };
 }

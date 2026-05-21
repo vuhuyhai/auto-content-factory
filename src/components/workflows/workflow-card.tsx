@@ -143,7 +143,7 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
               {workflow.lastRunAt && (
                 <div className="mt-1.5 inline-flex items-center gap-1 text-xs text-zinc-500">
                   <Clock className="h-3 w-3" />
-                  Chạy gần nhất: {formatRelativeTime(workflow.lastRunAt)}
+                  Chạy gần nhất: {formatRelativeTime(new Date(workflow.lastRunAt))}
                 </div>
               )}
 
