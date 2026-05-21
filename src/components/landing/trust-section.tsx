@@ -2,6 +2,7 @@
 // Server Component: giai toa nghi ngo ve founder truoc khi vao phan van de
 // Design: light theme, accent token accent-acf
 
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 
 interface ProofCard {
@@ -51,10 +52,14 @@ export function TrustSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Cột trái — Founder card */}
           <div>
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-slate-300 bg-gradient-to-br from-slate-200 to-slate-300">
-              <span className="text-2xl font-bold text-slate-700">VH</span>
-            </div>
-            {/* TODO: Replace với ảnh thật src/public/founder.jpg khi có */}
+            <Image
+              src="/founder/vu-hai.jpg"
+              alt="Vũ Hải - Chuyên gia tư vấn vận hành doanh nghiệp, founder Auto-Content Factory"
+              width={96}
+              height={96}
+              priority
+              className="h-24 w-24 rounded-2xl object-cover border-2 border-slate-200"
+            />
             <h3 className="text-xl font-bold text-slate-900 mt-4">
               Tôi là Vũ Hải
             </h3>
