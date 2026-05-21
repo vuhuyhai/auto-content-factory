@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Phase 2 Week 3 - **Polish UI hoàn thiện DONE** (session 20/05/2026). Milestone vừa xong 5 task polish: #1 fix fallback origin signup sang autocontent.online, #2 tạo 6 trang public mới (/terms /privacy /contact /roadmap /blog /docs) + bỏ link /docs/api khỏi footer, #3 centralize bonus offer constants thành OFFER_CONFIG, #4 favicon + OG image động ImageResponse static prerender, #5 tăng tap target nút edit lên 44x44px chuẩn WCAG/Apple HIG. Mỗi task 1 commit, tất cả pass build, local ahead origin/main 5 commits chưa push. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: push 5 commit + verify deploy autocontent.online.
+**Status:** Phase 2 Week 4 - **Day 25 DONE** (session 21/05/2026). Milestone vừa xong: Email nhắc sắp hết trial - cron endpoint `/api/cron/trial-reminders` (d3 + d1 reminder window 24h), 2 React Email template, dedup qua 2 cột `reminder_*_sent_at` + 2 partial index, Resend domain `autocontent.online` verified, cron-job.org schedule 9h VN daily, commit `13f4001` đã push + Vercel deploy READY, production smoke PASS. Trước đó Polish UI hoàn thiện 5 task polish: #1 fix fallback origin signup sang autocontent.online, #2 tạo 6 trang public mới (/terms /privacy /contact /roadmap /blog /docs) + bỏ link /docs/api khỏi footer, #3 centralize bonus offer constants thành OFFER_CONFIG, #4 favicon + OG image động ImageResponse static prerender, #5 tăng tap target nút edit lên 44x44px chuẩn WCAG/Apple HIG. Mỗi task 1 commit, tất cả pass build, local ahead origin/main 5 commits chưa push. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: push 5 commit + verify deploy autocontent.online.
 
 ## 2. Current State
 
@@ -69,7 +69,15 @@
   - Centralize bonus offer constants thành OFFER_CONFIG block trong bonus-guarantee-section.tsx (Polish #3)
   - Favicon + OG image động dùng ImageResponse API, static prerender lúc build (Polish #4)
   - Tăng tap target nút edit brand voice card lên 44x44px chuẩn WCAG/Apple HIG (Polish #5)
-- **Last verified:** 20/05/2026 - Polish UI hoàn thiện DONE (5 task, 5 commit, build PASS). Local ahead origin/main 5 commits, chưa push. Tiếp theo: push + verify deploy autocontent.online. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE.
+- ✅ **Day 25 DONE (21/05/2026) - Email nhắc sắp hết trial:**
+  - Cron endpoint `/api/cron/trial-reminders` (POST + GET healthcheck), 2 reminder window 24h: d3 + d1
+  - 2 React Email template: `trial-ending-3-days.tsx` + `trial-ending-1-day.tsx`
+  - Dedup qua 2 cột `reminder_d3_sent_at` + `reminder_d1_sent_at` (migration `day25_add_trial_reminder_dedup_columns`) + 2 partial index btree
+  - Resend domain `autocontent.online` verified (Hostinger DNS auto-sync), sender `noreply@autocontent.online`
+  - cron-job.org job "ACF Trial Reminders Daily" schedule `0 2 * * *` UTC = 9h sáng VN
+  - Smoke test local PASS (checked=2, sent=2, failed=0, dedup verified) + production smoke PASS (200 OK, no-eligible-users)
+  - Commit `13f4001`, code đã push origin/main, Vercel auto-deploy READY
+- **Last verified:** 21/05/2026 - Day 25 DONE. Email trial reminder infra complete + deployed + production smoke PASS. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE. Tiếp theo: Day 26 (4 findings + roadmap).
 
 ### Day 11 additions (13/05/2026)
 
@@ -666,6 +674,37 @@ Polish Phase 1 Week 2 (~2h):
 - Icon Pencil giữ nguyên h-3.5 w-3.5 (14px), visual không đổi
 - Trick: negative margin -m-2 bù lại không phá layout SectionHeader
 
+### Day 25 (21/05/2026)
+
+Email nhắc sắp hết trial - Phase 2 Week 4:
+
+**Migration `day25_add_trial_reminder_dedup_columns`:**
+- ALTER TABLE `subscriptions` thêm 2 cột `reminder_d3_sent_at` + `reminder_d1_sent_at` (TIMESTAMPTZ nullable)
+- Thêm 2 partial index btree trên `trial_end` WHERE `sent_at IS NULL AND status='trialing'` (phục vụ cron query d3 + d1)
+- Apply qua Supabase MCP success
+
+**5 file code mới (commit `13f4001`):**
+- `src/app/api/cron/trial-reminders/route.ts` - POST endpoint (Bearer auth) + GET healthcheck. Quét subscriptions trong window, gửi email d3/d1, mark dedup
+- `src/emails/trial-ending-3-days.tsx` - React Email template nhắc còn 3 ngày trial
+- `src/emails/trial-ending-1-day.tsx` - React Email template nhắc còn 1 ngày trial
+- `src/lib/email/send-trial-reminder.ts` - send helper với discriminated return type
+- `src/lib/payos/trial-queries.ts` - `getTrialUsersForReminder()` + `markTrialReminderSent()`
+
+**Window logic:** d3 = `[now+2.5d, now+3.5d]`, d1 = `[now+0.5d, now+1.5d]` (window 24h)
+
+**Resend domain verified:** `autocontent.online` verify xong qua Hostinger DNS auto-sync. Vercel env `RESEND_FROM_EMAIL` sync `Auto-Content Factory <noreply@autocontent.online>` cho All Environments
+
+**cron-job.org job "ACF Trial Reminders Daily":** POST `https://autocontent.online/api/cron/trial-reminders`, schedule `0 2 * * *` UTC (9h sáng VN), Authorization Bearer CRON_SECRET, notify on failure ON
+
+**Verify:**
+- Smoke test local PASS: checked=2, sent=2, failed=0, dedup verified
+- Code push origin/main, Vercel auto-deploy READY
+- Production smoke test PASS: 200 OK, response `{"status":"ok","checked":0,"sent":0,"failed":0,"reason":"no-eligible-users","durationMs":826}`
+
+**Commit Day 25:**
+- `13f4001` feat(week4-day25): email trial reminder - cron endpoint + 2 templates + dedup columns
+- `<sắp có>` docs(handoff): close Day 25 - email trial reminder infra
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -747,6 +786,10 @@ Polish Phase 1 Week 2 (~2h):
 | **Promo offer values (LIMITED_SLOTS, BONUS_DEADLINE, prices) gom trong OFFER_CONFIG block tại đầu component (Polish #3)** | KHÔNG hard-code rải rác trong JSX. Đổi promo = 1 chỗ. |
 | **Tap target tối thiểu trên tất cả interactive element = 44x44px (WCAG 2.5.5 + Apple HIG) (Polish #5)** | Icon nhỏ vẫn giữ visual nhỏ, mở rộng tap area bằng padding/h-w + negative margin. |
 | **Server Action với form: dùng `action={fn}` prop trên form element, KHÔNG dùng onSubmit (Polish #2)** | Client component dùng useActionState từ react để handle pending/error state. |
+| **AD-25.1: Cron schedule qua cron-job.org, KHÔNG dùng Vercel Cron (Day 25)** | Vercel Hobby plan giới hạn cron 1 lần/ngày. cron-job.org free unlimited, đã dùng sẵn cho "ACF Workflow Runner" từ Day 11. Trial reminder cần chạy đúng 9h sáng VN daily → dùng cron-job.org job thứ 2 "ACF Trial Reminders Daily" `0 2 * * *` UTC. Nhất quán với pattern cron hiện có. |
+| **AD-25.2: Window 24h cho trial reminder - d3 = [now+2.5d, now+3.5d], d1 = [now+0.5d, now+1.5d] (Day 25)** | Window rộng 24h là tradeoff: đủ rộng để không miss user khi cron chạy lệch giờ hoặc DB query chậm, đủ hẹp để không gửi nhắc quá sớm/quá muộn lệch ý nghĩa "còn 3 ngày" / "còn 1 ngày". Dedup column đảm bảo mỗi user nhận tối đa 1 email mỗi mốc dù window overlap nhiều ngày chạy. |
+| **AD-25.3: Dedup dùng 2 cột timestamp + partial index thay vì bảng riêng (Day 25)** | 2 cột `reminder_d3_sent_at` + `reminder_d1_sent_at` ngay trên `subscriptions` - cron query không cần JOIN bảng dedup riêng, đơn giản hơn. Partial index btree trên `trial_end` WHERE `sent_at IS NULL AND status='trialing'` giữ index nhỏ + query nhanh. Pattern giống Day 17 `last_digest_sent_at` trên profiles. |
+| **AD-25.4: Email sender từ `noreply@autocontent.online` - domain verified (Day 25)** | Domain `autocontent.online` đã verify ở Resend qua Hostinger DNS auto-sync (thoát Resend free sender `onboarding@resend.dev`). Sender domain riêng tăng deliverability + branding. Vercel env `RESEND_FROM_EMAIL` sync All Environments. Đóng issue "Resend chưa verify domain" defer từ Day 16. |
 
 ## 5. Known Issues
 
@@ -878,6 +921,14 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - **Drizzle `src/db/schema.ts` có thể còn khai báo bảng `subscriptions` cũ:** Day 23 M2 đã DROP + tạo lại bảng qua Supabase migration trực tiếp, chưa cập nhật Drizzle schema. Dự án hiện KHÔNG dùng Drizzle query (đã chốt Supabase client từ Day 7 RULE D7-6), nên không crash runtime. Đồng bộ schema.ts về đúng DB thật ở Day 26.
 - **M4 webhook chưa test end-to-end thật:** Code webhook handler đầy đủ (verify chữ ký + check code='00' + cập nhật DB) nhưng chỉ test được sau khi deploy production + đăng ký URL với PayOS + thanh toán thật bằng tiền nhỏ. PayOS webhook KHÔNG fire vào localhost. Defer test sau deploy.
 
+### Issues Day 25 (mới phát sinh — 5 finding cho Day 26)
+
+1. **Time drift risk - window 24h hẹp:** Window reminder 24h (d3 = `[now+2.5d, now+3.5d]`, d1 = `[now+0.5d, now+1.5d]`) phụ thuộc thời điểm cron chạy. Nếu cron-job.org delay > 30 phút hoặc DB query chậm, user có thể rớt khỏi window và KHÔNG bao giờ nhận email. Day 26 cân nhắc đổi sang one-way gate `trial_end <= NOW() + 3d AND reminder_d3_sent_at IS NULL` - idempotent, không phụ thuộc thời điểm chạy, miss 1 ngày thì ngày sau vẫn gửi.
+2. **CASCADE DELETE missing - FK profiles → auth.users:** FK `profiles.id → auth.users.id` KHÔNG có `ON DELETE CASCADE`. Khi DELETE `auth.users` phải xóa profile riêng (xem chi tiết Issues Day 20-21). Day 26 thêm migration `ON DELETE CASCADE` để liền mạch toàn chuỗi xóa user.
+3. **Email sync gap - profiles.email vs auth.users.email:** `profiles.email` KHÔNG tự sync với `auth.users.email` khi user đổi email. Cron trial reminder query lấy email từ `profiles` → có thể outdated, gửi nhắc về email cũ. Day 26: hoặc thêm trigger sync `auth.users.email → profiles.email`, hoặc JOIN `auth.users` mỗi lần query để lấy email mới nhất.
+4. **Drizzle schema drift:** Bảng `subscriptions` tạo + sửa qua Supabase MCP direct (Day 23 M2 + Day 25 migration). Drizzle migrations `0000_gifted_unus.sql` + `0001_curious_silver_surfer.sql` lệch xa DB thật. Day 26 cần introspect schema từ DB → generate baseline migration, hoặc switch hẳn sang Supabase migrations (bỏ Drizzle migration). Dự án hiện KHÔNG dùng Drizzle query (Supabase client từ Day 7 RULE D7-6) nên không crash runtime.
+5. **Index duplication note (không phải bug):** Có 2 index cũ `idx_subscriptions_reminder_*_sent_at` (btree `sent_at` WHERE `IS NOT NULL`) tồn tại trước migration Day 25. 2 index mới `idx_subscriptions_reminder_*_null` phục vụ cron query (WHERE `sent_at IS NULL`). Giữ cả 4, KHÔNG drop - 2 index serve 2 hướng query khác nhau.
+
 ### Issue nhỏ tồn (cho milestone sau)
 
 - Footer Facebook icon link đang trỏ "https://facebook.com" placeholder, chưa phải fanpage thật của ACF. Sửa khi có fanpage chính thức.
@@ -895,8 +946,13 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ### Roadmap đến soft launch
 
-- **Day 25:** Email nhắc sắp hết trial (trial-ending-3-days + trial-ending-1-day, endpoint `/api/cron/trial-reminders` schedule 9h sáng VN daily, query `subscriptions WHERE trial_end - NOW() = 3d OR 1d`)
-- **Day 26:** Sửa bug, đồng bộ Drizzle schema, điều tra Turbopack, enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited) + FK `profiles.id → auth.users.id ON DELETE CASCADE`
+- ~~**Day 25:** Email nhắc sắp hết trial~~ ✅ DONE 21/05/2026 (cron `/api/cron/trial-reminders`, 2 template d3/d1, dedup 2 cột, commit `13f4001`)
+- **Day 26:** Address 4 finding từ Day 25 + roadmap task:
+  - **(Ưu tiên 1)** Finding #1 - đổi window 24h sang one-way gate idempotent `trial_end <= NOW() + Nd AND reminder_*_sent_at IS NULL` (tránh time drift miss user)
+  - **(Ưu tiên 2)** Finding #2 - migration FK `profiles.id → auth.users.id ON DELETE CASCADE` (liền mạch chuỗi xóa user)
+  - Finding #3 - sync `profiles.email` ↔ `auth.users.email` (trigger hoặc JOIN auth.users trong cron query)
+  - Finding #4 - đồng bộ Drizzle schema với DB thật (introspect + baseline migration, hoặc switch sang Supabase migrations)
+  - Điều tra Turbopack dev chết Server Action (xem Issues Day 22-24), enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited)
 - **Day 27:** Polish landing page (PostHog conversion funnel signup → trial → upgrade, re-add CTA "Xem cách hoạt động", mobile responsive audit)
 - **Day 28-29:** Soft launch (target **09/06/2026**) - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
 
@@ -927,6 +983,9 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 7. Context cho AI
 
+**Ngày cuối session:** 21/05/2026
+**Milestone hiện tại:** Phase 2 Week 4 Day 25 completed (Email trial reminder infra). Tiếp theo Day 26 (4 finding + roadmap).
+
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
 - Forms: react-hook-form 7.75 + zod 4.4 + @hookform/resolvers 5.2 + framer-motion 12.38
@@ -937,8 +996,8 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - Background jobs: Inngest 4.4.0 (free tier 50k step/tháng)
 - News: rss-parser 3.13.0 (RSS description-only, KHÔNG dùng jsdom/readability sau Day 11 M2)
 - Cron: cron-job.org external service + cron-parser 5
-- Email: Resend (Week 3)
-- Payment: PayOS (Week 4)
+- Email: Resend (LIVE - domain autocontent.online verified Day 25, sender noreply@autocontent.online)
+- Payment: PayOS (LIVE - tích hợp đầy đủ + payment thật PASS Day 24)
 - Storage: Cloudflare R2 bucket acf-assets (Week 2-3)
 - Hosting: Vercel Hobby plan
 - Monitoring: Sentry (Week 4+)
@@ -951,7 +1010,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - Vercel project: auto-content-factory (vuhuyhais-projects)
 - Supabase: fnhgtxxuudnqxxmzdpjx (Pro plan, ap-southeast-1)
 - Inngest: vuhai-acf / auto-content-factory production app, SDK 4.4.0
-- cron-job.org: "ACF Workflow Runner" job */5 * * * * UTC
+- cron-job.org: "ACF Workflow Runner" job */5 * * * * UTC + "ACF Trial Reminders Daily" job 0 2 * * * UTC (9h sáng VN)
 - Admin email: fitnessviet@gmail.com
 - Node version: v24.14.0 (shadcn CLI fail)
 - npm package manager
