@@ -801,6 +801,33 @@ Polish landing trước soft launch (~3 giờ, 4 commit, deploy production READY
 
 **Tổng kết Day 27:** 10 files changed, +368/-33 lines, 4 commit, 3 giờ làm. Production LIVE với landing improvements: Sticky nav (Krug navigation), Hero secondary CTA (giảm friction), Trust section sau Hero (Spool trust gate), 3 sample bài Việt trước Pricing (bằng chứng giọng văn), padding đồng đều, phân cấp H2 anchor vs content. Sẵn sàng soft launch Day 28-29.
 
+### Day 28 (21/05/2026)
+
+Unify landing design tokens (~45 phút, 1 commit, deploy production READY):
+
+**Phase 0 — Audit-first:** Cursor scan 8 section landing → table 7 cột (file/bg/text H2/leading/wordBreak/eyebrow/max-w) → confirm dominant pattern (4-6/6 section dùng slate/Badge/keep-all) → 2 file mới Trust + Samples là 2 file duy nhất lệch token.
+
+**Phase 1 — Apply 7 token unify** (commit `039b68a`, 2 file, +42/-26 lines):
+- Token 1+2 - text color: `text-gray-900` → `text-slate-900` (H2, brand name), `text-gray-600` → `text-slate-600` (body), `text-gray-500` → `text-slate-500` (meta), `text-gray-700` → `text-slate-700` (body card)
+- Token 3 - background: `bg-gray-50` → `bg-slate-50` (samples section + trust proof card)
+- Token 4 - border: `border-gray-100/200/300` → `border-slate-100/200/300`
+- Token 5 - H2 styling: thêm `leading-[1.25] tracking-tight` + `style={{ wordBreak: 'keep-all' }}`
+- Token 6 - eyebrow: `<p className="text-sm font-semibold uppercase ...">` → `<Badge variant="outline" className="border-accent-acf text-accent-acf">` (pattern dominant 4/6 section)
+- Token 7 - container: `max-w-6xl` → `max-w-5xl` (fix alignment Trust founder+proof xa nhau, Samples card "trôi" → giờ density cao hơn, mắt dễ kết nối)
+
+**Phase 2 — DEFER nhận diện (không fix Day 28, để cleanup sau soft launch):**
+- samples-section hashtag `text-blue-600`: intent Facebook color, KHÔNG phải lỗi token
+- hero-section CTA secondary `border-gray-900`: brief cấm đụng hero, defer cùng Hero polish
+- samples-section badge card `bg-pink-100/blue-100/amber-100`: intent phân biệt 3 brand, giữ nguyên
+
+**Verify:**
+- `npm run typecheck` PASS
+- `npm run build` PASS
+- Visual check screenshot: Trust + Samples đã đồng nhất với section gốc (bg slate, eyebrow Badge, max-w-5xl gần hơn)
+- Production deploy READY qua Vercel MCP (commit `039b68a` sau merge)
+
+**Tổng kết Day 28:** 2 files changed (trust-section.tsx + samples-section.tsx), +42/-26 lines, 1 commit + 1 merge commit. 6 finding Day 27 DEFER đóng hết. Pattern audit-first chứng minh hiệu quả lần 2 (Day 27 Task 3 + Day 28) - save 10-20 phút mỗi lần vì không guess design tokens.
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -1025,16 +1052,9 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 4. **Drizzle schema drift:** Bảng `subscriptions` tạo + sửa qua Supabase MCP direct (Day 23 M2 + Day 25 migration). Drizzle migrations `0000_gifted_unus.sql` + `0001_curious_silver_surfer.sql` lệch xa DB thật. Day 26 cần introspect schema từ DB → generate baseline migration, hoặc switch hẳn sang Supabase migrations (bỏ Drizzle migration). Dự án hiện KHÔNG dùng Drizzle query (Supabase client từ Day 7 RULE D7-6) nên không crash runtime.
 5. **Index duplication note (không phải bug):** Có 2 index cũ `idx_subscriptions_reminder_*_sent_at` (btree `sent_at` WHERE `IS NOT NULL`) tồn tại trước migration Day 25. 2 index mới `idx_subscriptions_reminder_*_null` phục vụ cron query (WHERE `sent_at IS NULL`). Giữ cả 4, KHÔNG drop - 2 index serve 2 hướng query khác nhau.
 
-### Day 27 finding - cần unify landing design tokens
+### Day 28 finding - 1 debt nhỏ defer Hero polish
 
-6 finding gom lại, đề xuất xử lý trong 1 task duy nhất Day 28 "Unify landing design tokens" (~45 phút):
-
-1. **Token màu xám slate vs gray inconsistent:** section gốc dùng `text-slate-900`, 2 section mới Trust/Samples dùng `text-gray-900`. Cùng hệ xám nhưng khác scale Tailwind.
-2. **`leading-[1.25]` + `wordBreak: keep-all` thiếu ở Trust/Samples:** chỉ có ở H2 section gốc, ảnh hưởng cách ngắt dòng tiếng Việt.
-3. **Background `bg-slate-50` vs `bg-gray-50` khác hue nhẹ:** section gốc dùng slate, Trust/Samples dùng gray.
-4. **Eyebrow pattern khác:** section gốc dùng `<Badge variant="outline">`, Trust/Samples dùng `<p>` text uppercase.
-5. **Trust section `max-w-6xl` hơi rộng** (Claude phát hiện khi xem ảnh full page): founder + 3 proof card cách xa nhau, cân nhắc thu hẹp container.
-6. **Sample card "trôi" về 1 phía** (Claude phát hiện khi xem ảnh full page): grid 3 card chưa căn đều thị giác, cần xem lại alignment.
+- **hero-section.tsx CTA secondary "Xem bài viết mẫu" dùng `border-gray-900 text-gray-900`** thay vì slate. Lệch token nhưng brief Day 28 cấm đụng hero. Defer cùng task "Hero polish" tương lai (~1 phút sửa `gray-900` → `slate-900`).
 
 ### Issue nhỏ tồn (cho milestone sau)
 
@@ -1061,8 +1081,9 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
   - Finding #4 - đồng bộ Drizzle schema với DB thật (introspect + baseline migration, hoặc switch sang Supabase migrations)
   - Điều tra Turbopack dev chết Server Action (xem Issues Day 22-24), enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited)
 - ~~**Day 27:** Polish landing page~~ ✅ DONE 21/05/2026 (sticky nav + Hero CTA2 + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, 4 commit, merge `38fb399`, production READY)
-- **Day 28-29:** Soft launch (target **09/06/2026**) + **Unify landing design tokens** (~45p, gom 6 finding Day 27 - xem Section 5) - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
-- **Sau soft launch (nếu có time):** FAQ section (nav `#faq` hiện trỏ section chưa tồn tại) + bảng so sánh ACF vs Freelancer/Agency/ChatGPT
+- ~~**Day 28:** Unify landing design tokens~~ ✅ DONE 21/05/2026 (audit-first 8 section → apply 7 token Trust/Samples, commit `039b68a`, 6 finding Day 27 DEFER đóng hết, production READY)
+- **Day 29-30:** Soft launch (target **09/06/2026**) + monitor metrics - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
+- **Sau soft launch (nếu có time):** FAQ section (nav `#faq` hiện trỏ section chưa tồn tại) + bảng so sánh ACF vs Freelancer/Agency/ChatGPT + Hero CTA2 token unify (`border-gray-900` → `slate`, xem Section 5)
 
 **Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
@@ -1091,8 +1112,8 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 7. Context cho AI
 
-**Ngày cuối session:** 21/05/2026 - Day 27 DONE - polish landing live
-**Milestone hiện tại:** Phase 2 Week 4 Day 27 completed (Polish landing: sticky nav + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, production READY). Tiếp theo Day 28-29 soft launch + unify landing design tokens.
+**Ngày cuối session:** 21/05/2026 - Day 28 DONE - landing tokens unified
+**Milestone hiện tại:** Day 28 DONE - landing tokens unified, sẵn sàng soft launch Day 29.
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
@@ -1477,6 +1498,11 @@ Pattern: tạo const array `{title: 'text có nháy thẳng'}` render qua `{card
 
 **RULE D27-2: id ANCHOR ĐẶT THẲNG TRÊN SECTION ELEMENT trong file component, KHÔNG wrap div bên ngoài trong page.tsx.**
 Pattern: `<section id="samples" scroll-mt-20>` trong samples-section.tsx thay vì `<div id="samples"><SamplesSection/></div>` trong page.tsx. Tránh nguy cơ duplicate ID (`id="samples"` xuất hiện 2 lần = invalid HTML), giữ component self-contained. Lưu ý ngoại lệ: với section KHÔNG được phép sửa file (vd pricing/bonus theo constraint), vẫn dùng div wrapper trong page.tsx như Day 27 Task 1 đã làm cho `#features|#pricing|#bonus`.
+
+### Bài học Day 28 (1 RULE mới)
+
+**RULE D28-1: AUDIT-FIRST KHI POLISH DESIGN TOKEN XUYÊN NHIỀU FILE.**
+Pattern: scan TẤT CẢ section trước → output table với mọi token (bg, text, leading, border, eyebrow, max-w) → confirm dominant pattern (≥3 file dùng) làm chuẩn → file lệch là file đổi. KHÔNG đoán "section nào lệch", luôn scan toàn bộ trước. Pattern này proven Day 27 Task 3 + Day 28, save 10-20 phút mỗi task design tokens vs guess approach. Áp dụng cho mọi task "unify/standardize/normalize" tokens trong tương lai.
 
 ### Lưu ý cho chat tiếp theo
 
