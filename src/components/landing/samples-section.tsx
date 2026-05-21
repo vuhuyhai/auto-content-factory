@@ -53,7 +53,7 @@ export function SamplesSection() {
   return (
     <section
       id="samples"
-      className="w-full scroll-mt-20 bg-gray-50 py-16 px-4 md:py-20 md:px-6"
+      className="w-full scroll-mt-20 bg-gray-50 py-16 px-4 md:py-24 md:px-6"
     >
       <div className="max-w-6xl mx-auto">
         <p className="text-sm font-semibold uppercase tracking-wider text-accent-acf mb-3">

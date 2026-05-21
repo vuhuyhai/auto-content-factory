@@ -26,7 +26,7 @@ const PROOF_CARDS: ProofCard[] = [
 
 export function TrustSection() {
   return (
-    <section className="w-full bg-white py-12 px-4 md:py-16 md:px-6">
+    <section className="w-full bg-white py-16 px-4 md:py-24 md:px-6">
       <div className="max-w-6xl mx-auto">
         <p className="text-sm font-semibold uppercase tracking-wider text-accent-acf mb-3">
           Ai đứng sau
