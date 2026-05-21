@@ -899,7 +899,28 @@ Unify landing design tokens (~45 phút, 1 commit, deploy production READY):
 - npm run build PASS
 - Production deploy READY qua Vercel MCP
 
-**Tổng kết Day 29:** 4 task hoàn thành (Task 1 Hero CTA2 + Task 2 FAQ + Task 3 Comparison + Task 4 Founder/Pronoun). 4 commit feat/content/polish + 2 merge commit. Landing giờ có đầy đủ: trust gate (Trust), bằng chứng giọng văn (Samples), decision driver (Comparison), objection handling (FAQ) — và tone consultant formal "tôi/bạn" nhất quán, bỏ đóng khung ngành VSE/Ladysfit khỏi Trust section. Sẵn sàng soft launch Day 30+.
+**Task 5 - Founder photo + Credentials redesign (3 commit thẳng main, ~30 phút):**
+3 commit sequence:
+- `5fccf8f` feat(landing): thêm ảnh founder thật public/founder/vu-hai.jpg (96x96 rounded-2xl ban đầu)
+- `a2925d5` polish(landing): resize 96→200px, rounded-2xl→rounded-3xl (mặt founder rõ hơn, anchor visual)
+- `fe86f4c` feat(landing): thay 3 proof card track record marketing bằng 4 credentials professional 2x2 grid
+
+Chi tiết:
+- Ảnh founder: public/founder/vu-hai.jpg (457KB JPG, dưới 500KB nên skip resize external, Next.js Image tự optimize auto WebP khi serve). Component `<Image>` next/image với `priority` prop (above-the-fold), alt text đầy đủ cho SEO + a11y. Size cuối 200x200 logical (Tailwind h-48 w-48 = 192px, 8pt grid friendly). Shape rounded-3xl (24px corner) mềm hơn khi ảnh to.
+- 4 Credentials thay 3 proof: const `PROOF_CARDS` → `CREDENTIAL_CARDS`, interface discriminated union `type: 'stat' | 'role'`. Layout `grid-cols-1 md:grid-cols-2` (mobile 1 cột, desktop 2x2).
+  - Card 1 type='stat': "18 năm" font-mono đỏ to + caption "khởi nghiệp + 8 năm tư vấn và đào tạo doanh nghiệp" (anchor visual)
+  - Card 2-3-4 type='role': label uppercase đỏ subtle + caption — "CEO & Co-Founder" / Ladysfit Việt Nam · "Chủ tịch HĐQT" / VSE · "Certified" / Content Marketing Strategy của CMI × AMA
+- Bỏ 3 proof cũ (8 fanpage / 10 website / 8-10 câu hỏi onboarding). Lý do: SMB Việt tin "credentials professional" hơn "personal flex numbers" — authority anchor mạnh hơn cho founder identity.
+
+**Lưu ý workflow Task 5:** 3 commit landed thẳng trên main (KHÔNG tạo branch `polish/day29-founder-photo` như spec ban đầu). Lý do: lệnh `git checkout -b` đặt SAU lệnh commit trong prompt thay vì TRƯỚC → flow tuần tự làm commit landed main. Pattern note → RULE D29-4.
+
+**Verify Task 5:**
+- npm run typecheck PASS (cả 3 lần build sau mỗi commit)
+- npm run build PASS
+- Visual: ảnh founder 192px vuông bo 24px, 4 card credentials 2x2 desktop / 1 cột mobile
+- Production deploy READY qua Vercel MCP
+
+**Tổng kết Day 29 (final cập nhật lần 3):** 5 task hoàn thành (Task 1 Hero CTA2 + Task 2 FAQ + Task 3 Comparison + Task 4 Founder bio/Pronoun + Task 5 Founder photo/Credentials). 7 commit code + 2 merge commit + 2 HANDOFF commit. Landing đầy đủ trust+samples+comparison+FAQ + tone formal tôi/bạn + identity professional với ảnh + credentials authority. Sẵn sàng soft launch Day 30+.
 
 ## 4. Architecture Decisions
 
@@ -1128,6 +1149,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 ### Day 29 finding - 1 debt nhỏ defer khi mở rộng Comparison section
 
 - **comparison-section.tsx 198 LOC sát trần 200 LOC.** Lần update tới (vd thêm icon visual cho 6 criteria) nên tách data array (CRITERIA + OPTIONS) ra file riêng `comparison-data.ts` TRƯỚC khi thêm code mới. Tag: "Defer khi mở rộng Comparison section".
+- **Workflow gotcha:** lệnh `git checkout -b <branch>` PHẢI đứng đầu prompt task có branch riêng, KHÔNG đứng sau commit (Task 5 vì lệnh đặt sai vị trí → 3 commit landed thẳng main thay vì branch). Pattern đã ghi RULE D29-4.
 
 ### Issue nhỏ tồn (cho milestone sau)
 
@@ -1161,6 +1183,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
   - Icon visual cho 6 criteria trong Comparison (cần tách `comparison-data.ts` trước - xem Section 5 Day 29 finding)
   - Link "Bảng so sánh" trong sticky nav (nếu user feedback muốn quick access)
   - Auto-post Facebook integration (đã hứa trong FAQ Q4, target tháng 6/2026)
+  - Crop ảnh founder bỏ khung "CÁC PHƯƠNG" nếu cần ảnh portrait thuần (hiện ảnh có background event banner)
 
 **Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
@@ -1190,7 +1213,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 ## 7. Context cho AI
 
 **Ngày cuối session:** 21/05/2026 - Day 29 DONE - landing đầy đủ section
-**Milestone hiện tại:** Day 29 DONE - landing đầy đủ trust+samples+comparison+FAQ + pronoun unified + founder bio update generic, sẵn sàng soft launch Day 30.
+**Milestone hiện tại:** Day 29 DONE - landing đầy đủ trust+samples+comparison+FAQ + pronoun unified + founder bio + founder photo + credentials authority, sẵn sàng soft launch Day 30.
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
@@ -1591,6 +1614,9 @@ Pattern: `useState<number | null>(null)` + onClick toggle + max-h transition 300
 
 **RULE D29-3: KHI 2 RULE TRONG SPEC MÂU THUẪN, ESCALATE HỎI USER THAY VÌ TỰ QUYẾT.**
 Pattern Phase 0 audit-first phát hiện edge case spec contradiction (vd "KHÔNG đổi const COMPARISON_DATA" vs "đổi mọi pronoun" → cell data "Anh chị hiểu nhất" trong const là content hay pronoun?). Hỏi user thay vì guess intent. User decide → proceed Phase 1 đúng intent thật. Áp dụng cho mọi task có spec đa rule có overlap nhau.
+
+**RULE D29-4: KHI MỞ BRANCH MỚI, LỆNH `git checkout -b <branch>` PHẢI ĐỨNG ĐẦU PROMPT TASK, TRƯỚC MỌI LỆNH CODE/COMMIT.**
+Pattern sai: lệnh `git checkout -b polish/...` đặt SAU `git commit` trong cùng prompt → flow tuần tự làm commit landed main thay vì branch (Task 5 Day 29). Pattern đúng: Pre-flight section đầu prompt LUÔN có `git checkout -b <branch>` standalone block, chạy xong mới đến code/test/commit. Áp dụng cho mọi task có branch riêng.
 
 ### Lưu ý cho chat tiếp theo
 
