@@ -2,7 +2,7 @@
 // Source content: LANDING_CONTENT.md - Phần 1 + 2 rút gọn
 // Design: Light Bento, accent token accent-acf, gap 24px desktop, radius 20px
 
-import { Mic2, Sparkles, ArrowRight } from "lucide-react";
+import { Mic2, Sparkles, ArrowRight, ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,15 +30,26 @@ export function HeroSection() {
                 SaaS giúp chủ doanh nghiệp Việt tự động hoá viết content social bằng brand voice riêng. Tiết kiệm 4-6 giờ mỗi tuần.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button
                 size="lg"
                 asChild
-                className="bg-accent-acf hover:bg-[#d12d3a] text-white"
+                className="min-h-12 bg-accent-acf hover:bg-[#d12d3a] text-white"
               >
                 <Link href="/signup">
                   Bắt đầu Free
                   <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                asChild
+                variant="outline"
+                className="min-h-12 border-2 border-gray-900 bg-transparent text-gray-900 hover:bg-gray-900 hover:text-white"
+              >
+                <Link href="#samples">
+                  Xem bài viết mẫu
+                  <ArrowDown className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>

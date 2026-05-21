@@ -49,7 +49,7 @@ export function PainSection() {
             Bạn có quen?
           </Badge>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.25] tracking-tight mt-4 mb-4"
+            className="text-3xl md:text-4xl font-bold text-slate-900 leading-[1.25] tracking-tight mt-4 mb-4"
             style={{ wordBreak: "keep-all" }}
           >
             3 vấn đề kéo dài năm này qua năm khác

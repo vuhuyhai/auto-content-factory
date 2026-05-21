@@ -52,7 +52,7 @@ export function ConsequenceSection() {
             Cảnh báo
           </Badge>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.25] tracking-tight mt-4 mb-4"
+            className="text-3xl md:text-4xl font-bold text-slate-900 leading-[1.25] tracking-tight mt-4 mb-4"
             style={{ wordBreak: "keep-all" }}
           >
             Cái giá thật của việc trì hoãn

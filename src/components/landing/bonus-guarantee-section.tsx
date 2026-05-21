@@ -57,7 +57,7 @@ const TOTAL_VALUE_ITEMS = [
 
 export function BonusGuaranteeSection() {
   return (
-    <section className="w-full bg-slate-50 py-20 md:py-32 border-t border-slate-100">
+    <section className="w-full bg-slate-50 py-16 md:py-24 border-t border-slate-100">
       <div className="max-w-7xl mx-auto px-4 md:px-12">
         <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
           <Badge variant="outline" className="border-accent-acf text-accent-acf">
