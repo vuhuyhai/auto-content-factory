@@ -6,6 +6,7 @@ import { ConsequenceSection } from "@/components/landing/consequence-section";
 import { SamplesSection } from "@/components/landing/samples-section";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { BonusGuaranteeSection } from "@/components/landing/bonus-guarantee-section";
+import { ComparisonSection } from "@/components/landing/comparison-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { FinalCtaSection } from "@/components/landing/final-cta-section";
 import { Footer } from "@/components/landing/footer";
@@ -29,6 +30,8 @@ export default function HomePage() {
       <div id="bonus" className="scroll-mt-20">
         <BonusGuaranteeSection />
       </div>
+      {/* ComparisonSection tu mang id="comparison" + scroll-mt-20 */}
+      <ComparisonSection />
       {/* FAQSection tu mang id="faq" + scroll-mt-20 */}
       <FAQSection />
       <FinalCtaSection />

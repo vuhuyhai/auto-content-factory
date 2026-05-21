@@ -44,7 +44,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: 'Khác gì so với thuê freelancer 5 triệu?',
-    answer: '3 điểm khác. Một là tốc độ: freelancer 1-2 ngày mỗi bài, ACF 60-90 giây. Hai là nhất quán: freelancer mỗi người 1 giọng, ACF 1 brand voice duy nhất. Ba là chi phí: freelancer 5-8 triệu mỗi tháng, ACF Pro 399K. Bảng so sánh chi tiết với agency và ChatGPT có ở section bên dưới.',
+    answer: '3 điểm khác. Một là tốc độ: freelancer 1-2 ngày mỗi bài, ACF 60-90 giây. Hai là nhất quán: freelancer mỗi người 1 giọng, ACF 1 brand voice duy nhất. Ba là chi phí: freelancer 5-8 triệu mỗi tháng, ACF Pro 399K. Bảng so sánh chi tiết với agency và ChatGPT có ở section So sánh thẳng thắn phía trên.',
   },
 ];
 
