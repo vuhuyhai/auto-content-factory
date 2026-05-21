@@ -876,7 +876,30 @@ Unify landing design tokens (~45 phút, 1 commit, deploy production READY):
 - Click "FAQ" trong sticky nav scroll đúng tới FAQ section (link đã setup Day 27)
 - Comparison KHÔNG có link trong nav (optional theo brief)
 
-**Tổng kết Day 29:** 5 files changed total (1 file mới comparison + 1 file mới faq + page.tsx + hero + faq update Q8), 3 commit feat/polish + 1 merge commit. 3 việc defer từ Day 27-28 đóng hết. Landing giờ có đầy đủ: trust gate (Trust), bằng chứng giọng văn (Samples), decision driver (Comparison), objection handling (FAQ). Sẵn sàng soft launch Day 30+.
+**Task 4 - Founder bio update + Unify pronoun toi/ban (commit e6e3766 + merge, ~30 phút):**
+- src/components/landing/trust-section.tsx:
+  - H3 "Em là Vũ Hải" → "Tôi là Vũ Hải"
+  - Role "Chairman VSE, CEO Ladysfit" → "Chuyên gia tư vấn vận hành doanh nghiệp"
+  - Bio mới: 8 fanpage + 50k follower/page + 10 website + 30k traffic/site/tháng + 30-40h/tuần + insight 80/20 (hệ thống làm 80%, con người 20% quan trọng nhất)
+  - 2 proof card đổi: 100+ bài (VSE/Ladysfit) → 8 fanpage (50k follower/page) + 2 brand pilot → 10 website (30k traffic/site). Card 8/10 giữ nguyên (product-related)
+  - Sub-headline: "Đã chạy production cho 2 brand thật trước khi mở cho anh chị" → "Tôi build từ chính kinh nghiệm vận hành đa kênh content cho nhiều brand trước khi mở rộng cho bạn"
+  - Bỏ hoàn toàn brand VSE/Ladysfit khỏi Trust section (không đóng khung ngành)
+- src/components/landing/faq-section.tsx: 8 pronoun trong FAQ_ITEMS const + H2 + sub-header → "bạn"/"tôi"
+- src/components/landing/comparison-section.tsx: H2 + sub + footer + 1 cell data "Anh chị hiểu nhất" → "Bạn hiểu nhất"
+
+**Exception KHÔNG đổi (Cursor tự nhận diện đúng qua Phase 0 audit):**
+- "anh chủ" trong cụm trích dẫn Consequence section
+- "tiếng Anh" trong FAQ (tên ngôn ngữ, không phải pronoun)
+- "chị em" / "tụi mình" trong samples-section (giọng brand mẫu)
+
+**Verify Task 4:**
+- 3 files changed, +30/-26 lines
+- Grep "anh chị" / `\banh\b` / `\bem\b` zero match trong copy landing (5 match còn lại đều là exception đã xác nhận)
+- npm run typecheck PASS
+- npm run build PASS
+- Production deploy READY qua Vercel MCP
+
+**Tổng kết Day 29:** 4 task hoàn thành (Task 1 Hero CTA2 + Task 2 FAQ + Task 3 Comparison + Task 4 Founder/Pronoun). 4 commit feat/content/polish + 2 merge commit. Landing giờ có đầy đủ: trust gate (Trust), bằng chứng giọng văn (Samples), decision driver (Comparison), objection handling (FAQ) — và tone consultant formal "tôi/bạn" nhất quán, bỏ đóng khung ngành VSE/Ladysfit khỏi Trust section. Sẵn sàng soft launch Day 30+.
 
 ## 4. Architecture Decisions
 
@@ -1133,7 +1156,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 - ~~**Day 27:** Polish landing page~~ ✅ DONE 21/05/2026 (sticky nav + Hero CTA2 + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, 4 commit, merge `38fb399`, production READY)
 - ~~**Day 28:** Unify landing design tokens~~ ✅ DONE 21/05/2026 (audit-first 8 section → apply 7 token Trust/Samples, commit `039b68a`, 6 finding Day 27 DEFER đóng hết, production READY)
 - ~~**Day 29:** 3 task defer Day 27-28~~ ✅ DONE 21/05/2026 (Hero CTA2 token unify + FAQ section + Comparison table, 3 commit `73b3821`/`f2574dc`/`9f36478` + 1 merge, production READY)
-- **Day 30:** Soft launch (target **09/06/2026**) + monitor metrics - signup rate, FAQ scroll depth, Comparison engagement, phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
+- **Day 30:** Soft launch (target **09/06/2026**) + monitor metrics - signup rate, FAQ scroll depth, Comparison engagement, Trust founder card click rate (nếu setup analytics), phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
 - **Sau soft launch (nếu có time):**
   - Icon visual cho 6 criteria trong Comparison (cần tách `comparison-data.ts` trước - xem Section 5 Day 29 finding)
   - Link "Bảng so sánh" trong sticky nav (nếu user feedback muốn quick access)
@@ -1167,7 +1190,7 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 ## 7. Context cho AI
 
 **Ngày cuối session:** 21/05/2026 - Day 29 DONE - landing đầy đủ section
-**Milestone hiện tại:** Day 29 DONE - landing đầy đủ trust+samples+comparison+FAQ, sẵn sàng soft launch Day 30.
+**Milestone hiện tại:** Day 29 DONE - landing đầy đủ trust+samples+comparison+FAQ + pronoun unified + founder bio update generic, sẵn sàng soft launch Day 30.
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
@@ -1565,6 +1588,9 @@ Pattern: User chạy commit thành công, sau đó chạy lại git commit lần
 
 **RULE D29-2: ACCORDION NATIVE >> SHADCN ACCORDION KHI CÓ NODE v24 CONFLICT.**
 Pattern: `useState<number | null>(null)` + onClick toggle + max-h transition 300ms + ChevronDown rotate-180. ~50 LOC accordion logic, zero deps, full control. Áp dụng cho FAQ, mobile nav, collapsible card. KHÔNG cần Radix UI Accordion (shadcn) khi feature đơn giản single-open.
+
+**RULE D29-3: KHI 2 RULE TRONG SPEC MÂU THUẪN, ESCALATE HỎI USER THAY VÌ TỰ QUYẾT.**
+Pattern Phase 0 audit-first phát hiện edge case spec contradiction (vd "KHÔNG đổi const COMPARISON_DATA" vs "đổi mọi pronoun" → cell data "Anh chị hiểu nhất" trong const là content hay pronoun?). Hỏi user thay vì guess intent. User decide → proceed Phase 1 đúng intent thật. Áp dụng cho mọi task có spec đa rule có overlap nhau.
 
 ### Lưu ý cho chat tiếp theo
 
