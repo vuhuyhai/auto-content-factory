@@ -5,25 +5,33 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 
-interface ProofCard {
-  stat: string;
+interface CredentialCard {
+  type: "stat" | "role";
+  stat?: string;
+  label?: string;
   caption: string;
 }
 
-const PROOF_CARDS: ProofCard[] = [
+const CREDENTIAL_CARDS: CredentialCard[] = [
   {
-    stat: "8",
-    caption:
-      "fanpage đã quản trị đồng thời, mỗi page hơn 50.000 lượt theo dõi",
+    type: "stat",
+    stat: "18 năm",
+    caption: "khởi nghiệp + 8 năm tư vấn và đào tạo doanh nghiệp",
   },
   {
-    stat: "10",
-    caption: "website mỗi tháng tạo hơn 30.000 lượt truy cập mỗi site",
+    type: "role",
+    label: "CEO & Co-Founder",
+    caption: "Ladysfit Việt Nam",
   },
   {
-    stat: "8/10",
-    caption:
-      "câu hỏi đơn giản để hệ thống học giọng văn của brand bạn, mất ~10 phút",
+    type: "role",
+    label: "Chủ tịch HĐQT",
+    caption: "VSE (Vietnam Society of Excellence)",
+  },
+  {
+    type: "role",
+    label: "Certified",
+    caption: "Content Marketing Strategy của CMI × AMA",
   },
 ];
 
@@ -76,17 +84,25 @@ export function TrustSection() {
             </p>
           </div>
 
-          {/* Cột phải — Proof stack */}
-          <div className="flex flex-col gap-4">
-            {PROOF_CARDS.map((card) => (
+          {/* Cột phải — Credentials grid 2x2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {CREDENTIAL_CARDS.map((card, index) => (
               <div
-                key={card.stat}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-5"
+                key={index}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-5"
               >
-                <div className="font-mono text-3xl font-bold text-accent-acf">
-                  {card.stat}
-                </div>
-                <p className="text-sm text-slate-700 mt-1">{card.caption}</p>
+                {card.type === "stat" ? (
+                  <div className="font-mono text-3xl font-bold text-accent-acf leading-tight">
+                    {card.stat}
+                  </div>
+                ) : (
+                  <div className="text-xs font-semibold uppercase tracking-wider text-accent-acf">
+                    {card.label}
+                  </div>
+                )}
+                <p className="text-sm text-slate-700 mt-2 leading-relaxed">
+                  {card.caption}
+                </p>
               </div>
             ))}
           </div>
