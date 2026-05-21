@@ -828,6 +828,56 @@ Unify landing design tokens (~45 phút, 1 commit, deploy production READY):
 
 **Tổng kết Day 28:** 2 files changed (trust-section.tsx + samples-section.tsx), +42/-26 lines, 1 commit + 1 merge commit. 6 finding Day 27 DEFER đóng hết. Pattern audit-first chứng minh hiệu quả lần 2 (Day 27 Task 3 + Day 28) - save 10-20 phút mỗi lần vì không guess design tokens.
 
+### Day 29 (21/05/2026)
+
+3 task defer từ Day 27-28 hoàn thành (~2 giờ thực, 3 commit + 1 merge commit, deploy production READY):
+
+**Task 1 - Hero CTA2 token unify (commit 73b3821, ~5 phút):**
+- src/components/landing/hero-section.tsx: 4 class change trên 1 dòng - border-gray-900 → border-slate-900, text-gray-900 → text-slate-900, hover:bg-gray-900 → hover:bg-slate-900, hover:text-white giữ nguyên
+- 1 file changed, +1/-1 line
+- Đóng debt cuối Day 28 - toàn bộ landing giờ dùng token slate nhất quán
+
+**Task 2 - FAQ Section (commit f2574dc, ~75 phút):**
+- File mới src/components/landing/faq-section.tsx (Client Component ~145 LOC): accordion native pure React state (KHÔNG dùng shadcn Accordion để tránh Node v24 conflict), useState<number | null> single-open pattern, ChevronDown rotate-180 khi open, max-h transition 300ms
+- 8 FAQ items dạng const array (RULE D27-1 bypass eslint): Q1 generic vs ChatGPT, Q2 cơ chế học giọng brand 6 archetype, Q3 thời gian 11-12 phút, Q4 chỉnh sửa + auto-post 6/2026, Q5 tiếng Việt có dấu native, Q6 hủy gói 1 click, Q7 hoàn tiền 7 ngày trial, Q8 khác freelancer (3 điểm + dẫn xuống bảng so sánh)
+- src/app/page.tsx: thêm FAQ section trước FinalCta
+- ID anchor id="faq" trên section element (RULE D27-2)
+- Pattern accordion: text-base md:text-lg font-semibold question, py-5 tap target, border-b border-slate-200 separator
+- 2 files changed, +X/-Y lines
+
+**Task 3 - Comparison Table (commit 9f36478, ~45 phút):**
+- File mới src/components/landing/comparison-section.tsx (Server Component 198 LOC, sát trần 200): bảng 5 cột × 6 hàng so sánh ACF vs Tự viết/Freelancer/Agency/ChatGPT
+- 6 criteria: Thời gian/tuần, Chi phí/tháng, Hiểu giọng brand, Đăng đều, Tiếng Việt có dấu, Chuyên môn ngành
+- Responsive 2 layout: Desktop <table> native 6 cột (thêm "Tiêu chí" header thay vì empty - Cursor quyết định đúng), cột ACF nổi bật bg-accent-acf/5 + border-l-2 border-r-2 border-accent-acf. Mobile 5 card xếp dọc, card ACF border-2 border-accent-acf
+- bg-white section (alternating với Bonus slate-50 bên trên)
+- Footer paragraph italic + CTA "Bắt đầu Free, không cần thẻ →" link /signup
+- src/components/landing/faq-section.tsx: sửa Q8 answer "section bên dưới" → "section So sánh thẳng thắn phía trên" (vì Comparison giờ đứng TRƯỚC FAQ trong page.tsx)
+- src/app/page.tsx: thêm Comparison trước FAQ
+- 3 files changed, +X/-Y lines
+
+**Order section landing cuối Day 29:**
+1. LandingNav (sticky)
+2. Hero
+3. Trust
+4. Pain (#features)
+5. Consequence
+6. Samples (#samples)
+7. Pricing (#pricing)
+8. Bonus (#bonus)
+9. Comparison (#comparison) ← MỚI Day 29
+10. FAQ (#faq) ← MỚI Day 29
+11. FinalCta
+12. Footer
+
+**Verify:**
+- npm run typecheck PASS
+- npm run build PASS
+- Production deploy READY qua Vercel MCP (merge commit sau Task 3)
+- Click "FAQ" trong sticky nav scroll đúng tới FAQ section (link đã setup Day 27)
+- Comparison KHÔNG có link trong nav (optional theo brief)
+
+**Tổng kết Day 29:** 5 files changed total (1 file mới comparison + 1 file mới faq + page.tsx + hero + faq update Q8), 3 commit feat/polish + 1 merge commit. 3 việc defer từ Day 27-28 đóng hết. Landing giờ có đầy đủ: trust gate (Trust), bằng chứng giọng văn (Samples), decision driver (Comparison), objection handling (FAQ). Sẵn sàng soft launch Day 30+.
+
 ## 4. Architecture Decisions
 
 | Decision | Lý do |
@@ -1052,9 +1102,9 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 4. **Drizzle schema drift:** Bảng `subscriptions` tạo + sửa qua Supabase MCP direct (Day 23 M2 + Day 25 migration). Drizzle migrations `0000_gifted_unus.sql` + `0001_curious_silver_surfer.sql` lệch xa DB thật. Day 26 cần introspect schema từ DB → generate baseline migration, hoặc switch hẳn sang Supabase migrations (bỏ Drizzle migration). Dự án hiện KHÔNG dùng Drizzle query (Supabase client từ Day 7 RULE D7-6) nên không crash runtime.
 5. **Index duplication note (không phải bug):** Có 2 index cũ `idx_subscriptions_reminder_*_sent_at` (btree `sent_at` WHERE `IS NOT NULL`) tồn tại trước migration Day 25. 2 index mới `idx_subscriptions_reminder_*_null` phục vụ cron query (WHERE `sent_at IS NULL`). Giữ cả 4, KHÔNG drop - 2 index serve 2 hướng query khác nhau.
 
-### Day 28 finding - 1 debt nhỏ defer Hero polish
+### Day 29 finding - 1 debt nhỏ defer khi mở rộng Comparison section
 
-- **hero-section.tsx CTA secondary "Xem bài viết mẫu" dùng `border-gray-900 text-gray-900`** thay vì slate. Lệch token nhưng brief Day 28 cấm đụng hero. Defer cùng task "Hero polish" tương lai (~1 phút sửa `gray-900` → `slate-900`).
+- **comparison-section.tsx 198 LOC sát trần 200 LOC.** Lần update tới (vd thêm icon visual cho 6 criteria) nên tách data array (CRITERIA + OPTIONS) ra file riêng `comparison-data.ts` TRƯỚC khi thêm code mới. Tag: "Defer khi mở rộng Comparison section".
 
 ### Issue nhỏ tồn (cho milestone sau)
 
@@ -1082,8 +1132,12 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
   - Điều tra Turbopack dev chết Server Action (xem Issues Day 22-24), enforcement hạn mức theo tier (Free 1 workflow / Starter 5 workflow / Pro unlimited)
 - ~~**Day 27:** Polish landing page~~ ✅ DONE 21/05/2026 (sticky nav + Hero CTA2 + Trust section + 3 sample bài Việt + padding/H2 chuẩn hoá, 4 commit, merge `38fb399`, production READY)
 - ~~**Day 28:** Unify landing design tokens~~ ✅ DONE 21/05/2026 (audit-first 8 section → apply 7 token Trust/Samples, commit `039b68a`, 6 finding Day 27 DEFER đóng hết, production READY)
-- **Day 29-30:** Soft launch (target **09/06/2026**) + monitor metrics - phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
-- **Sau soft launch (nếu có time):** FAQ section (nav `#faq` hiện trỏ section chưa tồn tại) + bảng so sánh ACF vs Freelancer/Agency/ChatGPT + Hero CTA2 token unify (`border-gray-900` → `slate`, xem Section 5)
+- ~~**Day 29:** 3 task defer Day 27-28~~ ✅ DONE 21/05/2026 (Hero CTA2 token unify + FAQ section + Comparison table, 3 commit `73b3821`/`f2574dc`/`9f36478` + 1 merge, production READY)
+- **Day 30:** Soft launch (target **09/06/2026**) + monitor metrics - signup rate, FAQ scroll depth, Comparison engagement, phỏng vấn 5 SMB confirm pricing, invite 5-10 khách trial 7 ngày, monitor Vercel + Resend dashboard, daily HANDOFF update conversion metric
+- **Sau soft launch (nếu có time):**
+  - Icon visual cho 6 criteria trong Comparison (cần tách `comparison-data.ts` trước - xem Section 5 Day 29 finding)
+  - Link "Bảng so sánh" trong sticky nav (nếu user feedback muốn quick access)
+  - Auto-post Facebook integration (đã hứa trong FAQ Q4, target tháng 6/2026)
 
 **Target launch:** 09/06/2026 (Profile A 3-5 paid + 10 trial + 50% retention)
 
@@ -1112,8 +1166,8 @@ Phiên Day 21 close milestone đã chạy verify thực tế, kết quả:
 
 ## 7. Context cho AI
 
-**Ngày cuối session:** 21/05/2026 - Day 28 DONE - landing tokens unified
-**Milestone hiện tại:** Day 28 DONE - landing tokens unified, sẵn sàng soft launch Day 29.
+**Ngày cuối session:** 21/05/2026 - Day 29 DONE - landing đầy đủ section
+**Milestone hiện tại:** Day 29 DONE - landing đầy đủ trust+samples+comparison+FAQ, sẵn sàng soft launch Day 30.
 
 ### Stack
 - Frontend: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, shadcn/ui (14 components manual)
@@ -1503,6 +1557,14 @@ Pattern: `<section id="samples" scroll-mt-20>` trong samples-section.tsx thay v�
 
 **RULE D28-1: AUDIT-FIRST KHI POLISH DESIGN TOKEN XUYÊN NHIỀU FILE.**
 Pattern: scan TẤT CẢ section trước → output table với mọi token (bg, text, leading, border, eyebrow, max-w) → confirm dominant pattern (≥3 file dùng) làm chuẩn → file lệch là file đổi. KHÔNG đoán "section nào lệch", luôn scan toàn bộ trước. Pattern này proven Day 27 Task 3 + Day 28, save 10-20 phút mỗi task design tokens vs guess approach. Áp dụng cho mọi task "unify/standardize/normalize" tokens trong tương lai.
+
+### Bài học Day 29 (2 RULES mới)
+
+**RULE D29-1: KHI USER PASTE OUTPUT GIT, SCAN TOÀN BỘ TỪ TRÊN XUỐNG TÌM COMMIT THẬT.**
+Pattern: User chạy commit thành công, sau đó chạy lại git commit lần 2 ra "nothing to commit, working tree clean". User paste cả 2 output cho AI nhưng AI chỉ đọc dòng cuối nghĩ "chưa commit". Fix: đọc full output từ trên xuống, tìm dòng `[branch hash] feat(...)` hoặc git log thấy commit ở top. Nếu nghi ngờ, request user chạy `git log --oneline -5` + `Test-Path file mới` + `Get-Item file` để xác định thực trạng.
+
+**RULE D29-2: ACCORDION NATIVE >> SHADCN ACCORDION KHI CÓ NODE v24 CONFLICT.**
+Pattern: `useState<number | null>(null)` + onClick toggle + max-h transition 300ms + ChevronDown rotate-180. ~50 LOC accordion logic, zero deps, full control. Áp dụng cho FAQ, mobile nav, collapsible card. KHÔNG cần Radix UI Accordion (shadcn) khi feature đơn giản single-open.
 
 ### Lưu ý cho chat tiếp theo
 
