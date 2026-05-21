@@ -7,7 +7,7 @@
 **Owner:** Vũ Hải (Chairman VSE, CEO Ladysfit)
 **Started:** 12/05/2026
 **Target launch:** Tuần 4 (~09/06/2026)
-**Status:** Phase 2 Week 4 - **Day 25 DONE** (session 21/05/2026). Milestone vừa xong: Email nhắc sắp hết trial - cron endpoint `/api/cron/trial-reminders` (d3 + d1 reminder window 24h), 2 React Email template, dedup qua 2 cột `reminder_*_sent_at` + 2 partial index, Resend domain `autocontent.online` verified, cron-job.org schedule 9h VN daily, commit `13f4001` đã push + Vercel deploy READY, production smoke PASS. Trước đó Polish UI hoàn thiện 5 task polish: #1 fix fallback origin signup sang autocontent.online, #2 tạo 6 trang public mới (/terms /privacy /contact /roadmap /blog /docs) + bỏ link /docs/api khỏi footer, #3 centralize bonus offer constants thành OFFER_CONFIG, #4 favicon + OG image động ImageResponse static prerender, #5 tăng tap target nút edit lên 44x44px chuẩn WCAG/Apple HIG. Mỗi task 1 commit, tất cả pass build, local ahead origin/main 5 commits chưa push. Trước đó Day 22-24 đã hoàn thành Pricing + PayOS M1-M5 (giá Free 0đ / Starter 199K / Pro 399K, tích hợp PayOS đầy đủ startTrial + createPaymentLink + webhook, đã test thanh toán thật 199K thành công), domain `autocontent.online` LIVE. Chuẩn bị: push 5 commit + verify deploy autocontent.online.
+**Status:** Phase 2 Week 4 - **Day 26 DONE** (session 22/05/2026). Milestone vừa xong: Tech debt critical Day 26 - (a) Bổ sung FK `profiles.id → auth.users.id` ON DELETE CASCADE (Finding #2 Day 25 đóng), (b) Trigger `enforce_contents_brand_consistency` BEFORE INSERT/UPDATE OF brand_id/workflow_id chống drift `contents.brand_id != workflows.brand_id` qua workflow_id (Nhóm 2 #1 đóng), (c) Bỏ Drizzle ORM hoàn toàn - tạo `src/lib/db/types.ts` plain interfaces thay `src/lib/db/schema.ts`, refactor 4 file type-only import, uninstall `drizzle-orm` + `drizzle-kit` + `postgres`, xoá `drizzle.config.ts` + folder `drizzle/`, commit `94d7c8a` (Bug critical #2 đóng), (d) Fix Turbopack Server Action chết âm thầm - UpgradeCard chuyển từ `useTransition + onClick` sang `<form action> + useActionState` Next.js 16 recommended pattern (Bug critical #1 đóng). 4 bug critical Day 22-24 đều đóng. Còn lại: 5 bug nhỏ Polish UI + refactor 3 file >200 LOC + multi-source batch + bulk reject AlertDialog + PayOS regression edge case. Drop 10 mục defer/cancel (xem Section 8). Trước đó Day 25 hoàn thành email trial reminder cron `/api/cron/trial-reminders` (d3+d1 reminder, dedup 2 cột partial index, Resend domain `autocontent.online` verified, cron-job.org 9h VN daily, production smoke PASS).
 
 ## 2. Current State
 
@@ -77,7 +77,7 @@
   - cron-job.org job "ACF Trial Reminders Daily" schedule `0 2 * * *` UTC = 9h sáng VN
   - Smoke test local PASS (checked=2, sent=2, failed=0, dedup verified) + production smoke PASS (200 OK, no-eligible-users)
   - Commit `13f4001`, code đã push origin/main, Vercel auto-deploy READY
-- **Last verified:** 21/05/2026 - Day 25 DONE. Email trial reminder infra complete + deployed + production smoke PASS. Pricing + PayOS M1-M5 code complete + deployed + payment thật PASS. Domain `autocontent.online` LIVE. Tiếp theo: Day 26 (4 findings + roadmap).
+- **Last verified:** 22/05/2026 - Day 26 DONE. 4 việc critical đóng: FK CASCADE profiles→auth.users, trigger chống brand_id drift, bỏ Drizzle, fix Turbopack Server Action. Tiếp theo: 5 bug nhỏ Polish UI + refactor 3 file >200 LOC + multi-source batch + bulk reject AlertDialog + PayOS regression edge case (xem Section 8).
 
 ### Day 11 additions (13/05/2026)
 
@@ -704,6 +704,67 @@ Email nhắc sắp hết trial - Phase 2 Week 4:
 **Commit Day 25:**
 - `13f4001` feat(week4-day25): email trial reminder - cron endpoint + 2 templates + dedup columns
 - `<sắp có>` docs(handoff): close Day 25 - email trial reminder infra
+
+### Day 26 additions (22/05/2026)
+
+**M1: FK CASCADE profiles → auth.users (~10 phút)**
+- Audit FK toàn DB: 6/7 FK đã có ON DELETE CASCADE đúng. THIẾU 1 FK: `profiles.id → auth.users.id` (orphan nguy hiểm khi xoá user trong auth.users)
+- Migration `day26_fk_profiles_auth_users_and_brand_drift_trigger` apply qua Supabase MCP:
+  - `ALTER TABLE public.profiles ADD CONSTRAINT profiles_id_auth_users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE`
+- Cascade chain hoàn chỉnh: auth.users → profiles → brands → workflows → contents
+- Verify SQL: constraint tồn tại với `delete_rule = CASCADE`
+- Finding #2 từ Day 25 ĐÓNG
+
+**M2: Trigger chống brand_id drift (~20 phút)**
+- Vấn đề: `contents.brand_id` denormalized từ `workflows.brand_id` qua `workflow_id`. Có thể drift nếu UPDATE sai
+- Function `enforce_contents_brand_consistency()` BEFORE INSERT OR UPDATE OF brand_id, workflow_id ON contents:
+  - Đọc `workflows.brand_id` qua `NEW.workflow_id`
+  - Nếu NEW.brand_id NULL → tự fill bằng workflows.brand_id
+  - Nếu NEW.brand_id != workflows.brand_id → raise exception
+- Migration thứ 2 `day26_fix_function_search_path_brand_consistency`: lock `SET search_path = public, pg_catalog` để fix Supabase advisor warning function_search_path_mutable
+- Test 3 case PASS trong DO block:
+  - Case 1: brand_id NULL auto-fill từ workflow.brand_id
+  - Case 2: brand_id đúng → UPDATE pass
+  - Case 3: brand_id sai → raise exception "phải khớp"
+- Verify advisor sau migration: 0 warning mới (3 warning pre-existing không liên quan)
+- Nhóm 2 #1 ĐÓNG
+
+**M3: Bỏ Drizzle ORM hoàn toàn (~45 phút)**
+- Phát hiện qua search Cursor: ZERO query Drizzle thực tế (`db.select/insert/update/delete`). Chỉ 4 file import type-only (`BrandVoiceGuide`, `Workflow`). App query 100% qua Supabase client.
+- Phát hiện drift Drizzle schema vs DB thật >10 chỗ: subscriptions thiếu `tier/trial_start/trial_end/reminder_*`, contents thiếu `variants/selected_variant_index`, profiles thiếu `last_digest_sent_at`, type mismatch `payos_order_code` (varchar vs bigint)
+- Quyết định: BỎ HẲN thay vì introspect (vì ZERO query runtime)
+- Tạo `src/lib/db/types.ts`: 6 interface plain (Profile, Brand, Workflow, Content, ContentLog, Subscription) + interface BrandVoiceGuide khớp DB hiện tại Day 26
+- Refactor 4 file import: `@/lib/db/schema` → `@/lib/db/types` ở `src/lib/brands/queries.ts`, `src/lib/brands/converters.ts`, `src/lib/workflows/types.ts`, `src/lib/onboarding/types.ts`
+- Fix phụ: Type `Workflow` đổi `lastRunAt/createdAt` từ `Date` sang `string` (Supabase trả string ISO) → sửa 2 chỗ `workflows/queries.ts` (bỏ `new Date()`) + `workflow-card.tsx:146` (wrap `new Date(workflow.lastRunAt)` cho helper local)
+- Xoá 2 file: `src/lib/db/schema.ts`, `src/lib/db/index.ts`
+- Xoá `drizzle.config.ts` + folder `drizzle/` (5 file migration .sql + meta)
+- Uninstall: `drizzle-orm`, `drizzle-kit`, `postgres` (3 package)
+- Xoá 3 script `db:generate/db:push/db:studio` khỏi package.json
+- Verify: `npm run typecheck` PASS, `npm run build` PASS, 17 file changed (158 insertions, 2442 deletions)
+- Commit `94d7c8a` refactor(week4-day26): bo Drizzle hoan toan
+- Bug critical Day 22-24 #2 ĐÓNG
+
+**M4: Fix Turbopack Server Action chết âm thầm (~30 phút)**
+- Vấn đề Day 22-24: `UpgradeCard` 2 button "Bắt đầu dùng thử" + "Thanh toán ngay" không fire Server Action với `npm run dev` (Turbopack), phải dùng `npx next dev --webpack`
+- Root cause: Pattern `useTransition + onClick={() => actionAsync()}` không stable với Turbopack module HMR
+- Fix: chuyển sang Next.js 16 recommended pattern `<form action> + useActionState`:
+  - 2 button bọc trong 2 `<form action={formAction}>` riêng, mỗi form có `<input type="hidden" name="tier">` + `<button type="submit">`
+  - `useActionState` cho cả 2 action: `trialState/trialFormAction/isTrialPending` + `payState/payFormAction/isPayPending`
+  - 2 wrapper module-scope `startTrialActionWrapper(prevState, FormData)` + `createPaymentLinkWrapper(prevState, FormData)` đọc tier từ FormData rồi gọi Server Action gốc
+  - 2 useEffect xử lý kết quả: trial → toast, pay → `window.location.href` redirect (hoặc toast lỗi)
+  - Disable logic: cả 2 button `disabled={isTrialPending || isPayPending}`, text pending check `tier === plan.tier`
+  - Xoá: `useTransition`, `handleStartTrial`, `handlePay`, state `pendingTier`
+  - Giữ: 'use client', import từ '@/lib/payos/actions', toast state + auto-clear 3s, plan filter, toàn bộ markup
+- Verify: `npm run typecheck` PASS, `npm run build` PASS, 1 file sửa `src/components/billing/upgrade-card.tsx`
+- Pattern này stable cả Turbopack lẫn webpack (Next.js 16 recommended), progressive enhancement bonus (JS disabled vẫn work)
+- Bug critical Day 22-24 #1 ĐÓNG
+
+**Findings cuối Day 26:**
+1. Cascade chain hoàn chỉnh: xoá 1 user trong auth.users → tự động xoá profiles → brands → workflows → contents (5 bảng)
+2. Brand drift defense: 3 layer chống drift contents.brand_id (FK cascade, trigger auto-fill khi NULL, trigger raise exception khi mismatch)
+3. Drizzle drift đã giải quyết tận gốc bằng cách BỎ thay vì INTROSPECT - đơn giản hoá stack, giảm 1 source of truth phải sync với DB
+4. Form action pattern là Next.js 16 RECOMMENDED cho Server Action - mọi component Server Action mới NÊN dùng pattern này thay vì useTransition + onClick
+5. Drop list 10 mục (xem Section 8): Git history hero Day 5, shadcn CLI Node v24, Vercel Cron timezone, DEP0169 url.parse (4 drop hẳn) + Cloudflare R2, backup cron GitHub Actions, pagination jump, VariantEditor discard warning, delete workflow cascade test, Claude API synthesize brand voice onboarding, signup_disabled flow (6+1 defer sau launch)
 
 ## 4. Architecture Decisions
 
