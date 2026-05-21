@@ -55,10 +55,10 @@ export function TrustSection() {
             <Image
               src="/founder/vu-hai.jpg"
               alt="Vũ Hải - Chuyên gia tư vấn vận hành doanh nghiệp, founder Auto-Content Factory"
-              width={96}
-              height={96}
+              width={200}
+              height={200}
               priority
-              className="h-24 w-24 rounded-2xl object-cover border-2 border-slate-200"
+              className="h-48 w-48 rounded-3xl object-cover border-2 border-slate-200"
             />
             <h3 className="text-xl font-bold text-slate-900 mt-4">
               Tôi là Vũ Hải
