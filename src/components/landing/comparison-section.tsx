@@ -29,7 +29,7 @@ const OPTIONS: ComparisonOption[] = [
       "✅ Tốt nhất",
       "❌ Phụ thuộc tâm trạng",
       "✅",
-      "✅ Anh chị hiểu nhất",
+      "✅ Bạn hiểu nhất",
     ],
   },
   {
@@ -97,11 +97,11 @@ export function ComparisonSection() {
             className="text-3xl md:text-4xl font-bold text-slate-900 leading-[1.25] tracking-tight mb-4"
             style={{ wordBreak: "keep-all" }}
           >
-            Tại sao ACF không phải lựa chọn thứ N của anh chị
+            Tại sao ACF không phải lựa chọn thứ N của bạn
           </h2>
           <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-            5 cách phổ biến để có content. Tụi em so thẳng. Quyết định nào tốt
-            cho anh chị, anh chị tự chọn.
+            5 cách phổ biến để có content. Tôi so thẳng. Quyết định nào tốt
+            cho bạn, bạn tự chọn.
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export function ComparisonSection() {
         <div className="mt-8 md:mt-12 max-w-3xl mx-auto text-center">
           <p className="text-base md:text-lg text-slate-700 leading-relaxed italic">
             3 lựa chọn đầu phụ thuộc con người - nghỉ phép, bận việc, thay đổi
-            quan điểm. ChatGPT phụ thuộc anh chị ngồi prompt mỗi ngày. ACF phụ
+            quan điểm. ChatGPT phụ thuộc bạn ngồi prompt mỗi ngày. ACF phụ
             thuộc 1 lần setup, sau đó hệ thống tự chạy.
           </p>
           <div className="mt-8">

@@ -16,19 +16,19 @@ interface FaqItem {
 const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'AI viết có generic như ChatGPT không?',
-    answer: 'Không. ChatGPT không biết brand của anh là ai, viết cho audience nào, dùng từ ngữ gì. ACF học giọng brand qua 8 câu hỏi (hình mẫu thương hiệu, tone, từ "có dùng" và "tránh dùng", chủ đề chuyên môn). Mỗi bài generate ra đều mang chữ ký riêng. Anh xem 3 sample bài Việt phía trên - 3 giọng hoàn toàn khác nhau từ cùng 1 hệ thống.',
+    answer: 'Không. ChatGPT không biết brand của bạn là ai, viết cho audience nào, dùng từ ngữ gì. ACF học giọng brand qua 8 câu hỏi (hình mẫu thương hiệu, tone, từ "có dùng" và "tránh dùng", chủ đề chuyên môn). Mỗi bài generate ra đều mang chữ ký riêng. Bạn xem 3 sample bài Việt phía trên - 3 giọng hoàn toàn khác nhau từ cùng 1 hệ thống.',
   },
   {
     question: 'Hệ thống học giọng brand của tôi như nào?',
-    answer: 'Onboarding 10 phút có 8 câu hỏi đơn giản. Hệ thống map câu trả lời thành brand voice profile (12 hình mẫu thương hiệu + tone + từ vựng nên/không nên dùng). Profile này dùng làm context mỗi lần AI viết bài. Anh có thể chỉnh sửa profile bất cứ lúc nào trong dashboard.',
+    answer: 'Onboarding 10 phút có 8 câu hỏi đơn giản. Hệ thống map câu trả lời thành brand voice profile (12 hình mẫu thương hiệu + tone + từ vựng nên/không nên dùng). Profile này dùng làm context mỗi lần AI viết bài. Bạn có thể chỉnh sửa profile bất cứ lúc nào trong dashboard.',
   },
   {
     question: 'Mất bao lâu để có bài đầu tiên?',
-    answer: 'Khoảng 11-12 phút. 10 phút onboarding, 1 phút setup workflow (chọn nguồn tin hoặc chủ đề), 60-90 giây hệ thống generate bài đầu tiên. Anh sẽ thấy 3 variants để chọn cho từng bài.',
+    answer: 'Khoảng 11-12 phút. 10 phút onboarding, 1 phút setup workflow (chọn nguồn tin hoặc chủ đề), 60-90 giây hệ thống generate bài đầu tiên. Bạn sẽ thấy 3 variants để chọn cho từng bài.',
   },
   {
     question: 'Tôi có thể chỉnh sửa bài trước khi đăng không?',
-    answer: 'Có. Mỗi bài có 3 variants, anh chọn 1 variant tốt nhất rồi edit inline 4 field (hook, title, body, hashtag). Sau khi approved trong dashboard, anh copy text sang Facebook hoặc LinkedIn để đăng. Tính năng tự động đăng bài lên Facebook sẽ ra mắt tháng 6/2026.',
+    answer: 'Có. Mỗi bài có 3 variants, bạn chọn 1 variant tốt nhất rồi edit inline 4 field (hook, title, body, hashtag). Sau khi approved trong dashboard, bạn copy text sang Facebook hoặc LinkedIn để đăng. Tính năng tự động đăng bài lên Facebook sẽ ra mắt tháng 6/2026.',
   },
   {
     question: 'Có hỗ trợ tiếng Việt có dấu chuẩn không?',
@@ -36,11 +36,11 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: 'Hủy gói có dễ không?',
-    answer: 'Rất dễ. Login dashboard, vào Settings, click Cancel subscription, xong trong 1 click. Không phải gọi điện, không phải email xin phép. Anh hủy bất cứ lúc nào, không cam kết dài hạn.',
+    answer: 'Rất dễ. Login dashboard, vào Settings, click Cancel subscription, xong trong 1 click. Không phải gọi điện, không phải email xin phép. Bạn hủy bất cứ lúc nào, không cam kết dài hạn.',
   },
   {
     question: 'Nếu tôi không hài lòng?',
-    answer: 'Bảo đảm hoàn tiền với gói Pro trong 7 ngày dùng thử miễn phí. Nếu trong 7 ngày anh thấy hệ thống không hiểu giọng brand, không thấy bài đăng được, hủy luôn, không phải trả đồng nào. Sau 7 ngày trial, gói Free vẫn dùng được mãi mãi miễn phí.',
+    answer: 'Bảo đảm hoàn tiền với gói Pro trong 7 ngày dùng thử miễn phí. Nếu trong 7 ngày bạn thấy hệ thống không hiểu giọng brand, không thấy bài đăng được, hủy luôn, không phải trả đồng nào. Sau 7 ngày trial, gói Free vẫn dùng được mãi mãi miễn phí.',
   },
   {
     question: 'Khác gì so với thuê freelancer 5 triệu?',
@@ -72,11 +72,11 @@ export function FAQSection() {
             className="text-3xl md:text-4xl font-bold text-slate-900 leading-[1.25] tracking-tight mb-4"
             style={{ wordBreak: "keep-all" }}
           >
-            8 câu hỏi anh chị hay hỏi nhất
+            8 câu hỏi bạn hay hỏi nhất
           </h2>
           <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-            Nếu không tìm thấy câu trả lời ở đây, email fitnessviet@gmail.com em
-            trả lời trong 24 giờ.
+            Nếu không tìm thấy câu trả lời ở đây, email fitnessviet@gmail.com
+            tôi trả lời trong 24 giờ.
           </p>
         </div>
 
